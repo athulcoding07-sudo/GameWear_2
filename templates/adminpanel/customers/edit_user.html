@@ -1,0 +1,773 @@
+{% extends 'adminpanel/dashboard.html' %}
+
+{% block title %}Edit Customer | GameWear Admin{% endblock %}
+
+{% block content %}
+<style>
+    /* ── Animations ── */
+    .fade-in { animation: fadeIn 0.3s ease forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ── Drop zone states ── */
+    .drop-zone-active {
+        border-color: #ffffff !important;
+        background-color: rgba(255,255,255,0.04) !important;
+    }
+
+    /* ── Field validation ── */
+    .field-error { border-color: #ef4444 !important; }
+    .field-error-msg {
+        color: #ef4444;
+        font-size: 0.72rem;
+        margin-top: 4px;
+        display: none;
+    }
+    .field-error-msg.visible { display: block; }
+
+    /* ── Django form errors (server-side) ── */
+    .django-field-error {
+        color: #ef4444;
+        font-size: 0.72rem;
+        margin-top: 4px;
+        display: block;
+    }
+
+    /* ── Toast ── */
+    #toast {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        z-index: 9999;
+        min-width: 280px;
+        padding: 1rem 1.25rem;
+        border-radius: 0.75rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        transform: translateY(120%);
+        opacity: 0;
+        transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+        pointer-events: none;
+    }
+    #toast.show    { transform: translateY(0); opacity: 1; }
+    #toast.success { background: #18181b; border: 1px solid #22c55e; color: #22c55e; }
+    #toast.error   { background: #18181b; border: 1px solid #ef4444; color: #ef4444; }
+
+    /* ── Submit button spinner ── */
+    #submitBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-spinner {
+        width: 14px; height: 14px;
+        border: 2px solid rgba(0,0,0,0.25);
+        border-top-color: #000;
+        border-radius: 50%;
+        animation: spin 0.6s linear infinite;
+        display: none;
+    }
+    #submitBtn:disabled .btn-spinner { display: inline-block; }
+    #submitBtn:disabled .btn-label  { display: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Image preview ── */
+    #imagePreview { display: none; }
+    #imagePreview.visible { display: block; }
+    #uploadPlaceholder.hidden { display: none !important; }
+
+    /* ── Select option dark bg ── */
+    select option { background: #0a0a0a; }
+
+    /* ── Clear image checkbox ── */
+    .clear-image-wrap {
+        display: none;
+        align-items: center;
+        gap: 0.4rem;
+        margin-top: 0.6rem;
+        cursor: pointer;
+    }
+    .clear-image-wrap.visible { display: flex; }
+    .clear-image-wrap input[type="checkbox"] {
+        accent-color: #ef4444;
+        width: 13px;
+        height: 13px;
+        cursor: pointer;
+    }
+    .clear-image-wrap label {
+        font-size: 0.72rem;
+        color: #737373;
+        cursor: pointer;
+        transition: color 0.15s;
+        user-select: none;
+    }
+    .clear-image-wrap:hover label { color: #f87171; }
+
+    /* ── Page max-width wrapper ── */
+    .tw-max-7xl {
+        max-width: 80rem;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    /* ── Card ── */
+    .form-card {
+        max-width: 56rem;
+        background-color: #000;
+        border: 1px solid #171717;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: 0 25px 50px -12px rgba(0,0,0,0.9);
+    }
+
+    /* ── Back link ── */
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        color: #a3a3a3;
+        text-decoration: none;
+        font-size: 0.875rem;
+        transition: color 0.15s;
+        margin-bottom: 1rem;
+    }
+    .back-link:hover { color: #fff; }
+    .back-link svg   { margin-right: 0.5rem; transition: transform 0.15s; }
+    .back-link:hover svg { transform: translateX(-3px); }
+
+    /* ── Page title / subtitle ── */
+    .page-title    { font-size: 1.875rem; font-weight: 700; color: #fff; margin: 0; line-height: 1.2; }
+    .page-subtitle { color: #737373; margin-top: 0.25rem; font-size: 0.95rem; }
+
+    /* ── Profile upload column ── */
+    .upload-col {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    @media (min-width: 992px) {
+        .upload-col { width: 33.333%; flex-shrink: 0; }
+    }
+
+    /* ── Drop zone ── */
+    .drop-zone {
+        width: 100%;
+        max-width: 200px;
+        aspect-ratio: 1 / 1;
+        margin: 0 auto;
+        border-radius: 1rem;
+        background-color: #171717;
+        border: 2px dashed #262626;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #737373;
+        cursor: pointer;
+        overflow: hidden;
+        position: relative;
+        transition: border-color 0.2s, background-color 0.2s;
+    }
+    .drop-zone:hover {
+        border-color: #404040;
+        background-color: rgba(23,23,23,0.5);
+    }
+    .drop-zone input[type="file"] {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
+        width: 100%;
+        height: 100%;
+    }
+    #imagePreview {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 1rem;
+        pointer-events: none;
+    }
+
+    /* ── Remove image button ── */
+    #removeImageBtn {
+        display: none;
+        align-items: center;
+        gap: 0.25rem;
+        background: none;
+        border: none;
+        padding: 0;
+        color: #737373;
+        font-size: 0.75rem;
+        cursor: pointer;
+        margin: 0.75rem auto 0;
+        transition: color 0.15s;
+    }
+    #removeImageBtn.visible { display: flex; }
+    #removeImageBtn:hover   { color: #f87171; }
+
+    /* ── Upload hint ── */
+    .upload-hint {
+        font-size: 0.75rem;
+        color: #525252;
+        font-style: italic;
+        text-align: center;
+        margin-top: 1rem;
+    }
+
+    /* ── Current image badge ── */
+    .current-img-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        background: #171717;
+        border: 1px solid #262626;
+        border-radius: 0.4rem;
+        padding: 0.2rem 0.5rem;
+        font-size: 0.7rem;
+        color: #737373;
+        margin-top: 0.5rem;
+    }
+    .current-img-badge svg { color: #22c55e; }
+
+    /* ── Field label ── */
+    .field-label {
+        display: block;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #737373;
+        margin-bottom: 0.375rem;
+    }
+    .field-label .req { color: #ef4444; }
+
+    /* ── Text inputs ── */
+    .field-input {
+        width: 100%;
+        background-color: #171717;
+        border: 1px solid #262626;
+        color: #fff;
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+        font-size: 0.9rem;
+        outline: none;
+        transition: border-color 0.15s, box-shadow 0.15s;
+        box-sizing: border-box;
+    }
+    .field-input::placeholder { color: #404040; }
+    .field-input:focus {
+        border-color: #fff;
+        box-shadow: 0 0 0 1px #fff;
+        background-color: #171717;
+        color: #fff;
+    }
+    /* Pre-fill glow — subtle indicator that field has existing data */
+    .field-input.has-value {
+        border-color: #2a2a2a;
+    }
+
+    /* ── Select ── */
+    .field-select {
+        width: 100%;
+        background-color: #171717;
+        border: 1px solid #262626;
+        color: #fff;
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+        font-size: 0.9rem;
+        outline: none;
+        appearance: none;
+        cursor: pointer;
+        transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .field-select:focus {
+        border-color: #fff;
+        box-shadow: 0 0 0 1px #fff;
+    }
+    .select-wrap { position: relative; }
+    .select-wrap .chevron {
+        position: absolute;
+        right: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
+        color: #737373;
+        width: 1rem;
+        height: 1rem;
+    }
+
+    /* ── Actions bar ── */
+    .actions-bar {
+        padding-top: 2rem;
+        margin-top: 1.5rem;
+        border-top: 1px solid #171717;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 1rem;
+    }
+
+    /* ── Cancel link ── */
+    .btn-cancel {
+        padding: 0.75rem 2rem;
+        font-size: 0.875rem;
+        font-weight: 700;
+        color: #737373;
+        background: none;
+        border: none;
+        text-decoration: none;
+        transition: color 0.15s;
+        cursor: pointer;
+    }
+    .btn-cancel:hover { color: #fff; }
+
+    /* ── Submit button ── */
+    .btn-submit {
+        background-color: #fff;
+        color: #000;
+        padding: 0.75rem 2.5rem;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 700;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: background-color 0.15s;
+        box-shadow: 0 10px 15px -3px rgba(255,255,255,0.05);
+    }
+    .btn-submit:hover { background-color: #e5e5e5; }
+
+    /* ── Inner layout flex ── */
+    .form-inner {
+        display: flex;
+        flex-direction: column;
+        gap: 3rem;
+    }
+    @media (min-width: 992px) {
+        .form-inner { flex-direction: row; }
+    }
+
+    /* ── Fields column ── */
+    .fields-col {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    /* ── Two-column grid ── */
+    .two-col {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+    @media (max-width: 480px) {
+        .two-col { grid-template-columns: 1fr; }
+    }
+
+    /* ── Edit mode banner ── */
+    .edit-banner {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        background: #0d1a0d;
+        border: 1px solid #1a3a1a;
+        border-radius: 0.6rem;
+        padding: 0.75rem 1rem;
+        margin-bottom: 2rem;
+        font-size: 0.8rem;
+        color: #86efac;
+    }
+    .edit-banner svg { flex-shrink: 0; color: #22c55e; }
+</style>
+
+<div class="tw-max-7xl">
+    <div id="editCustomerView" class="fade-in">
+
+        <!-- ── Header ── -->
+        <div style="margin-bottom: 2rem;">
+            <a href="{% url 'adminpanel:customers_list' %}" class="back-link">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                </svg>
+                Back to Customer List
+            </a>
+            <h1 class="page-title">Edit Customer</h1>
+            <p class="page-subtitle">Update profile details for <strong style="color:#fff;">{{ user.get_full_name|default:user.email }}</strong>.</p>
+        </div>
+
+        <!-- ── Django non-field errors ── -->
+        {% if form.non_field_errors %}
+        <div class="edit-banner" style="background:#1a0d0d; border-color:#3a1a1a; color:#fca5a5;">
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- ── Django messages (success from redirect flash) ── -->
+        <!-- {% if messages %}
+            {% for message in messages %}
+            <div class="edit-banner {% if message.tags == 'error' %}style="background:#1a0d0d; border-color:#3a1a1a; color:#fca5a5;"{% endif %}">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+                {{ message }}
+            </div>
+            {% endfor %}
+        {% endif %} -->
+
+        <!-- ── Card ── -->
+        <div class="form-card">
+            
+            <form id="editUserForm" method="POST" enctype="multipart/form-data" novalidate style="padding: 2rem;">
+                {% csrf_token %}
+
+                <div class="form-inner">
+
+                    <!-- ── Profile Picture Column ── -->
+                    <!-- ── Profile Picture Column ── -->
+                    <div class="upload-col">
+                        <label class="field-label" style="width:100%;">Profile Picture</label>
+                        <div style="position:relative; width:100%;">
+                    
+                            <div id="dropZone" class="drop-zone {% if form.profile_image.errors %}field-error{% endif %}">
+                                <div id="uploadPlaceholder"
+                                    style="display:{% if user.profile_image %}none{% else %}flex{% endif %}; flex-direction:column; align-items:center; pointer-events:none;">
+                                    <svg width="48" height="48" style="margin-bottom:0.5rem;" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    <span style="font-size:0.75rem; font-weight:500; text-align:center; padding:0 1rem;">Click or Drag to
+                                        Upload</span>
+                                </div>
+                    
+                                <img id="imagePreview" src="{% if user.profile_image %}{{ user.profile_image.url }}{% else %}#{% endif %}"
+                                    alt="Profile Preview" class="{% if user.profile_image %}visible{% endif %}">
+                    
+                                <input type="file" id="profileImageInput" name="profile_image"
+                                    accept="image/jpeg,image/png,image/gif,image/webp">
+                            </div>
+                    
+                            <button type="button" id="removeImageBtn" class="{% if user.profile_image %}visible{% endif %}">
+                                <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                                Remove
+                            </button>
+                    
+                            <!-- Django ClearableFileInput clear checkbox -->
+                            <div class="clear-image-wrap" id="clearWrap"
+                                style="{% if user.profile_image %}display:flex;{% else %}display:none;{% endif %}">
+                                <input type="checkbox" name="profile_image-clear" id="imageClearInput">
+                                <label for="imageClearInput">Delete current image</label>
+                            </div>
+                    
+                            {% if form.profile_image.errors %}
+                            <p class="django-field-error" style="text-align:center; margin-top:0.5rem;">
+                                {{ form.profile_image.errors|join:", " }}
+                            </p>
+                            {% endif %}
+                    
+                            {% if user.profile_image %}
+                            <span class="current-img-badge" id="currentImgBadge">
+                                <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                                </svg>
+                                Current image saved
+                            </span>
+                            {% endif %}
+                    
+                            <p id="imageError" style="color:#ef4444; font-size:0.72rem; margin-top:4px; text-align:center; display:none;">
+                            </p>
+                            <p class="upload-hint">JPG, PNG, GIF or WEBP. Max 2MB.</p>
+                        </div>
+                    </div>
+                    
+                    <!-- ── Form Fields Column ── -->
+                    <div class="fields-col">
+                    
+                        <!-- First & Last Name -->
+                        <div class="two-col">
+                            <div>
+                                <label for="firstName" class="field-label">First Name <span class="req">*</span></label>
+                                <input type="text" id="firstName" name="first_name" value="{{ user.first_name }}" placeholder="e.g. Alex"
+                                    autocomplete="given-name"
+                                    class="field-input has-value {% if form.first_name.errors %}field-error{% endif %}">
+                                {% if form.first_name.errors %}
+                                <p class="django-field-error">{{ form.first_name.errors|join:", " }}</p>
+                                {% else %}
+                                <p class="field-error-msg" id="firstNameError">First name is required.</p>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <label for="lastName" class="field-label">Last Name <span class="req">*</span></label>
+                                <input type="text" id="lastName" name="last_name" value="{{ user.last_name }}" placeholder="e.g. Knight"
+                                    autocomplete="family-name"
+                                    class="field-input has-value {% if form.last_name.errors %}field-error{% endif %}">
+                                {% if form.last_name.errors %}
+                                <p class="django-field-error">{{ form.last_name.errors|join:", " }}</p>
+                                {% else %}
+                                <p class="field-error-msg" id="lastNameError">Last name is required.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    
+                        <!-- Email -->
+                        <div>
+                            <label for="email" class="field-label">Email Address <span class="req">*</span></label>
+                            <input type="email" id="email" name="email" value="{{ user.email }}" placeholder="alex.knight@example.com"
+                                autocomplete="email" class="field-input has-value {% if form.email.errors %}field-error{% endif %}">
+                            {% if form.email.errors %}
+                            <p class="django-field-error">{{ form.email.errors|join:", " }}</p>
+                            {% else %}
+                            <p class="field-error-msg" id="emailError">Enter a valid email address.</p>
+                            {% endif %}
+                        </div>
+                    
+                        <!-- Account Status -->
+                        <div class="two-col">
+                            <div>
+                                <label for="accountStatus" class="field-label">Account Status</label>
+                                <div class="select-wrap">
+                                    <select id="accountStatus" name="is_active" class="field-select">
+                                        <option value="true" {% if user.is_active %}selected{% endif %}>Active</option>
+                                        <option value="false" {% if not user.is_active %}selected{% endif %}>Inactive</option>
+                                    </select>
+                                    <svg class="chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="actions-bar">
+                            <a href="{% url 'adminpanel:customers_list' %}" class="btn-cancel">Cancel</a>
+                            <button type="submit" id="submitBtn" class="btn-submit">
+                                <span class="btn-spinner"></span>
+                                <span class="btn-label">Save Changes</span>
+                            </button>
+                        </div>
+
+                    </div><!-- /fields-col -->
+
+                </div><!-- /form-inner -->
+            </form>
+        </div><!-- /form-card -->
+
+    </div>
+</div>
+
+<!-- ── Toast Notification ── -->
+<div id="toast">
+    <svg id="toastIcon" width="20" height="20" style="flex-shrink:0;" fill="none" stroke="currentColor" viewBox="0 0 24 24"></svg>
+    <span id="toastMsg"></span>
+</div>
+
+<script>
+(function () {
+    const ALLOWED_TYPES  = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    const MAX_SIZE_BYTES = 2 * 1024 * 1024;
+
+    const imageInput        = document.getElementById('profileImageInput');
+    const dropZone          = document.getElementById('dropZone');
+    const imagePreview      = document.getElementById('imagePreview');
+    const uploadPlaceholder = document.getElementById('uploadPlaceholder');
+    const removeImageBtn    = document.getElementById('removeImageBtn');
+    const imageError        = document.getElementById('imageError');
+    const clearWrap         = document.getElementById('clearWrap');
+    const imageClearInput   = document.getElementById('imageClearInput');
+    const currentImgBadge   = document.getElementById('currentImgBadge');
+
+    /* ── If user already has an image, hide the placeholder immediately ── */
+    if (imagePreview && imagePreview.classList.contains('visible')) {
+        if (uploadPlaceholder) uploadPlaceholder.classList.add('hidden');
+    }
+
+    /* ── Image helpers ── */
+    function showImageError(msg) {
+        dropZone.classList.add('field-error');
+        imageError.textContent = msg;
+        imageError.style.display = 'block';
+    }
+    function clearImageError() {
+        dropZone.classList.remove('field-error');
+        imageError.style.display = 'none';
+    }
+
+    function handleImageFile(file) {
+        if (!file) return;
+        if (!ALLOWED_TYPES.includes(file.type)) {
+            showImageError('Invalid file type. Please upload a JPG, PNG, GIF, or WEBP image.');
+            resetImageInput();
+            return;
+        }
+        if (file.size > MAX_SIZE_BYTES) {
+            showImageError('File is too large. Maximum size is 2MB.');
+            resetImageInput();
+            return;
+        }
+        clearImageError();
+
+        /* Uncheck clear if user picks a new file */
+        if (imageClearInput) imageClearInput.checked = false;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            imagePreview.src = e.target.result;
+            imagePreview.classList.add('visible');
+            uploadPlaceholder.classList.add('hidden');
+            removeImageBtn.classList.add('visible');
+            if (clearWrap)       clearWrap.style.display = 'flex';
+            if (currentImgBadge) currentImgBadge.style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function resetImageInput() {
+        imageInput.value = '';
+        imagePreview.src = '#';
+        imagePreview.classList.remove('visible');
+        uploadPlaceholder.classList.remove('hidden');
+        removeImageBtn.classList.remove('visible');
+        if (currentImgBadge) currentImgBadge.style.display = 'none';
+    }
+
+    /* ── Remove button: clear preview + tick the Django "clear" checkbox ── */
+    if (removeImageBtn) {
+        removeImageBtn.addEventListener('click', () => {
+            resetImageInput();
+            clearImageError();
+            /*
+                Tick the Django ClearableFileInput hidden checkbox so the view
+                knows to delete the existing image on save.
+            */
+            if (imageClearInput) {
+                imageClearInput.checked = true;
+                if (clearWrap) clearWrap.style.display = 'flex';
+            }
+        });
+    }
+
+    /* ── Drag-and-drop ── */
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('drop-zone-active');
+    });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drop-zone-active'));
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('drop-zone-active');
+        const file = e.dataTransfer.files[0];
+        if (file) {
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            imageInput.files = dt.files;
+            handleImageFile(file);
+        }
+    });
+    imageInput.addEventListener('change', () => handleImageFile(imageInput.files[0]));
+
+    /* ── Client-side validation on blur (mirrors add form) ── */
+    const firstNameInput = document.getElementById('firstName');
+    const lastNameInput  = document.getElementById('lastName');
+    const emailInput     = document.getElementById('email');
+
+    function showError(inputEl, msgId, msg) {
+        inputEl.classList.add('field-error');
+        const el = document.getElementById(msgId);
+        if (el) { el.textContent = msg; el.classList.add('visible'); }
+    }
+    function clearError(inputEl, msgId) {
+        inputEl.classList.remove('field-error');
+        const el = document.getElementById(msgId);
+        if (el) el.classList.remove('visible');
+    }
+
+    if (firstNameInput) {
+        firstNameInput.addEventListener('blur', () => {
+            firstNameInput.value.trim()
+                ? clearError(firstNameInput, 'firstNameError')
+                : showError(firstNameInput, 'firstNameError', 'First name is required.');
+        });
+    }
+    if (lastNameInput) {
+        lastNameInput.addEventListener('blur', () => {
+            lastNameInput.value.trim()
+                ? clearError(lastNameInput, 'lastNameError')
+                : showError(lastNameInput, 'lastNameError', 'Last name is required.');
+        });
+    }
+    if (emailInput) {
+        emailInput.addEventListener('blur', () => {
+            const val   = emailInput.value.trim();
+            const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+            (val && valid)
+                ? clearError(emailInput, 'emailError')
+                : showError(emailInput, 'emailError', 'Enter a valid email address.');
+        });
+    }
+
+    /* ── Client-side guard before submit (catch obvious issues early) ── */
+    const form      = document.getElementById('editUserForm');
+    const submitBtn = document.getElementById('submitBtn');
+
+    form.addEventListener('submit', (e) => {
+        let valid = true;
+
+        if (firstNameInput && !firstNameInput.value.trim()) {
+            showError(firstNameInput, 'firstNameError', 'First name is required.');
+            valid = false;
+        }
+        if (lastNameInput && !lastNameInput.value.trim()) {
+            showError(lastNameInput, 'lastNameError', 'Last name is required.');
+            valid = false;
+        }
+        if (emailInput) {
+            const val   = emailInput.value.trim();
+            const valid2 = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+            if (!val || !valid2) {
+                showError(emailInput, 'emailError', 'Enter a valid email address.');
+                valid = false;
+            }
+        }
+        if (imageInput.files.length > 0) {
+            const file = imageInput.files[0];
+            if (!ALLOWED_TYPES.includes(file.type)) {
+                showImageError('Invalid file type. Please upload a JPG, PNG, GIF, or WEBP image.');
+                valid = false;
+            } else if (file.size > MAX_SIZE_BYTES) {
+                showImageError('File too large. Maximum size is 2MB.');
+                valid = false;
+            }
+        }
+
+        if (!valid) { e.preventDefault(); return; }
+
+        /* Show spinner while the standard POST is in-flight */
+        submitBtn.disabled = true;
+    });
+
+    /* ── Auto-show Django server-side error toast (if form re-rendered with errors) ── */
+    {% if form.errors %}
+    (function showServerErrorToast() {
+        const toast     = document.getElementById('toast');
+        const toastMsg  = document.getElementById('toastMsg');
+        const toastIcon = document.getElementById('toastIcon');
+        toast.className = 'error';
+        toastIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>';
+        toastMsg.textContent = 'Please fix the errors below and try again.';
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 5000);
+    })();
+    {% endif %}
+
+})();
+</script>
+
+{% endblock %}

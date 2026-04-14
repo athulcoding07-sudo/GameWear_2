@@ -1,0 +1,5 @@
+[MASTER]
+load-plugins=pylint_django
+
+[TYPECHECK]
+generated-members=objects,DoesNotExist,MultipleObjectsReturned

@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% load socialaccount %}
+
+{% block title %}
+  GameWear - Login
+{% endblock %}
+
+{% block content %}
+  <div class="w-full max-w-md p-8 sm:p-10 bg-neutral-900 rounded-xl shadow-2xl border border-neutral-800">
+    <header class="text-center mb-10">
+      <h1 class="text-3xl font-extrabold tracking-tight text-white"><span class="text-neutral-500">Game</span>Wear</h1>
+      <p class="mt-2 text-neutral-400">continue with Google</p>
+    </header>
+    {% if messages %}
+      {% for message in messages %}
+        <div class="mb-4 rounded-lg px-4 py-3 text-sm font-medium
+                {% if message.tags == 'success' %}
+            
+            
+            
+                    bg-green-500/10 text-green-400 border border-green-500/30
+
+
+
+          {% elif message.tags == 'error' %}
+            
+            
+            
+                    bg-red-500/10 text-red-400 border border-red-500/30
+
+
+
+          {% elif message.tags == 'warning' %}
+            
+            
+            
+                     bg-yellow-500/10 text-yellow-400 border border-yellow-500/30
+
+
+
+          {% else %}
+            
+            
+            
+                      bg-blue-500/10 text-blue-400 border border-blue-500/30
+
+
+
+          {% endif %}
+            ">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+
+    <div class="space-y-4 mb-6">
+      <a href="{% provider_login_url 'google' %}" class="w-full flex items-center justify-center py-3 px-4 rounded-lg font-bold text-neutral-900 bg-white hover:bg-neutral-200 transition border border-neutral-700">
+        <svg class="w-5 h-5 mr-3" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M44.5 20H24V28H36.42C35.8 31.84 32.74 34.62 29 35.88V42H38.5C43.54 37.38 46.5 30.54 46.5 24C46.5 22.34 46.33 20.73 46 19.18L44.5 20Z" fill="#4285F4" />
+          <path d="M24 46C30.3 46 35.6 43.8 39.5 40.5L30.98 33.72C28.84 35.25 26.4 36.1 24 36.1C18.68 36.1 14.04 32.55 12.38 27.68L4.85 33.6C8.75 41.3 15.8 46 24 46Z" fill="#34A853" />
+          <path d="M12.38 27.68C11.9 26.24 11.64 24.67 11.64 23.08C11.64 21.5 11.9 19.93 12.38 18.52L4.85 12.58C3.25 15.93 2.38 19.46 2.38 23.08C2.38 26.7 3.25 30.23 4.85 33.58L12.38 27.68Z" fill="#FBBC05" />
+          <path d="M24 9.9C26.86 9.9 29.43 11.02 31.42 12.82L38.7 5.7C35.5 3.1 30.7 1 24 1C15.8 1 8.75 5.7 4.85 13.4L12.38 19.32C14.04 14.45 18.68 10.9 24 10.9V9.9Z" fill="#EA4335" />
+        </svg>Continue with Google
+      </a>
+
+      <div class="relative">
+        <div class="absolute inset-0 flex items-center">
+          <div class="w-full border-t border-neutral-700"></div>
+        </div>
+        <div class="relative flex justify-center text-sm">
+          <span class="px-2 bg-neutral-900 text-neutral-500">Or continue with</span>
+        </div>
+      </div>
+    </div>
+
+    <form method="post" class="space-y-6">
+      {% csrf_token %}
+
+      <div>
+        <label for="id_email" class="block text-sm font-medium text-neutral-300 mb-2">Email address</label>
+        <input type="email" name="email" id="id_email" required autocomplete="email" class="w-full px-4 py-3 bg-neutral-800 border border-neutral-700 rounded-lg focus:ring-2 focus:ring-white text-white placeholder-neutral-500" placeholder="you@example.com" />
+      </div>
+
+      <div>
+        <label for="id_password" class="block text-sm font-medium text-neutral-300 mb-2">Password</label>
+        <input type="password" name="password" id="id_password" required autocomplete="current-password" class="w-full px-4 py-3 bg-neutral-800 border border-neutral-700 rounded-lg focus:ring-2 focus:ring-white text-white placeholder-neutral-500" placeholder="••••••••" />
+      </div>
+
+      <div class="text-right">
+        <a href="{% url 'users:forgot_password' %}" class="text-sm text-neutral-400 hover:text-white transition">Forgot password?</a>
+      </div>
+
+      <button type="submit" class="w-full py-3 rounded-lg font-bold text-neutral-900 bg-white hover:bg-neutral-200 transition">Login</button>
+    </form>
+
+    <p class="mt-8 text-center text-sm text-neutral-400">
+      Don't have an account?
+      <a href="{% url 'users:signup' %}" class="text-white font-semibold hover:text-neutral-300 transition">Create one</a>
+    </p>
+  </div>
+{% endblock %}

@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}GameWear - Verify OTP{% endblock %}
+
+{% block content %}
+
+<div class="w-full max-w-md p-8 sm:p-10 bg-neutral-900 rounded-xl shadow-2xl border border-neutral-800">
+
+    <!-- Header (Identical to Signup style) -->
+    <header class="text-center mb-8">
+        <h1 class="text-3xl font-extrabold tracking-tight text-white">
+            <span class="text-neutral-500">Game</span>Wear
+        </h1>
+        <p class="mt-2 text-neutral-400">Verify your account</p>
+    </header>
+
+    <!-- Messages -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="mb-4 text-center {% if message.tags == 'success' %}text-green-400{% else %}text-red-400{% endif %} text-sm">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- OTP Form -->
+    <form method="post" id="otp-form" class="space-y-6" novalidate  action="{% url 'users:verify_reset_otp' %}">
+        {% csrf_token %}
+
+        <div class="text-center">
+            <p class="text-sm text-neutral-300 mb-6">Enter the 6-digit code sent to your email.</p>
+            
+            <!-- Digit Inputs Grid -->
+            <div class="flex justify-between gap-2 sm:gap-3" id="otp-inputs">
+                <input type="text" maxlength="1" class="otp-digit w-10 h-12 sm:w-12 sm:h-14 text-center text-xl font-bold bg-black border border-neutral-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent transition-all" pattern="\d*" inputmode="numeric">
+                <input type="text" maxlength="1" class="otp-digit w-10 h-12 sm:w-12 sm:h-14 text-center text-xl font-bold bg-black border border-neutral-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent transition-all" pattern="\d*" inputmode="numeric">
+                <input type="text" maxlength="1" class="otp-digit w-10 h-12 sm:w-12 sm:h-14 text-center text-xl font-bold bg-black border border-neutral-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent transition-all" pattern="\d*" inputmode="numeric">
+                <input type="text" maxlength="1" class="otp-digit w-10 h-12 sm:w-12 sm:h-14 text-center text-xl font-bold bg-black border border-neutral-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent transition-all" pattern="\d*" inputmode="numeric">
+                <input type="text" maxlength="1" class="otp-digit w-10 h-12 sm:w-12 sm:h-14 text-center text-xl font-bold bg-black border border-neutral-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent transition-all" pattern="\d*" inputmode="numeric">
+                <input type="text" maxlength="1" class="otp-digit w-10 h-12 sm:w-12 sm:h-14 text-center text-xl font-bold bg-black border border-neutral-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent transition-all" pattern="\d*" inputmode="numeric">
+            </div>
+        </div>
+
+        <!-- Hidden input to store the combined value for the Django POST request -->
+        <input type="hidden" name="otp" id="id_otp">
+
+        <!-- SUBMIT -->
+        <button type="submit"
+            class="w-full mt-6 py-3 rounded-lg font-bold text-neutral-900 bg-white hover:bg-neutral-200 transition">
+            Verify OTP
+        </button>
+    </form>
+
+    <!-- Footer -->
+    <div class="mt-8 text-center text-sm text-neutral-400">
+    <p>Didn't receive the code?</p>
+
+    <!-- TIMER -->
+    <p class="mt-1">
+        OTP expires in <span id="otp-timer" class="text-white font-semibold">02:00</span>
+    </p>
+
+    <form method="post" action="{% url 'users:resend_reset_otp' %}">
+        {% csrf_token %}
+        <button id="resend-btn"
+            type="submit"
+            disabled
+            class="mt-3 text-neutral-500 font-semibold cursor-not-allowed">
+            Resend Code
+        </button>
+    </form>
+</div>
+
+
+
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const inputs = document.querySelectorAll('.otp-digit');
+        const hiddenInput = document.getElementById('id_otp');
+        const form = document.getElementById('otp-form');
+
+        inputs.forEach((input, index) => {
+            // Handle numeric typing and move to next box
+            input.addEventListener('input', (e) => {
+                const val = e.target.value;
+                if (!/^\d*$/.test(val)) {
+                    e.target.value = val.replace(/\D/g, '');
+                    return;
+                }
+                
+                if (val.length === 1 && index < inputs.length - 1) {
+                    inputs[index + 1].focus();
+                }
+                combineOTP();
+            });
+
+            // Handle backspace to move focus backward
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && !e.target.value && index > 0) {
+                    inputs[index - 1].focus();
+                }
+            });
+
+            // Handle pasting 6 digits
+            input.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const data = e.clipboardData.getData('text').trim();
+                if (data.length === 6 && /^\d+$/.test(data)) {
+                    data.split('').forEach((char, i) => {
+                        if (inputs[i]) inputs[i].value = char;
+                    });
+                    combineOTP();
+                    inputs[5].focus();
+                }
+            });
+        });
+
+        function combineOTP() {
+            let otpValue = "";
+            inputs.forEach(input => otpValue += input.value);
+            hiddenInput.value = otpValue;
+        }
+
+        // Final check on submit
+        form.addEventListener('submit', (e) => {
+            combineOTP();
+            if (hiddenInput.value.length !== 6) {
+                e.preventDefault();
+                // Logic to show a local error message could go here
+            }
+        });
+    });
+    document.addEventListener('DOMContentLoaded', () => {
+
+        let timeLeft = 120; // 2 minutes (seconds)
+
+        const timerEl = document.getElementById("otp-timer");
+        const resendBtn = document.getElementById("resend-btn");
+
+        const countdown = setInterval(() => {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+
+            timerEl.textContent =
+                `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+            timeLeft--;
+
+            if (timeLeft < 0) {
+                clearInterval(countdown);
+                timerEl.textContent = "Expired";
+
+                // Enable resend button
+                resendBtn.disabled = false;
+                resendBtn.classList.remove("text-neutral-500", "cursor-not-allowed");
+                resendBtn.classList.add("text-white", "hover:text-neutral-300");
+            }
+        }, 1000);
+    });
+</script>
+
+{% endblock %}

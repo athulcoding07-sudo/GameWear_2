@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}GameWear - Change Email{% endblock %}
+
+{% block content %}
+
+<div class="w-full max-w-md p-8 sm:p-10 bg-neutral-900 rounded-xl shadow-2xl border border-neutral-800">
+
+    <!-- Header -->
+    <header class="text-center mb-8">
+        <h1 class="text-3xl font-extrabold tracking-tight text-white">
+            <span class="text-neutral-500">Game</span>Wear
+        </h1>
+        <p class="mt-2 text-neutral-400">Update your email address</p>
+    </header>
+
+    <!-- Messages (Success/Error feedback) -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="mb-4 text-center {% if message.tags == 'success' %}text-green-400{% else %}text-red-400{% endif %} text-sm font-medium auto-dismiss">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Non-field Errors (General Form Errors) -->
+    {% if form.non_field_errors %}
+        <div class="mb-6 text-center text-red-400 text-sm font-medium bg-red-400/10 p-3 rounded-lg border border-red-400/20 auto-dismiss">
+            {% for error in form.non_field_errors %}
+                <div>{{ error }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Email Change Form -->
+    <form method="post" class="space-y-6" action="{% url 'users:request_email_change_sent_otp' %}">
+        {% csrf_token %}
+
+        <div class="space-y-2">
+            <label for="id_new_email" class="block text-sm font-medium text-neutral-300">
+                New Email Address
+            </label>
+            <input 
+                type="email" 
+                name="new_email" 
+                id="id_new_email" 
+                required
+                placeholder="name@example.com"
+                class="w-full p-3 bg-black border {% if form.new_email.errors %}border-red-500 focus:border-red-500 focus:ring-red-500{% else %}border-neutral-700 focus:ring-white{% endif %} rounded-lg text-white placeholder-neutral-600 focus:outline-none focus:ring-2 focus:border-transparent transition-all"
+            >
+            
+            <!-- Field Errors -->
+            {% if form.new_email.errors %}
+                <div class="mt-1 space-y-1 auto-dismiss">
+                    {% for error in form.new_email.errors %}
+                        <p class="text-xs text-red-400 font-medium">{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <p class="text-xs text-neutral-500 mt-1">
+                We'll send a verification code to this new address.
+            </p>
+        </div>
+
+        <!-- SUBMIT -->
+        <button type="submit"
+            class="w-full py-3 rounded-lg font-bold text-neutral-900 bg-white hover:bg-neutral-200 transition transform active:scale-95">
+            Update Email
+        </button>
+    </form>
+
+    <!-- Footer / Navigation -->
+    <div class="mt-8 text-center border-t border-neutral-800 pt-6">
+        <a href="{% url 'users:user_profile_edit' %}" class="text-sm text-neutral-400 hover:text-white transition">
+            &larr; Back to Profile
+        </a>
+    </div>
+
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Function to handle automatic dismissal
+        const autoDismiss = () => {
+            const dismissElements = document.querySelectorAll('.auto-dismiss');
+            
+            if (dismissElements.length > 0) {
+                setTimeout(() => {
+                    dismissElements.forEach(el => {
+                        // Smooth fade out
+                        el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+                        el.style.opacity = '0';
+                        el.style.transform = 'translateY(-10px)';
+                        
+                        // Remove from DOM after transition finishes
+                        setTimeout(() => {
+                            el.remove();
+                        }, 600);
+                    });
+                }, 10000); // 10 seconds delay
+            }
+        };
+
+        autoDismiss();
+    });
+</script>
+
+{% endblock %}

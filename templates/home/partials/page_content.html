@@ -1,0 +1,133 @@
+{% load static %}
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- Hero Section -->
+        <section class="mb-12">
+            <div
+                class="relative overflow-hidden rounded-xl shadow-2xl h-96 sm:h-[480px] flex items-center justify-center p-6 md:p-12">
+                <!-- Background Image Placeholder - updated to monochrome colors -->
+                <div class="absolute inset-0 bg-cover bg-center opacity-100"
+                    style="background-image: url({% static 'images/landing_page/cover_page.webp' %});">
+                </div>
+                <!-- Pure black overlay -->
+                <div class="absolute inset-0 bg-black/70"></div>
+
+                <!-- Hero Content -->
+                <div class="relative text-center z-10">
+                    <h1 class="text-4xl sm:text-6xl font-extrabold mb-4 leading-tight">
+                        Wear the Game with <span class="text-white">GameWear</span>
+                    </h1>
+                    <p class="text-lg sm:text-xl text-neutral-400 mb-8">
+                        Discover exclusive collections for Men, Women, and Kids.
+                    </p>
+                    <a href="#"
+                        class="inline-block bg-white text-black px-8 py-3 rounded-full font-bold text-lg shadow-xl hover:bg-neutral-200 transition duration-300 transform hover:scale-[1.02]">
+                        Shop Now
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Search Bar -->
+        <section class="mb-12">
+            <div class="relative max-w-2xl mx-auto">
+                <!-- Input background is very dark neutral gray for contrast with black body -->
+                <input type="search" placeholder="Search for your perfect pair..."
+                    class="w-full py-4 pl-12 pr-4 bg-neutral-900 text-white rounded-xl shadow-lg focus:outline-none focus:ring-2 focus:ring-white transition duration-200 placeholder-neutral-400 border border-neutral-700" />
+                <div class="absolute left-4 top-1/2 transform -translate-y-1/2">
+                    <svg class="w-6 h-6 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                </div>
+            </div>
+        </section>
+
+        <!-- Best Sellers Section -->
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold mb-8 tracking-tight border-l-4 border-white pl-4">Best Sellers</h2>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6 lg:gap-8">
+
+                <!-- Product Card 1 -->
+                <div
+                    class="bg-neutral-900 rounded-xl overflow-hidden shadow-xl hover:shadow-2xl transition duration-300 transform hover:-translate-y-1">
+                    <img src="{% static 'images/landing_page/product_2.webp' %}" alt="Velocity X Jersey"
+                        class="w-full h-auto object-cover border-b border-neutral-800">
+                    <div class="p-4">
+                        <h3 class="text-lg font-semibold truncate">Velocity X</h3>
+                        <p class="text-neutral-400 text-sm mb-2 h-10 overflow-hidden">Black & white performance jersey.
+                        </p>
+                        <p class="text-xl font-bold text-white">₹ 1069</p>
+                    </div>
+                </div>
+
+                <!-- Product Card 2 -->
+                <div
+                    class="bg-neutral-900 rounded-xl overflow-hidden shadow-xl hover:shadow-2xl transition duration-300 transform hover:-translate-y-1">
+                    <img src="{% static 'images/landing_page/product_3.jpg' %}" alt="Stride Pro Jersey"
+                        class="w-full h-auto object-cover border-b border-neutral-800">
+                    <div class="p-4">
+                        <h3 class="text-lg font-semibold truncate">Stride Pro</h3>
+                        <p class="text-neutral-400 text-sm mb-2 h-10 overflow-hidden">Classic white athletic fit, soft
+                            and comfortable.</p>
+                        <p class="text-xl font-bold text-white">₹ 999</p>
+                    </div>
+                </div>
+
+                <!-- Product Card 3 -->
+                <div
+                    class="bg-neutral-900 rounded-xl overflow-hidden shadow-xl hover:shadow-2xl transition duration-300 transform hover:-translate-y-1">
+                    <img src="{% static 'images/landing_page/product_1.jpg' %}" alt="AirBound Max Jersey"
+                        class="w-full h-auto object-cover border-b border-neutral-800">
+                    <div class="p-4">
+                        <h3 class="text-lg font-semibold truncate">AirBound Max</h3>
+                        <p class="text-neutral-400 text-sm mb-2 h-10 overflow-hidden">Ultra-light mesh for maximum
+                            breathability.</p>
+                        <p class="text-xl font-bold text-white">₹ 999</p>
+                    </div>
+                </div>
+
+                <!-- Product Card 4 -->
+                <div
+                    class="bg-neutral-900 rounded-xl overflow-hidden shadow-xl hover:shadow-2xl transition duration-300 transform hover:-translate-y-1">
+                    <img src="{% static 'images/landing_page/product_4.webp' %}"
+                        alt="Court Conqueror Jersey" class="w-full h-auto object-cover border-b border-neutral-800">
+                    <div class="p-4">
+                        <h3 class="text-lg font-semibold truncate">Court Conqueror</h3>
+                        <p class="text-neutral-400 text-sm mb-2 h-10 overflow-hidden">Designed for court sports, premium
+                            durability.</p>
+                        <p class="text-xl font-bold text-white">₹ 1290</p>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Legendary Section -->
+        <section class="mb-16">
+            <h2 class="text-3xl font-bold mb-8 tracking-tight border-l-4 border-white pl-4">Legendary</h2>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 lg:gap-8">
+
+                <!-- Legendary Item 1 -->
+                <div class="bg-neutral-900 rounded-xl shadow-xl overflow-hidden">
+                    <img src="{% static 'images/landing_page/messi.jpg' %}" alt="Legendary Player 1"
+                        class="w-full h-auto object-cover transform hover:scale-[1.05] transition duration-500">
+                </div>
+
+                <!-- Legendary Item 2 -->
+                <div class="bg-neutral-900 rounded-xl shadow-xl overflow-hidden">
+                    <img src="{% static 'images/landing_page/player_2.jpg' %}" alt="Legendary Player 2"
+                        class="w-full h-auto object-cover transform hover:scale-[1.05] transition duration-500">
+                </div>
+
+                <!-- Legendary Item 3 -->
+                <div class="bg-neutral-900 rounded-xl shadow-xl overflow-hidden">
+                    <img src="{% static 'images/landing_page/player_5.jpeg' %}" alt="Legendary Player 3"
+                        class="w-full h-auto object-cover transform hover:scale-[1.05] transition duration-500">
+                </div>
+            </div>
+        </section>
+    </main>

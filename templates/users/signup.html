@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}GameWear - Sign Up{% endblock %}
+
+{% block content %}
+
+<div class="w-full max-w-md p-8 sm:p-10 bg-neutral-900 rounded-xl shadow-2xl border border-neutral-800">
+
+    <!-- Header -->
+    <header class="text-center mb-8">
+        <h1 class="text-3xl font-extrabold tracking-tight text-white">
+            <span class="text-neutral-500">Game</span>Wear
+        </h1>
+        <p class="mt-2 text-neutral-400">Create your new account</p>
+    </header>
+
+    <!-- Messages -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="mb-4 text-green-400 text-sm">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Signup Form -->
+    <form method="POST" class="space-y-4" novalidate  action = "{% url 'users:signup' %}" >
+        {% csrf_token %}
+
+        <!-- NON-FIELD ERRORS (IMPORTANT) -->
+        {% if form.non_field_errors %}
+            <div class="mb-4 text-red-400 text-sm">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+
+        <!-- FULL NAME -->
+        <div>
+            <label class="block text-sm font-medium text-neutral-300 mb-2">
+                {{ form.full_name.label }}
+            </label>
+            {{ form.full_name }}
+            {% if form.full_name.errors %}
+                <p class="text-red-400 text-sm mt-1">
+                    {{ form.full_name.errors|striptags }}
+                </p>
+            {% endif %}
+        </div>
+
+        <!-- EMAIL -->
+        <div>
+            <label class="block text-sm font-medium text-neutral-300 mb-2">
+                {{ form.email.label }}
+            </label>
+            {{ form.email }}
+            {% if form.email.errors %}
+                <p class="text-red-400 text-sm mt-1">
+                    {{ form.email.errors|striptags }}
+                </p>
+            {% endif %}
+        </div>
+
+        <!-- PASSWORD -->
+        <div>
+            <label class="block text-sm font-medium text-neutral-300 mb-2">
+                {{ form.password1.label }}
+            </label>
+            {{ form.password1 }}
+            {% if form.password1.errors %}
+                <p class="text-red-400 text-sm mt-1">
+                    {{ form.password1.errors|striptags }}
+                </p>
+            {% endif %}
+        </div>
+
+        <!-- CONFIRM PASSWORD -->
+        <div>
+            <label class="block text-sm font-medium text-neutral-300 mb-2">
+                {{ form.password2.label }}
+            </label>
+            {{ form.password2 }}
+            {% if form.password2.errors %}
+                <p class="text-red-400 text-sm mt-1">
+                    {{ form.password2.errors|striptags }}
+                </p>
+            {% endif %}
+        </div>
+
+        <!-- PHONE NUMBER -->
+        <div>
+            <label class="block text-sm font-medium text-neutral-300 mb-2">
+                {{ form.phone_number.label }}
+            </label>
+            {{ form.phone_number }}
+            {% if form.phone_number.errors %}
+                <p class="text-red-400 text-sm mt-1">
+                    {{ form.phone_number.errors|striptags }}
+                </p>
+            {% endif %}
+        </div>
+
+        <!-- REFERRAL CODE -->
+        <div>
+            <label class="block text-sm font-medium text-neutral-300 mb-2">
+                Referral Code <span class="text-neutral-500">(Optional)</span>
+            </label>
+            {{ form.referral_code }}
+            {% if form.referral_code.errors %}
+                <p class="text-red-400 text-sm mt-1">
+                    {{ form.referral_code.errors|striptags }}
+                </p>
+            {% endif %}
+        </div>
+
+        <!-- SUBMIT -->
+        <button type="submit"
+            class="w-full mt-6 py-3 rounded-lg font-bold text-neutral-900 bg-white hover:bg-neutral-200 transition">
+            Sign Up
+        </button>
+    </form>
+
+    <!-- Footer -->
+    <p class="mt-8 text-center text-sm text-neutral-400">
+        Already have an account?
+        <a href="{% url 'users:login' %}" class="text-white font-semibold hover:text-neutral-300">
+            Login
+        </a>
+    </p>
+
+</div>
+
+{% endblock %}

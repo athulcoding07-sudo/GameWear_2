@@ -1,0 +1,257 @@
+{% extends "users/user_dashboard_base.html" %}
+{% load static %}
+
+{% block title %}Shop All Jerseys | GameWear{% endblock %}
+
+{% block content %}
+
+<div class="min-h-screen bg-black text-white py-8">
+    <div class="max-w-2xl mx-auto mb-12 text-center">
+        <h1 class="text-4xl md:text-5xl font-black uppercase italic tracking-tighter mb-6">The Collection</h1>
+
+        <form method="GET" action="{% url 'products:users_product_listing' %}" class="relative group">
+            {% for key, value in request.GET.items %}
+            {% if key != 'search' and key != 'page' %}
+            {% if key == 'category' %}
+            {% for cat_val in request.GET.getlist.category %}
+            <input type="hidden" name="category" value="{{ cat_val }}">
+            {% endfor %}
+            {% else %}
+            <input type="hidden" name="{{ key }}" value="{{ value }}">
+            {% endif %}
+            {% endif %}
+            {% endfor %}
+
+            <input type="text" name="search" value="{{ request.GET.search|default:'' }}"
+                placeholder="Search by team, player, or league..."
+                class="w-full bg-neutral-900/50 border border-neutral-800 rounded-2xl py-4 px-6 text-lg text-white focus:border-white focus:ring-0 transition backdrop-blur-sm">
+
+            <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                {% if request.GET.search %}
+                <a href="?{% for key, value in request.GET.items %}{% if key != 'search' and key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}"
+                    class="text-neutral-500 hover:text-white transition p-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </a>
+                {% endif %}
+                <button type="submit" class="bg-white text-black p-2 rounded-xl hover:bg-neutral-200 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="flex flex-col lg:flex-row gap-8">
+        <aside class="w-full lg:w-72 flex-shrink-0">
+            <div class="sticky top-24 bg-neutral-900/40 border border-neutral-800 rounded-3xl p-6 backdrop-blur-md">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xs font-black uppercase tracking-[0.2em] text-white italic">Filters</h2>
+                    <!-- <a href="{% url 'products:users_product_listing' %}"
+                        class="text-[9px] font-bold text-neutral-500 hover:text-white transition uppercase">Clear
+                        All</a> -->
+                </div>
+
+                <form method="GET" action="{% url 'products:users_product_listing' %}" id="filter-form"
+                    class="space-y-8">
+                    <input type="hidden" name="search" value="{{ request.GET.search|default:'' }}">
+                    <input type="hidden" name="sort" id="id_sort" value="{{ request.GET.sort|default:'-created_at' }}">
+
+                    <div>
+                        <label
+                            class="block text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-4">Category</label>
+                        <div class="space-y-3">
+                            {% for category in categories %}
+                            <label class="flex items-center cursor-pointer group">
+                                <input type="checkbox" name="category" value="{{ category.slug }}" class="hidden peer"
+                                    {% if category.slug in request.GET.getlist.category %}checked{% endif %}>
+                                <div
+                                    class="w-5 h-5 border border-neutral-800 rounded-md bg-black peer-checked:bg-white peer-checked:border-white transition flex items-center justify-center mr-3">
+                                    <svg class="w-3 h-3 text-black opacity-0 peer-checked:opacity-100" fill="none"
+                                        stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
+                                            d="M5 13l4 4L19 7" />
+                                    </svg>
+                                </div>
+                                <span class="text-sm font-medium text-neutral-400 group-hover:text-white transition">{{category.name }}</span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div>
+                        <label
+                            class="block text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-4">Price
+                            Range</label>
+                        <div class="grid grid-cols-2 gap-2 mb-3">
+                            <input type="number" name="min_price" value="{{ request.GET.min_price }}" placeholder="Min"
+                                class="bg-black border border-neutral-800 rounded-lg py-2 px-3 text-xs text-white focus:border-white outline-none">
+                            <input type="number" name="max_price" value="{{ request.GET.max_price }}" placeholder="Max"
+                                class="bg-black border border-neutral-800 rounded-lg py-2 px-3 text-xs text-white focus:border-white outline-none">
+                        </div>
+                        <button type="submit"
+                            class="w-full py-2 bg-neutral-800 hover:bg-white hover:text-black text-white text-[10px] font-black uppercase tracking-widest rounded-lg transition">
+                            Apply Filters
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </aside>
+
+        <div class="flex-1">
+            <div
+                class="flex flex-col md:flex-row justify-between items-center bg-neutral-900/20 border border-neutral-800 rounded-2xl p-4 mb-8 gap-4">
+                <div class="text-[10px] font-bold uppercase tracking-widest text-neutral-500">
+                    Showing <span class="text-white">{{ page_obj.start_index }}-{{ page_obj.end_index }}</span> of <span
+                        class="text-white">{{ paginator.count }}</span> Results
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <span class="text-[10px] font-bold uppercase tracking-widest text-neutral-600">Sort By:</span>
+                    <select
+                        onchange="document.getElementById('id_sort').value = this.value; document.getElementById('filter-form').submit();"
+                        class="bg-black border border-neutral-800 text-[10px] font-bold uppercase text-white py-2 px-6 rounded-full focus:border-white outline-none cursor-pointer">
+                        <option value="-created_at" {% if request.GET.sort == '-created_at' or not request.GET.sort%}selected{% endif %}>New Arrivals</option>
+                        <option value="price" {% if request.GET.sort == 'price' %}selected{% endif %}>Price: Low to High
+                        </option>
+                        <option value="-price" {% if request.GET.sort == '-price' %}selected{% endif %}>Price: High to Low
+                        </option>
+                        <option value="name" {% if request.GET.sort == 'name' %}selected{% endif %}>Name: A - Z</option>
+                        <option value="-name" {% if request.GET.sort == '-name' %}selected{% endif %}>Name: Z - A</option>
+                    </select>
+                </div>
+            </div>
+
+            {% if request.GET.category or request.GET.min_price or request.GET.max_price or request.GET.search %}
+            <div class="flex flex-wrap gap-2 mb-8 items-center animate-in fade-in slide-in-from-top-4 duration-500">
+                <span class="text-[9px] font-black uppercase text-neutral-600 mr-2">Applied:</span>
+                {% if request.GET.search %}
+                <div class="flex items-center gap-2 bg-neutral-800 px-3 py-1.5 rounded-full border border-neutral-700">
+                    <span class="text-[10px] text-white font-bold">"{{ request.GET.search }}"</span>
+                    <a href="?{% for key,v in request.GET.items %}{% if key != 'search' and key != 'page' %}{{key}}={{v}}&{% endif %}{% endfor %}"
+                        class="text-neutral-500 hover:text-red-500 transition">✕</a>
+                </div>
+                {% endif %}
+
+                {% for cat_obj in categories %}
+                {% if cat_obj.slug in request.GET.getlist.category or cat_obj.slug in request.GET.category %}
+                <div class="flex items-center gap-2 bg-white text-black px-3 py-1.5 rounded-full shadow-lg">
+                    <span class="text-[10px] font-black uppercase italic">{{ cat_obj.name }}</span>
+                    <a href="?{% for key,value in request.GET.items %}{% if key == 'category' %}{% for v in request.GET.getlist.category %}{% if v != cat_obj.slug %}category={{v}}&{% endif %}{% endfor %}{% elif key != 'page' %}{{key}}={{value}}&{% endif %}{% endfor %}"
+                        class="text-black/40 hover:text-black transition font-bold">✕</a>
+                </div>
+                {% endif %}
+                {% endfor %}
+
+                {% if request.GET.min_price or request.GET.max_price %}
+                <div class="flex items-center gap-2 bg-neutral-800 px-3 py-1.5 rounded-full border border-neutral-700">
+                    <span class="text-[10px] font-bold text-white">₹{{ request.GET.min_price|default:"0" }} - ₹{{request.GET.max_price|default:"Any" }}</span>
+                    <a href="?{% for key,v in request.GET.items %}{% if key != 'min_price' and key != 'max_price' and key != 'page' %}{{key}}={{v}}&{% endif %}{% endfor %}"
+                        class="text-neutral-500 hover:text-red-500 transition">✕</a>
+                </div>
+                {% endif %}
+
+                <a href="{% url 'products:users_product_listing' %}"
+                    class="text-[9px] font-bold text-neutral-500 hover:text-white uppercase ml-2 border-b border-dotted border-neutral-700">Clear
+                    All</a>
+            </div>
+            {% endif %}
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                {% for product in page_obj %}
+                <div class="group relative">
+                    <div
+                        class="relative aspect-[4/5] bg-neutral-900 border border-neutral-800 rounded-3xl overflow-hidden p-6 transition-all duration-500 lg:group-hover:border-neutral-600">
+                        {% with variant=product.variants.first %}
+                        {% if variant.discount_percentage %}
+                        <div
+                            class="absolute top-4 right-4 z-10 bg-red-600 text-white text-[10px] font-black uppercase px-3 py-1 rounded-full tracking-tighter">
+                            {{ variant.discount_percentage }}% OFF
+                        </div>
+                        {% elif product.is_new %}
+                        <div
+                            class="absolute top-4 right-4 z-10 bg-blue-500 text-white text-[9px] font-black uppercase px-2 py-1 rounded-md italic">
+                            New
+                        </div>
+                        {% endif %}
+                        {% endwith %}
+
+                        <a href="{% url 'products:users_product_detail' product.slug %}" class="block w-full h-full">
+                            {% with v=product.variants.first %}
+                            {% if v and v.images.first %}
+                            <img src="{{ v.images.first.image.url }}" alt="{{ product.name }}"
+                                class="w-full h-full object-contain transition-transform duration-700 lg:group-hover:scale-110">
+                            {% else %}
+                            <div
+                                class="w-full h-full flex flex-col items-center justify-center text-neutral-800 bg-neutral-900/50">
+                                <svg class="w-12 h-12 mb-3 opacity-20" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2v-5H4v5a2 2 0 002 2z" />
+                                </svg>
+                                <span
+                                    class="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-600">Unavailable</span>
+                                <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                    <div class="bg-black/40 backdrop-blur-[2px] w-full py-2 text-center">
+                                        <span
+                                            class="text-[9px] font-black uppercase tracking-widest text-neutral-400">Not
+                                            for Sale</span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% endwith %}
+                        </a>
+
+                        <div
+                            class="absolute inset-x-0 bottom-0 p-4 lg:p-6 translate-y-0 lg:translate-y-full lg:group-hover:translate-y-0 transition-transform duration-300 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
+                            <a href="{% url 'products:users_product_detail' product.slug %}"
+                                class="w-full block bg-white text-black text-center py-3 rounded-full text-[10px] font-black uppercase tracking-widest active:scale-95 hover:bg-neutral-200 transition">
+                                View Product
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="mt-5 px-2">
+                        <div class="flex justify-between items-start mb-1">
+                            <p class="text-[9px] font-black uppercase text-neutral-500 tracking-widest">{{product.category.name }}</p>
+                            <div class="flex gap-2">
+                                {% with variant=product.variants.first %}
+                                {% if variant %}
+                                <span class="text-sm text-white font-black italic">₹{{ variant.price }}</span>
+                                {% endif %}
+                                {% endwith %}
+                            </div>
+                        </div>
+                        <h3
+                            class="text-sm font-bold text-white lg:group-hover:text-neutral-400 transition line-clamp-1">
+                            {{ product.name }}
+                        </h3>
+                    </div>
+                </div>
+                {% empty %}
+                <div
+                    class="col-span-full py-32 flex flex-col items-center justify-center text-center bg-neutral-900/10 border border-dashed border-neutral-800 rounded-3xl">
+                    <svg class="w-16 h-16 text-neutral-800 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <h3 class="text-xl font-bold text-white mb-2">No Jerseys Found</h3>
+                    <p class="text-neutral-500 text-sm max-w-xs uppercase tracking-widest">Try adjusting your filters.
+                    </p>
+                    <a href="{% url 'products:users_product_listing' %}"
+                        class="mt-6 text-xs font-black text-white underline underline-offset-8 uppercase hover:text-neutral-400 transition">Reset
+                        All Filters</a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+
+</div>
+{% endblock %}

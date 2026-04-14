@@ -1,0 +1,537 @@
+{% extends 'adminpanel/dashboard.html' %}
+{% load static %}
+
+{% block title %}{% if product %}Edit Product{% else %}Add Product{% endif %} | GameWear{% endblock %}
+
+{% block content %}
+<!-- Cropper.js Dependencies -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+
+<div class="max-w-7xl mx-auto pb-20">
+    <form action="{% if product %}{% url 'products:product_edit' product.id %}{% else %}{% url 'products:product_add' %}{% endif %}" id="productForm" method="POST" enctype="multipart/form-data" class="space-y-8">
+        {% csrf_token %}
+
+        <!-- Header Section -->
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <div>
+                    <h1 class="text-2xl font-bold text-white">
+                        {% if product %}Edit Product{% else %}Create New Product{% endif %}
+                    </h1>
+                    <p class="text-neutral-500 text-sm">
+                        Manage your jersey inventory, variants, and high-resolution media.
+                    </p>
+                </div>
+                <div class="flex flex-col gap-1 ml-4 border-l border-neutral-800 pl-4">
+                    <label class="text-[10px] uppercase font-bold text-neutral-500">Global Status</label>
+                    <select name="product_status" class="bg-neutral-900 border border-neutral-800 text-xs rounded-lg px-2 py-1 text-white focus:ring-1 focus:ring-white outline-none">
+                        <option value="active" {% if product.is_active != False %}selected{% endif %}>Active</option>
+                        <option value="archived" {% if product.is_active == False %}selected{% endif %}>Archived</option>
+                    </select>
+                </div>
+            </div>
+            <div class="flex gap-3">
+                <a href="{% url 'products:product_list' %}"
+                   class="px-5 py-2.5 rounded-lg border border-neutral-800 text-neutral-400 hover:text-white transition text-sm font-bold">
+                    Cancel
+                </a>
+                <button type="submit" id="mainSubmitBtn"
+                        class="px-8 py-2.5 bg-white text-black rounded-lg font-bold hover:bg-neutral-200 transition text-sm flex items-center gap-2">
+                    Save Product
+                </button>
+            </div>
+        </div>
+
+        <!-- General Information -->
+        <div class="bg-black border border-neutral-900 rounded-2xl p-6 space-y-6">
+            <h2 class="text-lg font-bold text-white">General Information</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-2">
+                    <label class="text-sm font-medium text-neutral-400">Product Name</label>
+                    <input type="text" name="name" value="{{ product.name|default:'' }}" required
+                           class="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white focus:border-white outline-none transition">
+                </div>
+                <div class="space-y-2">
+                    <label class="text-sm font-medium text-neutral-400">Category</label>
+                    <select name="category" required
+                            class="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white focus:border-white outline-none transition cursor-pointer">
+                        <option value="">Select Category</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat.id }}"
+                                {% if product and product.category.id == cat.id %}selected{% endif %}>
+                            {{ cat.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="space-y-2">
+                <label class="text-sm font-medium text-neutral-400">Description</label>
+                <textarea name="description" rows="3" required
+                          class="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white focus:border-white outline-none transition">{{ product.description|default:'' }}</textarea>
+            </div>
+            <div class="space-y-2">
+                <label class="text-sm font-medium text-neutral-400">Highlights</label>
+                <textarea name="highlights" rows="3" required
+                          class="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white focus:border-white outline-none transition">{{ product.highlights|default:'' }}</textarea>
+            </div>
+        </div>
+
+        <!-- Variants & Media -->
+        <div class="bg-black border border-neutral-900 rounded-2xl p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-lg font-bold text-white">Product Variants & Media</h2>
+                <button type="button" id="addVariantBtn"
+                        class="text-sm font-bold text-white bg-neutral-900 px-4 py-2 rounded-lg border border-neutral-800 hover:bg-neutral-800 transition">
+                    + Add Variant
+                </button>
+            </div>
+
+            <div id="variantContainer" class="space-y-6">
+                {% if variants %}
+                    {% for v in variants %}
+                    <div class="variant-row bg-neutral-950 border border-neutral-800 rounded-2xl p-5 transition-all duration-300 {% if v.is_active == False %}opacity-60 grayscale-[0.5]{% endif %}">
+                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+                            <div class="lg:col-span-7 grid grid-cols-2 md:grid-cols-7 gap-2">
+                                <input type="hidden" name="variant_ids" value="{{ v.id }}">
+                                <div class="space-y-1">
+                                    <label class="text-[10px] uppercase font-bold text-neutral-500">Size</label>
+                                    <select name="sizes" required class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white">
+                                        <option value="S" {% if v.size == "S" %}selected{% endif %}>S</option>
+                                        <option value="M" {% if v.size == "M" %}selected{% endif %}>M</option>
+                                        <option value="L" {% if v.size == "L" %}selected{% endif %}>L</option>
+                                        <option value="XL" {% if v.size == "XL" %}selected{% endif %}>XL</option>
+                                        <option value="XXL" {% if v.size == "XXL" %}selected{% endif %}>XXL</option>
+                                    </select>
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] uppercase font-bold text-neutral-500">Color</label>
+                                    <select name="colors" required class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white">
+                                        <option value="Black" {% if v.color == "Black" %}selected{% endif %}>Black</option>
+                                        <option value="White" {% if v.color == "White" %}selected{% endif %}>White</option>
+                                        <option value="Red" {% if v.color == "Red" %}selected{% endif %}>Red</option>
+                                        <option value="Blue" {% if v.color == "Blue" %}selected{% endif %}>Blue</option>
+                                        <option value="Green" {% if v.color == "Green" %}selected{% endif %}>Green</option>
+                                        <option value="Yellow" {% if v.color == "Yellow" %}selected{% endif %}>Yellow</option>
+                                        <option value="Navy" {% if v.color == "Navy" %}selected{% endif %}>Navy</option>
+                                    </select>
+                                </div>
+                                <div class="space-y-1"><label class="text-[10px] uppercase font-bold text-neutral-500">SKU</label><input type="text" name="skus" value="{{ v.sku }}" required class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white"></div>
+                                <div class="space-y-1"><label class="text-[10px] uppercase font-bold text-neutral-500">Price</label><input type="number" step="0.01" name="prices" value="{{ v.price }}" required class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white"></div>
+                                <div class="space-y-1"><label class="text-[10px] uppercase font-bold text-neutral-500">Disc %</label><input type="number" name="discount_percentages" value="{{ v.discount_percentage|default:0 }}" min="0" max="100" class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white"></div>
+                                <div class="space-y-1"><label class="text-[10px] uppercase font-bold text-neutral-500">Stock</label><input type="number" name="stocks" value="{{ v.stock }}" required class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white"></div>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] uppercase font-bold text-neutral-500">Status</label>
+                                    <select name="variant_status" class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-[10px] text-white font-bold">
+                                        <option value="true" {% if v.is_active != False %}selected{% endif %}>Active</option>
+                                        <option value="false" {% if v.is_active == False %}selected{% endif %}>Archive</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="lg:col-span-4">
+                                <label class="text-[10px] uppercase font-bold text-neutral-500 block mb-2">Variant Images (3 Required)</label>
+                                <div class="grid grid-cols-3 gap-2">
+                                    {% for img in v.images.all|slice:":3" %}
+                                    <label class="relative aspect-square border-2 border-solid border-emerald-500/50 rounded-xl flex items-center justify-center cursor-pointer hover:bg-neutral-900 transition overflow-hidden group">
+                                        <input type="file" name="variant_images_{{ v.id }}" accept="image/*" class="sr-only variant-image-input">
+                                        <div class="preview-container absolute inset-0">
+                                            <img src="{{ img.image.url }}" class="w-full h-full object-cover">
+                                        </div>
+                                        <div class="crop-overlay absolute inset-0 bg-black/60 hidden items-center justify-center">
+                                            <span class="text-[10px] font-bold text-white uppercase tracking-widest">Processing</span>
+                                        </div>
+                                    </label>
+                                    {% endfor %}
+                                    {% with count=v.images.count %}
+                                    {% if count < 3 %}
+                                        {% for i in "123"|slice:count %}
+                                        <label class="relative aspect-square border-2 border-dashed border-neutral-800 rounded-xl flex items-center justify-center cursor-pointer hover:bg-neutral-900 transition overflow-hidden group">
+                                            <input type="file" name="variant_images_{{ v.id }}" accept="image/*" class="sr-only variant-image-input">
+                                            <div class="preview-container absolute inset-0 hidden"><img src="" class="w-full h-full object-cover"></div>
+                                            <div class="crop-overlay absolute inset-0 bg-black/60 hidden items-center justify-center"><span class="text-[10px] font-bold text-white uppercase tracking-widest">Processing</span></div>
+                                            <div class="placeholder-icon text-neutral-600 group-hover:text-neutral-400"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg></div>
+                                        </label>
+                                        {% endfor %}
+                                    {% endif %}
+                                    {% endwith %}
+                                </div>
+                            </div>
+                            <div class="lg:col-span-1 flex items-center justify-end">
+                                <button type="button" class="remove-variant-btn p-2 text-rose-500 hover:bg-rose-500/10 rounded-lg">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <!-- Default New Variant -->
+                    <div class="variant-row bg-neutral-950 border border-neutral-800 rounded-2xl p-5">
+                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+                            <div class="lg:col-span-7 grid grid-cols-2 md:grid-cols-7 gap-2">
+                                <input type="hidden" name="variant_ids" value="">
+                                <div class="space-y-1">
+                                    <label class="text-[10px] uppercase font-bold text-neutral-500">Size</label>
+                                    <select name="sizes" required class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white">
+                                        <option value="S">S</option><option value="M">M</option><option value="L">L</option><option value="XL">XL</option><option value="XXL">XXL</option>
+                                    </select>
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] uppercase font-bold text-neutral-500">Color</label>
+                                    <select name="colors" required class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white">
+                                        <option value="Black">Black</option><option value="White">White</option><option value="Red">Red</option><option value="Blue">Blue</option><option value="Green">Green</option><option value="Yellow">Yellow</option><option value="Navy">Navy</option>
+                                    </select>
+                                </div>
+                                <div class="space-y-1"><label class="text-[10px] uppercase font-bold text-neutral-500">SKU</label><input type="text" name="skus" required class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white"></div>
+                                <div class="space-y-1"><label class="text-[10px] uppercase font-bold text-neutral-500">Price</label><input type="number" step="0.01" name="prices" required class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white"></div>
+                                <div class="space-y-1"><label class="text-[10px] uppercase font-bold text-neutral-500">Disc %</label><input type="number" name="discount_percentage" value="0" min="0" max="100" class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white"></div>
+                                <div class="space-y-1"><label class="text-[10px] uppercase font-bold text-neutral-500">Stock</label><input type="number" name="stocks" required class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white"></div>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] uppercase font-bold text-neutral-500">Status</label>
+                                    <select name="variant_status" class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-[10px] text-white font-bold">
+                                        <option value="true" selected>Active</option>
+                                        <option value="false">Archive</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="lg:col-span-4">
+                                <label class="text-[10px] uppercase font-bold text-neutral-500 block mb-2">Variant Images (3 Required)</label>
+                                <div class="grid grid-cols-3 gap-2">
+                                    {% for i in "123" %}
+                                    <label class="relative aspect-square border-2 border-dashed border-neutral-800 rounded-xl flex items-center justify-center cursor-pointer hover:bg-neutral-900 transition overflow-hidden group">
+                                        <input type="file"  accept="image/png, image/jpeg, image/webp" name="images" accept="image/*" class="sr-only variant-image-input">
+                                        <div class="preview-container absolute inset-0 hidden"><img src="" class="w-full h-full object-cover"></div>
+                                        <div class="crop-overlay absolute inset-0 bg-black/60 hidden items-center justify-center"><span class="text-[10px] font-bold text-white uppercase tracking-widest">Processing</span></div>
+                                        <div class="placeholder-icon text-neutral-600 group-hover:text-neutral-400"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg></div>
+                                    </label>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="lg:col-span-1 flex items-center justify-end">
+                                <button type="button" class="remove-variant-btn p-2 text-rose-500 hover:bg-rose-500/10 rounded-lg">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div id="imageErrorMessage" class="mt-6 text-rose-500 text-xs font-bold hidden text-center">
+                ⚠️ Each variant must have all 3 image slots filled.
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Global Cropper Modal -->
+<div id="cropperModal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/90 backdrop-blur-sm"></div>
+    <div class="relative bg-neutral-950 border border-neutral-800 w-full max-w-2xl rounded-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div class="p-4 border-b border-neutral-900 flex justify-between items-center">
+            <h3 class="font-bold text-white">Adjust Variant Image</h3>
+            <button type="button" id="closeCropModal" class="text-neutral-500 hover:text-white">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <div class="flex-1 bg-black overflow-hidden flex items-center justify-center">
+            <img id="croppingImage" class="max-w-full max-h-full block">
+        </div>
+        <div class="p-4 border-t border-neutral-900 flex justify-end gap-3">
+            <button type="button" id="cancelCrop" class="px-6 py-2 text-sm text-neutral-400 hover:text-white font-bold">Cancel</button>
+            <button type="button" id="saveCrop" class="bg-white text-black px-8 py-2 rounded-xl text-sm font-bold hover:bg-neutral-200">Apply Crop</button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+    // --- 1. DOM Registry ---
+    const variantContainer = document.getElementById('variantContainer');
+    const addVariantBtn = document.getElementById('addVariantBtn');
+    const productForm = document.getElementById('productForm');
+    const mainSubmitBtn = document.getElementById('mainSubmitBtn');
+    const imageError = document.getElementById('imageErrorMessage');
+
+    const cropperModal = document.getElementById('cropperModal');
+    const croppingImg = document.getElementById('croppingImage');
+    const saveCropBtn = document.getElementById('saveCrop');
+    const cancelCropBtn = document.getElementById('cancelCrop');
+    const closeCropModal = document.getElementById('closeCropModal');
+
+    // --- 2. State ---
+    let activeCropper = null;
+    let activeInput = null;
+    let activePreview = null;
+    let activeOverlay = null;
+    let activePlaceholder = null;
+    let activeLabel = null;
+
+    // --- 3. Cropper Logic ---
+    const openCropper = (src, input, preview, overlay, placeholder, label) => {
+        // FIX: Guard against empty or invalid src before opening the cropper.
+        // This prevents the cropper from opening with a broken/empty source,
+        // which was triggered by the re-crop click listener after a failed upload.
+        if (!src || src === '' || src === window.location.href) return;
+
+        activeInput = input;
+        activePreview = preview;
+        activeOverlay = overlay;
+        activePlaceholder = placeholder;
+        activeLabel = label;
+
+        croppingImg.src = src;
+        cropperModal.classList.remove('hidden');
+        cropperModal.classList.add('flex');
+
+        if (activeCropper) activeCropper.destroy();
+
+        activeCropper = new Cropper(croppingImg, {
+            aspectRatio: NaN,
+            viewMode: 1,
+            autoCropArea: 1,
+            dragMode: 'move',
+            responsive: true,
+            ready() {
+                const containerData = activeCropper.getContainerData();
+                activeCropper.setCropBoxData({
+                    left: 0,
+                    top: 0,
+                    width: containerData.width,
+                    height: containerData.height
+                });
+            }
+        });
+    };
+
+    const closeCropper = () => {
+        if (cropperModal) {
+            cropperModal.classList.add('hidden');
+            cropperModal.classList.remove('flex');
+        }
+        if (activeCropper) {
+            activeCropper.destroy();
+            activeCropper = null;
+        }
+    };
+
+    saveCropBtn.addEventListener('click', async () => {
+        if (!activeCropper) return;
+
+        activeOverlay.classList.remove('hidden');
+        activeOverlay.classList.add('flex');
+
+        const canvas = activeCropper.getCroppedCanvas({
+            maxWidth: 4096,
+            maxHeight: 4096,
+            imageSmoothingQuality: 'high'
+        });
+
+        canvas.toBlob((blob) => {
+            const fileName = activeInput.files[0] ? activeInput.files[0].name : 'variant_image.jpg';
+            const croppedFile = new File([blob], fileName, { type: 'image/jpeg' });
+
+            const dt = new DataTransfer();
+            dt.items.add(croppedFile);
+            activeInput.files = dt.files;
+
+            activePreview.querySelector('img').src = canvas.toDataURL('image/jpeg');
+            activePreview.classList.remove('hidden');
+            if (activePlaceholder) activePlaceholder.classList.add('hidden');
+            activeLabel.classList.remove('border-dashed');
+            activeLabel.classList.add('border-solid', 'border-emerald-500/50');
+
+            activeOverlay.classList.add('hidden');
+            closeCropper();
+        }, 'image/jpeg', 0.9);
+    });
+
+    [cancelCropBtn, closeCropModal].forEach(b => {
+        if (b) b.addEventListener('click', closeCropper);
+    });
+
+    // --- 4. Row Initialization ---
+    const setupVariantRow = (row) => {
+        const statusSelect = row.querySelector('select[name="variant_status"]');
+        if (statusSelect) {
+            statusSelect.addEventListener('change', () => {
+                row.classList.toggle('opacity-60', statusSelect.value === 'false');
+                row.classList.toggle('grayscale-[0.5]', statusSelect.value === 'false');
+            });
+        }
+
+        const inputs = row.querySelectorAll('.variant-image-input');
+        inputs.forEach(input => {
+            input.addEventListener('change', function (e) {
+                const file = e.target.files[0];
+
+                // FIX: If no file is selected (e.g. user cancelled the dialog), exit cleanly.
+                if (!file) return;
+
+                // File type validation
+                if (!file.type.startsWith('image/')) {
+                    alert("Only image files are allowed (jpg, png, etc)");
+                    // FIX: Explicitly reset the input value AND clear any stale preview src
+                    // so the re-crop click listener cannot pick up a broken image source.
+                    this.value = "";
+                    const label = this.closest('label');
+                    const img = label.querySelector('img');
+                    if (img) img.src = ""; // <-- KEY FIX: wipe stale src to block re-crop trigger
+                    return; // Early return prevents FileReader from ever running
+                }
+
+                // File size validation (2MB)
+                if (file.size > 2 * 1024 * 1024) {
+                    alert("Image must be less than 2MB");
+                    this.value = "";
+                    const label = this.closest('label');
+                    const img = label.querySelector('img');
+                    if (img) img.src = ""; // Same fix applied here for consistency
+                    return;
+                }
+
+                const label = this.closest('label');
+                const preview = label.querySelector('.preview-container');
+                const overlay = label.querySelector('.crop-overlay');
+                const placeholder = label.querySelector('.placeholder-icon');
+
+                const reader = new FileReader();
+                reader.onload = (event) => openCropper(event.target.result, this, preview, overlay, placeholder, label);
+                reader.readAsDataURL(file);
+            });
+        });
+
+        // Re-crop click handler — now safe because openCropper guards against empty src
+        row.querySelectorAll('label.relative').forEach(label => {
+            label.addEventListener('click', (e) => {
+                if (e.target.tagName === 'INPUT') return;
+
+                const img = label.querySelector('img');
+                const input = label.querySelector('input');
+
+                // FIX: Added explicit check that img.src is a valid data URL or http URL,
+                // not an empty string left behind after a failed/rejected upload.
+                if (img && img.src && img.src !== "" && !img.src.includes('undefined') && img.src !== window.location.href) {
+                    const preview = label.querySelector('.preview-container');
+                    const overlay = label.querySelector('.crop-overlay');
+                    const placeholder = label.querySelector('.placeholder-icon');
+                    openCropper(img.src, input, preview, overlay, placeholder, label);
+                }
+            });
+        });
+    };
+
+    // --- 5. Dynamic Row Management ---
+    if (addVariantBtn) {
+        addVariantBtn.addEventListener('click', () => {
+            const row = document.createElement('div');
+            row.className = 'variant-row bg-neutral-950 border border-neutral-800 rounded-2xl p-5 animate-in fade-in slide-in-from-top-2 duration-300 mb-4';
+            row.innerHTML = `
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+                    <div class="lg:col-span-7 grid grid-cols-2 md:grid-cols-7 gap-2">
+                        <input type="hidden" name="variant_ids" value="">
+                        <div class="space-y-1">
+                            <label class="text-[10px] uppercase font-bold text-neutral-500">Size</label>
+                            <select name="sizes" required class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white">
+                                <option value="S">S</option><option value="M">M</option><option value="L">L</option><option value="XL">XL</option><option value="XXL">XXL</option>
+                            </select>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-[10px] uppercase font-bold text-neutral-500">Color</label>
+                            <select name="colors" required class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white">
+                                <option value="Black">Black</option><option value="White">White</option><option value="Red">Red</option><option value="Blue">Blue</option><option value="Green">Green</option><option value="Yellow">Yellow</option><option value="Navy">Navy</option>
+                            </select>
+                        </div>
+                        <div class="space-y-1"><label class="text-[10px] uppercase font-bold text-neutral-500">SKU</label><input type="text" name="skus" required class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white"></div>
+                        <div class="space-y-1"><label class="text-[10px] uppercase font-bold text-neutral-500">Price</label><input type="number" step="0.01" name="prices" required class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white"></div>
+                        <div class="space-y-1"><label class="text-[10px] uppercase font-bold text-neutral-500">Disc %</label><input type="number" name="discount_percentage" value="0" min="0" max="100" class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white"></div>
+                        <div class="space-y-1"><label class="text-[10px] uppercase font-bold text-neutral-500">Stock</label><input type="number" name="stocks" required class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white"></div>
+                        <div class="space-y-1">
+                            <label class="text-[10px] uppercase font-bold text-neutral-500">Status</label>
+                            <select name="variant_status" class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-[10px] text-white font-bold">
+                                <option value="true" selected>Active</option>
+                                <option value="false">Archive</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-4">
+                        <label class="text-[10px] uppercase font-bold text-neutral-500 block mb-2">Variant Images (3 Required)</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            ${[1, 2, 3].map(() => `
+                                <label class="relative aspect-square border-2 border-dashed border-neutral-800 rounded-xl flex items-center justify-center cursor-pointer hover:bg-neutral-900 transition overflow-hidden group">
+                                    <input type="file" name="images" accept="image/*" class="sr-only variant-image-input">
+                                    <div class="preview-container absolute inset-0 hidden"><img src="" class="w-full h-full object-cover"></div>
+                                    <div class="crop-overlay absolute inset-0 bg-black/60 hidden items-center justify-center"><span class="text-[10px] font-bold text-white uppercase tracking-widest">Processing</span></div>
+                                    <div class="placeholder-icon text-neutral-600 group-hover:text-neutral-400"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg></div>
+                                </label>
+                            `).join('')}
+                        </div>
+                    </div>
+                    <div class="lg:col-span-1 flex items-center justify-end">
+                        <button type="button" class="remove-variant-btn p-2 text-rose-500 hover:bg-rose-500/10 rounded-lg transition">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
+                    </div>
+                </div>
+            `;
+            variantContainer.appendChild(row);
+            setupVariantRow(row);
+        });
+    }
+
+    if (variantContainer) {
+        variantContainer.addEventListener('click', (e) => {
+            const btn = e.target.closest('.remove-variant-btn');
+            if (btn && variantContainer.querySelectorAll('.variant-row').length > 1) {
+                btn.closest('.variant-row').remove();
+            }
+        });
+    }
+
+    // --- 6. Form Submission ---
+    if (productForm) {
+        productForm.addEventListener('submit', (e) => {
+            let isValid = true;
+            const rows = document.querySelectorAll('.variant-row');
+
+            rows.forEach(row => {
+                const labels = row.querySelectorAll('label.relative');
+                let filled = 0;
+                labels.forEach(l => {
+                    const img = l.querySelector('img');
+                    if (img && img.src && !img.src.includes('undefined') && img.src !== "" && img.src !== window.location.href) filled++;
+                });
+
+                if (filled < 3) {
+                    isValid = false;
+                    row.classList.add('border-rose-500', 'border-2');
+                } else {
+                    row.classList.remove('border-rose-500', 'border-2');
+                }
+            });
+
+            if (!isValid) {
+                e.preventDefault();
+                if (imageError) {
+                    imageError.classList.remove('hidden');
+                    imageError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                return;
+            }
+
+            if (mainSubmitBtn) {
+                mainSubmitBtn.disabled = true;
+                mainSubmitBtn.innerHTML = `Saving...`;
+            }
+        });
+    }
+
+    // Init existing rows
+    document.querySelectorAll('.variant-row').forEach(setupVariantRow);
+});
+    </script>
+{% endblock %}

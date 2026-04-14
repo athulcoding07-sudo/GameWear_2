@@ -1,0 +1,329 @@
+{% extends 'adminpanel/dashboard.html' %}
+{% load static %}
+
+{% block title %}Category Management | GameWear{% endblock %}
+
+{% block content %}
+<!-- Cropper.js CSS & JS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+
+<div class="max-w-6xl mx-auto">
+    <!-- Header Section -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+        <div>
+            <div class="flex items-center gap-3 mb-1">
+                <h1 class="text-2xl font-bold text-white">Category Management</h1>
+            </div>
+            <p class="text-neutral-500 text-sm">Organize your products by managing collections and tags.</p>
+        </div>
+        <div class="flex w-full sm:w-auto gap-3">
+            <button type="button" onclick="toggleModal()" class="flex-1 sm:flex-none bg-white text-black text-sm font-bold py-2.5 px-6 rounded-lg hover:bg-neutral-200 transition flex items-center justify-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Add Category
+            </button>
+        </div>
+    </div>
+
+    <!-- Search & Filter Section -->
+    <div class="bg-black border border-neutral-900 rounded-2xl p-4 mb-8">
+        <form method="GET" action="{% url 'products:category_list' %}" class="flex flex-col md:flex-row gap-4">
+            <div class="relative flex-1">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-neutral-500">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                </span>
+                <input type="text" name="search" value="{{ search_query }}" placeholder="Search categories..." 
+                       class="bg-neutral-950 border border-neutral-800 text-sm rounded-xl block w-full pl-10 p-3 focus:border-white outline-none transition text-white placeholder-neutral-600">
+            </div>
+            <div class="flex gap-2">
+                <button type="submit" class="bg-neutral-800 text-white px-6 py-3 rounded-xl text-sm font-bold hover:bg-neutral-700 transition">Search</button>
+                <select name="status" onchange="this.form.submit()" class="bg-neutral-950 border border-neutral-800 text-sm rounded-xl px-4 py-3 focus:border-white outline-none text-white cursor-pointer">
+                    <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Status</option>
+                    <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+                    <option value="archived" {% if status_filter == 'archived' %}selected{% endif %}>Archived</option>
+                </select>
+            </div>
+        </form>
+    </div>
+
+    <!-- Data Table -->
+    <div class="bg-black border border-neutral-900 rounded-2xl overflow-hidden mb-6">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left">
+                <thead class="text-xs text-neutral-500 bg-neutral-950 uppercase border-b border-neutral-900">
+                    <tr>
+                        <th class="px-6 py-4 font-medium">Category</th>
+                        <th class="px-6 py-4 font-medium">Description</th>
+                        <th class="px-6 py-4 font-medium">Products</th>
+                        <th class="px-6 py-4 font-medium">Status</th>
+                        <th class="px-6 py-4 font-medium text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="text-sm divide-y divide-neutral-900">
+                    {% for category in categories %}
+                    <tr class="hover:bg-neutral-900/40 transition-colors">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-lg bg-neutral-900 border border-neutral-800 overflow-hidden flex-shrink-0">
+                                    {% if category.image %}
+                                        <img src="{{ category.image.url }}" alt="{{ category.name }}" class="w-full h-full object-cover">
+                                    {% else %}
+                                        <div class="w-full h-full flex items-center justify-center text-neutral-700">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <div class="font-bold text-white">{{ category.name }}</div>
+                                    <div class="text-[10px] text-neutral-600 font-mono uppercase tracking-tighter">slug: {{ category.slug }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-neutral-400 max-w-xs truncate">{{ category.description|default:"No description."|truncatechars:50 }}</td>
+                        <td class="px-6 py-4 font-medium text-neutral-300">{{ category.product_count|default:0 }}</td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider {% if category.is_active %}bg-emerald-500/10 text-emerald-500 border border-emerald-500/20{% else %}bg-rose-500/10 text-rose-500 border border-rose-500/20{% endif %}">
+                                {% if category.is_active %}Active{% else %}Archived{% endif %}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex justify-end gap-2">
+                                <button type="button" onclick="toggleModal('{{ category.id }}', '{{ category.name|escapejs }}', '{{ category.description|escapejs }}', '{% if category.image %}{{ category.image.url|escapejs }}{% endif %}')" class="p-2 hover:bg-neutral-800 rounded-lg text-neutral-500 hover:text-white transition">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                                </button>
+                                <a href="{% url 'products:category_toggle' category.id %}" class="p-2 hover:bg-yellow-900/20 rounded-lg text-neutral-500 hover:text-yellow-500 transition">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                </a>
+                                <a href="{% url 'products:category_delete' category.id %}" class="p-2 hover:bg-rose-900/20 rounded-lg text-neutral-500 hover:text-rose-500 transition">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="px-6 py-12 text-center text-neutral-500">No categories found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div id="category-modal" class="fixed inset-0 z-[80] hidden items-center justify-center">
+    <div class="fixed inset-0 bg-black/90 backdrop-blur-sm" onclick="toggleModal()"></div>
+    <div class="relative w-full max-w-lg p-4">
+        <div class="bg-neutral-950 border border-neutral-800 rounded-2xl shadow-2xl overflow-hidden relative z-10 flex flex-col max-h-[90vh]">
+            <div class="p-6 border-b border-neutral-900 flex justify-between items-center bg-black shrink-0">
+                <h2 id="modal-title" class="text-xl font-bold text-white">Add New Category</h2>
+                <button type="button" onclick="toggleModal()" class="text-neutral-500 hover:text-white transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            
+            <form id="cat-form" action="{% url 'products:category_save' %}" method="POST" enctype="multipart/form-data" class="p-6 space-y-5 overflow-y-auto">
+                {% csrf_token %}
+                <input type="hidden" id="cat-id" name="category_id" value="">
+                
+                <div class="space-y-2">
+                    <label class="text-xs font-semibold text-neutral-500 uppercase tracking-widest">Category Name</label>
+                    <input type="text" id="cat-name" name="name" required class="w-full bg-black border border-neutral-800 rounded-xl p-3 focus:border-white outline-none transition text-white placeholder-neutral-700">
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-xs font-semibold text-neutral-500 uppercase tracking-widest">Category Image</label>
+                    <div class="relative">
+                        <input type="file" id="cat-image" name="category_image" accept="image/jpeg, image/png, image/webp"
+                               class="w-full bg-black border border-neutral-800 rounded-xl p-2.5 text-sm text-neutral-400 file:mr-4 file:py-1.5 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-neutral-800 file:text-white hover:file:bg-neutral-700 transition cursor-pointer">
+                    </div>
+                    
+                    <!-- Cropper Container -->
+                    <div id="cropper-container" class="mt-3 hidden">
+                        <div class="w-full max-h-[400px] overflow-hidden rounded-xl border border-neutral-800 bg-black">
+                             <img id="image-preview" class="block max-w-full">
+                        </div>
+                        <p class="text-[10px] text-neutral-500 mt-2 text-center">Drag to adjust.</p>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-xs font-semibold text-neutral-500 uppercase tracking-widest">Description</label>
+                    <textarea id="cat-desc" name="description" rows="3" class="w-full bg-black border border-neutral-800 rounded-xl p-3 focus:border-white outline-none transition text-white placeholder-neutral-700 resize-none"></textarea>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-4 border-t border-neutral-900">
+                    <button type="button" onclick="toggleModal()" class="px-6 py-2.5 text-sm font-bold text-neutral-400 hover:text-white transition">Cancel</button>
+                    <button type="submit" id="submit-btn" class="bg-white text-black px-8 py-2.5 rounded-xl text-sm font-bold hover:bg-neutral-200 transition flex items-center justify-center min-w-[160px]">
+                        <span>Confirm Changes</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // --- 1. DOM Elements caching ---
+    const form = document.getElementById('cat-form');
+    const fileInput = document.getElementById('cat-image');
+    const cropperContainer = document.getElementById('cropper-container');
+    const imagePreview = document.getElementById('image-preview');
+    const submitBtn = document.getElementById('submit-btn');
+    const modal = document.getElementById('category-modal');
+    
+    // --- 2. State Management ---
+    let cropper = null;
+    let objectUrl = null;
+    const TARGET_SIZE = 500; // Target output resolution constraint
+
+    // --- 3. Memory Management Utility ---
+    function cleanupCropper() {
+        if (cropper) {
+            cropper.destroy();
+            cropper = null;
+        }
+        if (objectUrl) {
+            URL.revokeObjectURL(objectUrl);
+            objectUrl = null;
+        }
+        imagePreview.src = '';
+        cropperContainer.classList.add('hidden');
+    }
+
+    // --- 4. Modal Controls (Attached to Window for global access) ---
+    window.toggleModal = function(id = '', name = '', desc = '', imageUrl = '') {
+        const isHidden = modal.classList.contains('hidden');
+
+        if (isHidden) {
+            // Open Mode: Populate data
+            document.getElementById('cat-id').value = id;
+            document.getElementById('cat-name').value = name;
+            document.getElementById('cat-desc').value = desc;
+            document.getElementById('modal-title').innerText = id ? 'Edit Category' : 'Add New Category';
+            
+            // Required for required tag validation on fresh inputs vs edits
+            fileInput.required = !id; 
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+
+            // If an image exists (Edit Mode), show it in the cropper
+            if (imageUrl) {
+                imagePreview.src = imageUrl;
+                cropperContainer.classList.remove('hidden');
+                initCropper();
+            }
+            
+            // Small timeout for CSS transition to settle before rendering
+            setTimeout(() => document.getElementById('cat-name').focus(), 100);
+        } else {
+            // Close Mode: Cleanup completely to prevent memory leaks and ghost data
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            form.reset();
+            cleanupCropper();
+        }
+    };
+
+    // --- 5. Cropper Initialization ---
+    function initCropper() {
+        if (cropper) cropper.destroy();
+        cropper = new Cropper(imagePreview, {
+            aspectRatio: NaN, 
+            viewMode: 2,    
+            dragMode: 'move', 
+            autoCropArea: 1, 
+            restore: false,
+            guides: true,
+            center: true,
+            highlight: false,
+            cropBoxMovable: true,
+            cropBoxResizable: true,
+            toggleDragModeOnDblclick: false,
+        });
+    }
+
+    // --- 6. File Input Handler (Initialize Cropper) ---
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        
+        // Validation & Cleanup
+        cleanupCropper();
+        if (!file) return;
+
+        if (!file.type.startsWith('image/')) {
+            alert('Please select a valid image file (JPG, PNG, WebP).');
+            fileInput.value = '';
+            return;
+        }
+
+        // Generate temporary local URL for the selected file
+        objectUrl = URL.createObjectURL(file);
+        imagePreview.src = objectUrl;
+        cropperContainer.classList.remove('hidden');
+        initCropper();
+    });
+
+    // --- 7. Form Submission Handler (Intercept, Crop, Submit) ---
+    form.addEventListener('submit', async function(e) {
+        // If there's no cropper active (e.g., editing text only), let standard submit proceed
+        if (!cropper) return;
+
+        e.preventDefault();
+
+        // UX: Disable button to prevent double submission
+        const originalBtnContent = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `
+            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Processing...
+        `;
+
+        try {
+            // Get the cropped image data drawn to an offscreen canvas
+            const canvas = cropper.getCroppedCanvas({
+                maxWidth: TARGET_SIZE,  
+                maxHeight: TARGET_SIZE, 
+                imageSmoothingEnabled: true,
+                imageSmoothingQuality: 'high',
+            });
+
+            // Convert canvas to a highly compressed blob
+            const blob = await new Promise(resolve => {
+                canvas.toBlob(resolve, 'image/jpeg', 0.90); 
+            });
+
+            if (!blob) throw new Error("Canvas generation failed.");
+
+            // Create a brand new standard File object from the blob
+            const originalFile = fileInput.files[0];
+            const fileName = originalFile ? originalFile.name : 'category_image.jpg';
+            const safeFileName = fileName.includes('.') ? fileName.replace(/\.[^/.]+$/, "") + "_cropped.jpg" : "category_image_cropped.jpg";
+            const croppedFile = new File([blob], safeFileName, { type: 'image/jpeg' });
+
+            // Replace the standard input's file payload via DataTransfer API.
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(croppedFile);
+            fileInput.files = dataTransfer.files;
+
+            // Submit the form natively
+            form.submit();
+
+        } catch (error) {
+            console.error('Cropping error:', error);
+            alert('Failed to process the image. Please try again.');
+            
+            // Revert UX state on failure
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnContent;
+        }
+    });
+});
+</script>
+{% endblock %}
