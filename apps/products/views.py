@@ -1,6 +1,6 @@
 from django.shortcuts import render,redirect,get_object_or_404
 from django.core.paginator import Paginator
-from .models import Category,ProductImage,Product,ProductVariant,Review,ReviewImage
+from .models import Category,ProductImage,Product,ProductVariant,Review,ReviewImage,Brand
 from .forms import ProductForm
 from django.views.decorators.http import require_POST
 from django.contrib import messages
@@ -12,6 +12,7 @@ from django.db.models import Q,Count,Sum,Prefetch,Min,Avg
 from django.db import transaction
 from django.contrib.auth.decorators import login_required
 from apps.common.decorators import admin_required
+import re
 
 
 
@@ -190,8 +191,8 @@ def product_list(request):
     if search:
         products = products.filter(
             Q(name__icontains=search) |
-            Q(description__icontains=search) |
-            Q(brand__icontains=search)
+            Q(description__icontains=search) 
+            
         )
 
     # =========================
@@ -254,13 +255,14 @@ def product_list(request):
 @transaction.atomic
 def product_add(request):
     categories = Category.objects.filter(is_active=True)
-
+    brands = Brand.objects.filter(is_active=True)
     # =========================
     # POST
     # =========================
     if request.method == "POST":
         name = request.POST.get("name")
         category_id = request.POST.get("category")
+        brand_id = request.POST.get("brand")
         description = request.POST.get("description")
         highlights = request.POST.get("highlights")
 
@@ -278,6 +280,8 @@ def product_add(request):
 
         v_status = request.POST.get("variant_status", "active")
         v_is_active = v_status == "active"
+
+        
 
         # -------------------------
         # IMAGE VALIDATION 
@@ -322,6 +326,7 @@ def product_add(request):
         product = Product.objects.create(
             name=name,
             category_id=category_id,
+            brand_id=brand_id if brand_id else None,
             description=description,
             highlights=highlights,
             is_active=p_is_active,
@@ -376,6 +381,7 @@ def product_add(request):
         "categories": categories,
         "variants": [],
         "product": None,
+        'brands': brands,
     }
 
     return render(
@@ -396,6 +402,7 @@ def product_edit(request, product_id=None):
         variants = product.variants.all()
 
     categories = Category.objects.all()
+    brands = Brand.objects.filter(is_active=True)
 
     # =========================
     # POST
@@ -405,6 +412,7 @@ def product_edit(request, product_id=None):
         description = request.POST.get("description")
         highlights = request.POST.get("highlights")
         category_id = request.POST.get("category")
+        brand_id = request.POST.get("brand")
         product_status = request.POST.get("product_status", "active")
 
         variant_ids = request.POST.getlist("variant_ids")
@@ -427,6 +435,7 @@ def product_edit(request, product_id=None):
             product.description = description
             product.highlights = highlights
             product.category = category
+            product.brand_id = brand_id if brand_id else None
             product.save()
         else:
             product = Product.objects.create(
@@ -576,6 +585,7 @@ def product_edit(request, product_id=None):
         "product": product,
         "variants": variants,
         "categories": categories,
+        "brands": brands, 
     }
 
     return render(
@@ -750,7 +760,7 @@ def user_product_detail(request, slug):
                     .prefetch_related("images")
                 ),
             ),
-            # 🔥 Prefetch Reviews (Approved Only)
+            #  Prefetch Reviews (Approved Only)
             Prefetch(
                 "reviews",
                 queryset=(
@@ -766,7 +776,7 @@ def user_product_detail(request, slug):
     )
 
     # =====================================================
-    # 🚨 INVALID PRODUCT
+    # INVALID PRODUCT
     # =====================================================
     if not product:
         messages.error(request, "Product is unavailable.")
@@ -790,7 +800,7 @@ def user_product_detail(request, slug):
         default_variant = variants_qs.order_by("price").first()
 
     # =====================================================
-    # ⭐ REVIEWS SECTION
+    #  REVIEWS SECTION
     # =====================================================
 
     all_reviews = product.reviews.all()  # already approved & optimized
@@ -938,3 +948,100 @@ def add_or_edit_review(request, slug):
         return redirect("products:users_product_detail", slug=product.slug)
 
     return redirect("products:users_product_detail", slug=product.slug)
+
+
+
+
+@admin_required
+def brand_list(request):
+    search_query = request.GET.get('search', '').strip()
+    status_filter = request.GET.get('status', 'all')
+
+    brands = Brand.objects.annotate(
+        product_count=Count('products')
+    ).order_by('-id')
+
+    #  Search
+    if search_query:
+        brands = brands.filter(
+            Q(name__icontains=search_query) |
+            Q(description__icontains=search_query)
+        )
+
+    # Filter
+    if status_filter == 'active':
+        brands = brands.filter(is_active=True)
+    elif status_filter == 'archived':
+        brands = brands.filter(is_active=False)
+
+    context = {
+        'brands': brands,
+        'search_query': search_query,
+        'status_filter': status_filter
+    }
+
+    return render(request, 'adminpanel/products/brand/brand_list.html', context)
+
+@admin_required
+def brand_save(request):
+    if request.method != 'POST':
+        return redirect('products:brand_list')
+
+    brand_id = request.POST.get('brand_id')
+    name = request.POST.get('name', '').strip()
+    description = request.POST.get('description', '').strip()
+
+    # Validation
+    if not name:
+        messages.error(request, "Brand name is required")
+        return redirect('products:brand_list')
+
+    if not re.match(r'^[A-Za-z\s]+$', name):
+        messages.error(request, "Brand name must contain only letters and spaces")
+        return redirect('products:brand_list')
+
+    #  Update
+    if brand_id:
+        brand = get_object_or_404(Brand, id=brand_id)
+        brand.name = name
+        brand.description = description
+        brand.save()
+        messages.success(request, "Brand updated successfully")
+
+    #  Create
+    else:
+        if Brand.objects.filter(name__iexact=name).exists():
+            messages.error(request, "Brand already exists")
+            return redirect('products:brand_list')
+
+        Brand.objects.create(
+            name=name,
+            description=description
+        )
+        messages.success(request, "Brand added successfully")
+
+    return redirect('products:brand_list')
+
+
+@admin_required
+def brand_toggle(request, id):
+    brand = get_object_or_404(Brand, id=id)
+
+    brand.is_active = not brand.is_active
+    brand.save(update_fields=['is_active'])
+
+    return redirect('products:brand_list')
+    
+
+
+@admin_required
+def brand_delete(request, id):
+    if request.method != 'POST':
+        messages.error(request, "Invalid request")
+        return redirect('products:brand_list')
+
+    brand = get_object_or_404(Brand, id=id)
+    brand.delete()
+
+    messages.success(request, "Brand deleted successfully")
+    return redirect('products:brand_list')

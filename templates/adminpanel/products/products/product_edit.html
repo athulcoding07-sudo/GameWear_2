@@ -57,6 +57,22 @@
                         {% endfor %}
                     </select>
                 </div>
+                <!-- ✅ Brand (NEW - senior level safe) -->
+        <div class="space-y-2">
+            <label class="text-sm font-medium text-neutral-400">Brand</label>
+            <select name="brand"
+                class="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white focus:border-white outline-none transition cursor-pointer">
+                
+                <option value="">Select Brand</option>
+                
+                {% for brand in brands %}
+                <option value="{{ brand.id }}"
+                    {% if product and product.brand and product.brand_id == brand.id %}selected{% endif %}>
+                    {{ brand.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
             </div>
             <div class="space-y-2">
                 <label class="text-sm font-medium text-neutral-400">Description</label>

@@ -70,12 +70,18 @@
                         <p class="text-xs font-black uppercase text-neutral-500 tracking-[0.3em] mb-4">
                             {{ product.category.name }}
                         </p>
+                        <!-- Brand -->
+                        {% if product.brand %}
+                        <p class="text-xs font-black uppercase text-neutral-500 tracking-[0.3em] mb-4">
+                            {{ product.brand.name }}
+                        </p>
+                        {% endif %}
 
                         <h1 class="text-3xl md:text-4xl font-black uppercase italic tracking-tighter leading-none mb-4">
                             {{ product.name }}
                         </h1>
 
-                        <!-- ⭐ Rating -->
+                        <!-- Rating -->
                         <div class="flex items-center gap-3 mb-4">
                             <div class="text-yellow-400 text-sm font-bold">
                                 ★ {{ avg_rating|default:0|floatformat:1 }}
@@ -85,7 +91,7 @@
                             </div>
                         </div>
 
-                        <!-- 💰 Price -->
+                        <!--  Price -->
                         <div class="flex items-center gap-6">
 
                             <!-- Final Discount Price -->

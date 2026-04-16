@@ -44,39 +44,71 @@
         </div>
 
         <!-- General Information -->
-        <div class="bg-black border border-neutral-900 rounded-2xl p-6 space-y-6">
-            <h2 class="text-lg font-bold text-white">General Information</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="space-y-2">
-                    <label class="text-sm font-medium text-neutral-400">Product Name</label>
-                    <input type="text" name="name" value="{{ product.name|default:'' }}" required
-                           class="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white focus:border-white outline-none transition">
-                </div>
-                <div class="space-y-2">
-                    <label class="text-sm font-medium text-neutral-400">Category</label>
-                    <select name="category" required
-                            class="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white focus:border-white outline-none transition cursor-pointer">
-                        <option value="">Select Category</option>
-                        {% for cat in categories %}
-                        <option value="{{ cat.id }}"
-                                {% if product and product.category.id == cat.id %}selected{% endif %}>
-                            {{ cat.name }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
-            <div class="space-y-2">
-                <label class="text-sm font-medium text-neutral-400">Description</label>
-                <textarea name="description" rows="3" required
-                          class="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white focus:border-white outline-none transition">{{ product.description|default:'' }}</textarea>
-            </div>
-            <div class="space-y-2">
-                <label class="text-sm font-medium text-neutral-400">Highlights</label>
-                <textarea name="highlights" rows="3" required
-                          class="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white focus:border-white outline-none transition">{{ product.highlights|default:'' }}</textarea>
-            </div>
+<div class="bg-black border border-neutral-900 rounded-2xl p-6 space-y-6">
+    <h2 class="text-lg font-bold text-white">General Information</h2>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <!-- Product Name -->
+        <div class="space-y-2">
+            <label class="text-sm font-medium text-neutral-400">Product Name</label>
+            <input type="text" name="name" value="{{ product.name|default:'' }}" required
+                class="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white focus:border-white outline-none transition">
         </div>
+
+        <!-- Category -->
+        <div class="space-y-2">
+            <label class="text-sm font-medium text-neutral-400">Category</label>
+            <select name="category" required
+                class="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white focus:border-white outline-none transition cursor-pointer">
+                
+                <option value="">Select Category</option>
+                
+                {% for cat in categories %}
+                <option value="{{ cat.id }}"
+                    {% if product and product.category and product.category.id == cat.id %}selected{% endif %}>
+                    {{ cat.name }}
+                </option>
+                {% endfor %}
+
+            </select>
+        </div>
+
+        <!-- Brand -->
+        <div class="space-y-2">
+            <label class="text-sm font-medium text-neutral-400">Brand</label>
+            <select name="brand"
+                class="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white focus:border-white outline-none transition cursor-pointer">
+                
+                <option value="">Select Brand</option>
+                
+                {% for brand in brands %}
+                <option value="{{ brand.id }}"
+                    {% if product and product.brand and product.brand.id == brand.id %}selected{% endif %}>
+                    {{ brand.name }}
+                </option>
+                {% endfor %}
+
+            </select>
+        </div>
+
+    </div>
+
+    <!-- Description -->
+    <div class="space-y-2">
+        <label class="text-sm font-medium text-neutral-400">Description</label>
+        <textarea name="description" rows="3" required
+            class="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white focus:border-white outline-none transition">{{ product.description|default:'' }}</textarea>
+    </div>
+
+    <!-- Highlights -->
+    <div class="space-y-2">
+        <label class="text-sm font-medium text-neutral-400">Highlights</label>
+        <textarea name="highlights" rows="3" required
+            class="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white focus:border-white outline-none transition">{{ product.highlights|default:'' }}</textarea>
+    </div>
+
+</div>
 
         <!-- Variants & Media -->
         <div class="bg-black border border-neutral-900 rounded-2xl p-6">

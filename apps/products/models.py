@@ -16,7 +16,7 @@ class Category(models.Model):
     slug = models.SlugField(unique=True, blank=True, db_index=True)
     description = models.TextField(blank=True)
 
-    # ✅ Make image optional (VERY IMPORTANT)
+    #  Make image optional (VERY IMPORTANT)
     image = CloudinaryField(
         "category",
         folder="category/images",
@@ -48,6 +48,34 @@ class Category(models.Model):
         return self.name
 
 
+class Brand(models.Model):
+    name = models.CharField(max_length=150, unique=True)
+    slug = models.SlugField(unique=True, blank=True)
+    description = models.TextField(blank=True)
+
+    is_active = models.BooleanField(default=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['name']
+
+    def save(self, *args, **kwargs):   # 👈 WRITE HERE
+        base_slug = slugify(self.name)
+        slug = base_slug
+        counter = 1
+
+        while Brand.objects.filter(slug=slug).exclude(id=self.id).exists():
+            slug = f"{base_slug}-{counter}"
+            counter += 1
+
+        self.slug = slug
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
+
 # =========================
 # Product
 # =========================
@@ -57,12 +85,19 @@ class Product(models.Model):
         on_delete=models.CASCADE,
         related_name="products",
     )
+    brand = models.ForeignKey(
+        'Brand',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='products'
+    )
 
     name = models.CharField(max_length=200)
     slug = models.SlugField(max_length=220, unique=True, blank=True, db_index=True)
     description = models.TextField(blank=True)
     highlights = models.TextField(blank=True, null=True)
-    brand = models.CharField(max_length=100, blank=True)
+    
 
     is_active = models.BooleanField(default=True)
     is_featured = models.BooleanField(default=False)
@@ -87,7 +122,7 @@ class Product(models.Model):
     def review_count(self):
         return self.reviews.filter(is_approved=True).count()
 
-    # ⭐ Bonus: Rating Breakdown
+    #  Bonus: Rating Breakdown
     def rating_breakdown(self):
         return {
             star: self.reviews.filter(is_approved=True, rating=star).count()
@@ -278,3 +313,7 @@ class ReviewImage(models.Model):
 
     def __str__(self):
         return f"Image for Review {self.review.id}"
+
+
+
+
