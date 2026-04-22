@@ -251,6 +251,33 @@
             </div>
         </div>
     </div>
+    </div>  <!-- product grid end -->
+
+<!--  ADD PAGINATION HERE -->
+<div class="flex justify-center mt-10 gap-2">
+
+    {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}"
+           class="px-4 py-2 bg-neutral-800 text-white rounded">
+           Previous
+        </a>
+    {% endif %}
+
+    {% for num in page_obj.paginator.page_range %}
+        <a href="?page={{ num }}"
+           class="px-4 py-2 {% if page_obj.number == num %}bg-white text-black{% else %}bg-neutral-800 text-white{% endif %} rounded">
+           {{ num }}
+        </a>
+    {% endfor %}
+
+    {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}"
+           class="px-4 py-2 bg-neutral-800 text-white rounded">
+           Next
+        </a>
+    {% endif %}
+
+</div>
 
 
 </div>
