@@ -41,4 +41,14 @@ urlpatterns = [
     path('brand/save/', views.brand_save, name='brand_save'),
     path('brand/toggle/<int:id>/', views.brand_toggle, name='brand_toggle'),
     path('brand/delete/<int:id>/', views.brand_delete, name='brand_delete'),
+
+    # =========================
+    # CART MANAGEMENT 
+    # =========================
+
+    path("cart-view/", views.cart_view, name="cart_view"),
+    path("cart-add/<int:product_id>/", views.add_to_cart_view, name="add_to_cart"),
+    path("cart-update/<int:item_id>/<str:action>/", views.update_cart_view, name="update_cart"),
+    path("cart-remove/<int:item_id>/", views.remove_cart_view, name="remove_cart"),
+    
 ]

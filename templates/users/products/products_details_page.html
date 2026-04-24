@@ -163,7 +163,7 @@
 
 
                     <!-- Selection Form -->
-                    <form action="#" method="POST" class="space-y-8">
+                    <form action="{% url 'products:add_to_cart' product.id %}" method="POST" class="space-y-8">
                         {% csrf_token %}
 
                         <!-- 🎨 Color Selection -->
@@ -205,9 +205,10 @@
                                 <input type="number" name="quantity" value="1" min="1" max="10" class="w-12 bg-transparent text-center border-none focus:ring-0 font-black text-lg">
                                 <button type="button" onclick="this.previousElementSibling.stepUp()" class="px-6 text-neutral-500 font-bold">+</button>
                             </div>
-                            <button id="add-to-cart-btn" type="submit" {% if not has_stock %}disabled{% endif %} class="flex-1 bg-white text-black font-black uppercase tracking-[0.2em] text-xs h-14 rounded-full hover:bg-neutral-200 transition disabled:opacity-40">
+                            <button id="add-to-cart-btn" type="submit"  class="flex-1 bg-white text-black font-black uppercase tracking-[0.2em] text-xs h-14 rounded-full hover:bg-neutral-200 transition disabled:opacity-40">
                                 Add to Equipment Bag
                             </button>
+                            <a href="{% url 'products:add_to_cart' product.id %}">Test Add</a>
                         </div>
                     </form>
                 </div>
@@ -466,7 +467,7 @@ inputs.forEach(input => {
 });
 
 /* Minimum image validation */
-const form = document.querySelector("form");
+const form = document.querySelector("review-form");
 form.addEventListener("submit", function(e){
     let count = 0;
     inputs.forEach(input=>{
