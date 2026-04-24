@@ -5,487 +5,631 @@
 
 {% block content %}
 
+{% if not product.is_active %}
+<script>window.location.href = "{% url 'products:users_product_listing' %}";</script>
+{% endif %}
+
 <div class="min-h-screen bg-black text-white py-12">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-        <!-- 🚨 AUTO REDIRECT GUARD -->
-        {% if not product.is_active %}
-        <script>
-            window.location.href = "{% url 'products:users_product_listing' %}";
-        </script>
-        {% endif %}
+    {# ─── Breadcrumbs ─────────────────────────────────────────────────── #}
+    <nav class="flex mb-8 text-[10px] font-bold uppercase tracking-widest text-neutral-500">
+      <a href="{% url 'users:dashboard' %}" class="hover:text-white transition">Home</a>
+      <span class="mx-2">/</span>
+      <a href="{% url 'products:users_product_listing' %}" class="hover:text-white transition">Shop</a>
+      <span class="mx-2">/</span>
+      <span class="text-white">{{ product.name }}</span>
+    </nav>
 
-        <!-- Breadcrumbs -->
-        <nav class="flex mb-8 text-[10px] font-bold uppercase tracking-widest text-neutral-500">
-            <a href="{% url 'users:dashboard' %}" class="hover:text-white transition">Home</a>
-            <span class="mx-2">/</span>
-            <a href="{% url 'products:users_product_listing' %}" class="hover:text-white transition">Shop</a>
-            <span class="mx-2">/</span>
-            <span class="text-white">{{ product.name }}</span>
-        </nav>
+    {# ─── Product Grid ─────────────────────────────────────────────────── #}
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 xl:gap-24 items-start">
 
-        <div class="max-w-7xl mx-auto px-4 py-12">
-            <!-- THE PRODUCT GRID -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 xl:gap-24 items-start">
+      {# ── LEFT: Image Gallery ── #}
+      <div class="lg:sticky lg:top-8 space-y-6 self-start">
 
-                <!-- LEFT COLUMN (IMAGE GALLERY) -->
-                <div class="lg:sticky lg:top-8 space-y-6 self-start">
-                    <!-- Main Image -->
-                    <div class="relative aspect-[4/5] bg-neutral-900 border border-neutral-800 rounded-[2rem] overflow-hidden group">
-                        {% if default_variant and default_variant.images.all %}
-                            <img id="main-image"
-                                 src="{{ default_variant.images.first.image.url }}"
-                                 alt="{{ product.name }}"
-                                 onclick="openImageModal(this.src)"
-                                 class="w-full h-full object-contain p-12 transition-transform duration-500 group-hover:scale-110 cursor-zoom-in">
-                        {% else %}
-                            <div class="w-full h-full flex items-center justify-center text-neutral-800 font-black italic">
-                                NO GEAR IMAGE
-                            </div>
-                        {% endif %}
-
-                        {% if product.old_price and default_variant.price %}
-                            <div class="absolute top-8 left-8 bg-white text-black text-[10px] font-black uppercase px-4 py-1.5 rounded-full italic tracking-tighter">
-                                SALE
-                            </div>
-                        {% endif %}
-                    </div>
-
-                    <!-- Thumbnail Grid -->
-                    {% if default_variant and default_variant.images.all %}
-                    <div class="grid grid-cols-4 gap-4">
-                        {% for img in default_variant.images.all %}
-                        <button onclick="changeImage('{{ img.image.url }}')"
-                                class="aspect-square bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden p-2 hover:border-white transition">
-                            <img src="{{ img.image.url }}" class="w-full h-full object-contain">
-                        </button>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
-                </div>
-
-                <!-- RIGHT COLUMN (PRODUCT INFO) -->
-                <div class="flex flex-col justify-center">
-                    <div class="mb-8">
-                        <p class="text-xs font-black uppercase text-neutral-500 tracking-[0.3em] mb-4">
-                            {{ product.category.name }}
-                        </p>
-                        <!-- Brand -->
-                        {% if product.brand %}
-                        <p class="text-xs font-black uppercase text-neutral-500 tracking-[0.3em] mb-4">
-                            {{ product.brand.name }}
-                        </p>
-                        {% endif %}
-
-                        <h1 class="text-3xl md:text-4xl font-black uppercase italic tracking-tighter leading-none mb-4">
-                            {{ product.name }}
-                        </h1>
-
-                        <!-- Rating -->
-                        <div class="flex items-center gap-3 mb-4">
-                            <div class="text-yellow-400 text-sm font-bold">
-                                ★ {{ avg_rating|default:0|floatformat:1 }}
-                            </div>
-                            <div class="text-neutral-500 text-xs">
-                                ({{ review_count }} reviews)
-                            </div>
-                        </div>
-
-                        <!--  Price -->
-                        <div class="flex items-center gap-6">
-
-                            <!-- Final Discount Price -->
-                            {% if default_variant.discount_percentage > 0 %}
-                                <span class="text-4xl font-black italic">
-                                    ₹{{ default_variant.discount_price }}
-                                </span>
-
-                                <!-- Original Price -->
-                                <span class="text-xl text-neutral-600 line-through font-bold">
-                                    ₹{{ default_variant.price }}
-                                </span>
-
-                                <!-- Discount % -->
-                                <span class="text-green-400 text-sm font-bold">
-                                    {{ default_variant.discount_percentage }}% OFF
-                                </span>
-
-                            {% else %}
-
-                                <!-- No Discount -->
-                                <span class="text-4xl font-black italic">
-                                    ₹{{ default_variant.price }}
-                                </span>
-
-                            {% endif %}
-
-                        </div>
-
-                        <!-- 📦 Stock Status -->
-                        {% if has_stock %}
-                            <p id="stock-text" class="text-green-500 text-sm font-bold mt-2">In Stock</p>
-                        {% else %}
-                            <p id="stock-text" class="text-red-500 text-sm font-bold mt-2">Out of Stock</p>
-                        {% endif %}
-                    </div>
-
-                    <!-- ⚡ KEY HIGHLIGHTS SECTION -->
-                    <!-- Always display the block, handle empty content inside -->
-                    <div class="border-t border-neutral-800">
-                        <button type="button" onclick="toggleHighlights()" class="w-full flex items-center justify-between py-6 group text-left">
-                            <span class="text-[10px] font-black uppercase tracking-widest text-white group-hover:text-neutral-400 transition">Key Highlights</span>
-                            <svg id="highlight-chevron" class="w-4 h-4 text-neutral-500 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
-                        </button>
-                        <div id="highlight-content" class="max-h-0 overflow-hidden transition-all duration-500 ease-in-out">
-                            <div class="pb-8 text-neutral-400 text-sm leading-relaxed font-medium">
-                                {% if product.highlights %}
-                                    {{ product.highlights|linebreaksbr }}
-                                {% else %}
-                                    <span class="italic text-neutral-600 uppercase text-[9px] tracking-widest">Technical details coming soon for this model.</span>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Description -->
-                    <div class="border-t border-neutral-800 mb-10">
-                        <button type="button" onclick="toggleDescription()" class="w-full flex items-center justify-between py-6 group text-left">
-                            <span class="text-[10px] font-black uppercase tracking-widest text-white group-hover:text-neutral-400 transition">Product Description</span>
-                            <svg id="desc-chevron" class="w-4 h-4 text-neutral-500 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
-                        </button>
-                        <div id="desc-content" class="max-h-0 overflow-hidden transition-all duration-500 ease-in-out">
-                            <div class="pb-8 text-neutral-400 text-sm leading-relaxed font-medium">
-                                {{ product.description|linebreaksbr }}
-                            </div>
-                        </div>
-                    </div>
-
-
-
-                    <!-- Selection Form -->
-                    <form action="{% url 'products:add_to_cart' product.id %}" method="POST" class="space-y-8">
-                        {% csrf_token %}
-
-                        <!-- 🎨 Color Selection -->
-                        <div>
-                            <label class="text-[10px] font-black uppercase tracking-widest text-neutral-500 block mb-4">Select Color</label>
-                            <div class="flex flex-wrap gap-3">
-                                {% for variant in product.variants.all %}
-                                    {% if variant.color %}
-                                    <label class="relative cursor-pointer group">
-                                        <input type="radio" name="color" value="{{ variant.color }}" class="hidden peer color-radio" data-variant-id="{{ variant.id }}">
-                                        <div class="px-6 py-3 border border-neutral-800 rounded-xl text-center text-xs font-bold uppercase transition peer-checked:bg-white peer-checked:text-black peer-checked:border-white">
-                                            {{ variant.color }}
-                                        </div>
-                                    </label>
-                                    {% endif %}
-                                {% endfor %}
-                            </div>
-                        </div>
-                        <div>
-                            <label class="text-[10px] font-black uppercase tracking-widest text-neutral-500 block mb-4">Select Size</label>
-                            <div class="grid grid-cols-4 gap-3">
-                                {% for variant in product.variants.all %}
-                                <label class="relative cursor-pointer group">
-                                    <input type="radio" name="variant" value="{{ variant.id }}" class="hidden peer variant-radio" data-stock="{{ variant.stock }}" {% if variant.stock <= 0 %}disabled{% endif %} {% if variant == default_variant %}checked{% endif %}>
-                                    <div class="w-full py-4 border border-neutral-800 rounded-xl text-center text-sm font-bold uppercase transition peer-checked:bg-white peer-checked:text-black peer-checked:border-white peer-disabled:opacity-20 peer-disabled:cursor-not-allowed">
-                                        {{ variant.size|default:"Standard" }}
-                                    </div>
-                                    {% if variant.stock <= 0 %}
-                                    <div class="absolute inset-0 flex items-center justify-center"><div class="w-full h-[1px] bg-neutral-600 -rotate-45"></div></div>
-                                    {% endif %}
-                                </label>
-                                {% endfor %}
-                            </div>
-                        </div>
-
-                        <div class="flex flex-col sm:flex-row gap-4 pt-4">
-                            <div class="flex border border-neutral-800 rounded-full overflow-hidden h-14 bg-neutral-900/30">
-                                <button type="button" onclick="this.nextElementSibling.stepDown()" class="px-6 text-neutral-500 font-bold">—</button>
-                                <input type="number" name="quantity" value="1" min="1" max="10" class="w-12 bg-transparent text-center border-none focus:ring-0 font-black text-lg">
-                                <button type="button" onclick="this.previousElementSibling.stepUp()" class="px-6 text-neutral-500 font-bold">+</button>
-                            </div>
-                            <button id="add-to-cart-btn" type="submit"  class="flex-1 bg-white text-black font-black uppercase tracking-[0.2em] text-xs h-14 rounded-full hover:bg-neutral-200 transition disabled:opacity-40">
-                                Add to Equipment Bag
-                            </button>
-                            <a href="{% url 'products:add_to_cart' product.id %}">Test Add</a>
-                        </div>
-                    </form>
-                </div>
+        {# Main image #}
+        <div class="relative aspect-[4/5] bg-neutral-900 border border-neutral-800 rounded-[2rem] overflow-hidden group">
+          {% if default_variant and default_variant.images.all %}
+            <img id="main-image"
+                 src="{{ default_variant.images.first.image.url }}"
+                 alt="{{ product.name }}"
+                 onclick="openImageModal(this.src)"
+                 class="w-full h-full object-contain p-12 transition-transform duration-500 group-hover:scale-110 cursor-zoom-in">
+          {% else %}
+            <div class="w-full h-full flex items-center justify-center text-neutral-800 font-black italic">
+              NO GEAR IMAGE
             </div>
+          {% endif %}
+
+          {% if product.old_price and default_variant.price %}
+            <div class="absolute top-8 left-8 bg-white text-black text-[10px] font-black uppercase px-4 py-1.5 rounded-full italic tracking-tighter">
+              SALE
+            </div>
+          {% endif %}
         </div>
 
-        <!-- =============================== -->
-        <!-- ⭐ REVIEWS SECTION -->
-        <!-- =============================== -->
-        <div class="mt-32 pt-16 border-t border-neutral-800" id="reviews-section">
-            <div class="text-center mb-16">
-                <h2 class="text-4xl font-black uppercase italic tracking-tighter mb-8">Verified Reviews</h2>
-                <div class="flex flex-col items-center justify-center gap-6">
-                    <div class="flex items-center gap-6">
-                        <span class="text-6xl font-black italic">{{ avg_rating|floatformat:1 }}</span>
-                        <div class="text-left">
-                            <div class="text-yellow-400 text-xl tracking-tighter mb-1">
-                                ★★★★<span class="text-neutral-800">★</span>
-                            </div>
-                            <p class="text-[10px] font-black uppercase tracking-widest text-neutral-500">Based on {{ review_count }} reviews</p>
-                        </div>
-                    </div>
-                    <div class="flex gap-3">
-                        <span class="inline-flex items-center px-4 py-1.5 rounded-full border border-neutral-800 text-neutral-400 text-[10px] font-black uppercase tracking-widest bg-neutral-900/50">
-                            Verified Gear
-                        </span>
-                        <span class="inline-flex items-center px-4 py-1.5 rounded-full bg-white text-black text-[10px] font-black uppercase tracking-widest italic">
-                            JUDGE.ME TRUSTED
-                        </span>
-                    </div>
+        {# Thumbnail strip #}
+        {% if default_variant and default_variant.images.all %}
+        <div class="grid grid-cols-4 gap-4">
+          {% for img in default_variant.images.all %}
+          <button onclick="changeImage('{{ img.image.url }}')"
+                  class="aspect-square bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden p-2 hover:border-white transition">
+            <img src="{{ img.image.url }}" class="w-full h-full object-contain">
+          </button>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+      </div>
+
+      {# ── RIGHT: Product Info ── #}
+      <div class="flex flex-col justify-center">
+
+        {# Meta: category + brand #}
+        <div class="mb-8">
+          <p class="text-xs font-black uppercase text-neutral-500 tracking-[0.3em] mb-4">
+            {{ product.category.name }}
+          </p>
+
+          {% if product.brand %}
+          <p class="text-xs font-black uppercase text-neutral-500 tracking-[0.3em] mb-4">
+            {{ product.brand.name }}
+          </p>
+          {% endif %}
+
+          <h1 class="text-3xl md:text-4xl font-black uppercase italic tracking-tighter leading-none mb-4">
+            {{ product.name }}
+          </h1>
+
+          {# Rating #}
+          <div class="flex items-center gap-3 mb-4">
+            <div class="text-yellow-400 text-sm font-bold">
+              ★ {{ avg_rating|default:0|floatformat:1 }}
+            </div>
+            <div class="text-neutral-500 text-xs">
+              ({{ review_count }} reviews)
+            </div>
+          </div>
+
+          {# Price #}
+          <div class="flex items-center gap-6">
+            {% if default_variant.discount_percentage > 0 %}
+              <span class="text-4xl font-black italic">₹{{ default_variant.discount_price }}</span>
+              <span class="text-xl text-neutral-600 line-through font-bold">₹{{ default_variant.price }}</span>
+              <span class="text-green-400 text-sm font-bold">{{ default_variant.discount_percentage }}% OFF</span>
+            {% else %}
+              <span class="text-4xl font-black italic">₹{{ default_variant.price }}</span>
+            {% endif %}
+          </div>
+
+          {# Stock status #}
+          {% if has_stock %}
+            <p id="stock-text" class="text-green-500 text-sm font-bold mt-2">In Stock</p>
+          {% else %}
+            <p id="stock-text" class="text-red-500 text-sm font-bold mt-2">Out of Stock</p>
+          {% endif %}
+        </div>
+
+        {# ── Key Highlights accordion ── #}
+        <div class="border-t border-neutral-800">
+          <button type="button" onclick="toggleHighlights()"
+                  class="w-full flex items-center justify-between py-6 group text-left">
+            <span class="text-[10px] font-black uppercase tracking-widest text-white group-hover:text-neutral-400 transition">Key Highlights</span>
+            <svg id="highlight-chevron" class="w-4 h-4 text-neutral-500 transition-transform duration-300"
+                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </button>
+          <div id="highlight-content" class="max-h-0 overflow-hidden transition-all duration-500 ease-in-out">
+            <div class="pb-8 text-neutral-400 text-sm leading-relaxed font-medium">
+              {% if product.highlights %}
+                {{ product.highlights|linebreaksbr }}
+              {% else %}
+                <span class="italic text-neutral-600 uppercase text-[9px] tracking-widest">
+                  Technical details coming soon for this model.
+                </span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        {# ── Product Description accordion ── #}
+        <div class="border-t border-neutral-800 mb-10">
+          <button type="button" onclick="toggleDescription()"
+                  class="w-full flex items-center justify-between py-6 group text-left">
+            <span class="text-[10px] font-black uppercase tracking-widest text-white group-hover:text-neutral-400 transition">Product Description</span>
+            <svg id="desc-chevron" class="w-4 h-4 text-neutral-500 transition-transform duration-300"
+                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </button>
+          <div id="desc-content" class="max-h-0 overflow-hidden transition-all duration-500 ease-in-out">
+            <div class="pb-8 text-neutral-400 text-sm leading-relaxed font-medium">
+              {{ product.description|linebreaksbr }}
+            </div>
+          </div>
+        </div>
+
+        {# ── Add to Cart form ── #}
+        <form action="{% url 'products:add_to_cart' product.id %}" method="POST" class="space-y-8">
+          {% csrf_token %}
+
+          {# Color selection #}
+          <div>
+            <label class="text-[10px] font-black uppercase tracking-widest text-neutral-500 block mb-4">
+              Select Color
+            </label>
+            <div class="flex flex-wrap gap-3">
+              {% for variant in product.variants.all %}
+                {% if variant.color %}
+                <label class="relative cursor-pointer group">
+                  <input type="radio" name="color" value="{{ variant.color }}"
+                         class="hidden peer color-radio" data-variant-id="{{ variant.id }}">
+                  <div class="px-6 py-3 border border-neutral-800 rounded-xl text-center text-xs font-bold uppercase transition
+                               peer-checked:bg-white peer-checked:text-black peer-checked:border-white">
+                    {{ variant.color }}
+                  </div>
+                </label>
+                {% endif %}
+              {% endfor %}
+            </div>
+          </div>
+
+          {# Size selection #}
+          <div>
+            <label class="text-[10px] font-black uppercase tracking-widest text-neutral-500 block mb-4">
+              Select Size
+            </label>
+            <div class="grid grid-cols-4 gap-3">
+              {% for variant in product.variants.all %}
+              <label class="relative cursor-pointer group">
+                <input type="radio" name="variant" value="{{ variant.id }}"
+                       class="hidden peer variant-radio"
+                       data-stock="{{ variant.stock }}"
+                       {% if variant.stock <= 0 %}disabled{% endif %}
+                       {% if variant == default_variant %}checked{% endif %}>
+                <div class="w-full py-4 border border-neutral-800 rounded-xl text-center text-sm font-bold uppercase transition
+                             peer-checked:bg-white peer-checked:text-black peer-checked:border-white
+                             peer-disabled:opacity-20 peer-disabled:cursor-not-allowed">
+                  {{ variant.size|default:"Standard" }}
                 </div>
-            </div>
-
-            <!-- Tab Navigation -->
-            <div class="flex justify-center border-b border-neutral-800 mb-16">
-                <button onclick="switchReviewTab('view')" id="tab-btn-view" class="px-10 py-5 border-b-2 border-white text-white font-black uppercase tracking-widest text-xs transition-all">
-                    All Reviews
-                </button>
-                <button onclick="switchReviewTab('write')" id="tab-btn-write" class="px-10 py-5 border-b-2 border-transparent text-neutral-600 font-black uppercase tracking-widest text-xs hover:text-white transition-all">
-                    Write a Review
-                </button>
-            </div>
-
-            <!-- Tab 1: View -->
-            <div id="tab-content-view" class="block animate-fadeIn">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {% for review in reviews %}
-                    <div class="bg-neutral-900/30 border border-neutral-800 rounded-[2rem] p-8 flex flex-col justify-between hover:border-neutral-700 transition-colors">
-                        <div>
-                            <div class="flex justify-between items-start mb-6">
-                                <div>
-                                    <div class="flex items-center gap-3">
-                                        <span class="font-black uppercase text-sm tracking-tight text-white">{{ review.user.username }}</span>
-                                        <span class="text-[9px] bg-white text-black px-2 py-0.5 rounded-sm font-black uppercase italic">VERIFIED</span>
-                                    </div>
-                                    <p class="text-[10px] text-neutral-600 font-bold uppercase tracking-widest mt-1">{{ review.created_at|date:"M d, Y" }}</p>
-                                </div>
-                                <div class="text-yellow-400 flex text-sm">
-                                    {% for i in "12345" %}
-                                        <span class="{% if forloop.counter <= review.rating %}text-yellow-400{% else %}text-neutral-800{% endif %}">★</span>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                            <h4 class="text-sm font-black uppercase tracking-tight mb-3">{{ review.title|default:"Quality Gear" }}</h4>
-                            <p class="text-neutral-400 text-sm leading-relaxed mb-6 font-medium">{{ review.comment }}</p>
-                            {% if review.images.all %}
-                            <div class="flex gap-3 mb-4">
-                                {% for img in review.images.all|slice:":2" %}
-                                <img src="{{ img.image.url }}" class="w-20 h-20 object-cover rounded-xl border border-neutral-800 cursor-zoom-in hover:opacity-80 transition" onclick="openImageModal(this.src)">
-                                {% endfor %}
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                    {% empty %}
-                    <div class="col-span-2 py-20 text-center">
-                        <p class="text-neutral-600 font-black uppercase tracking-widest text-xs italic">No Gear Reports Yet.</p>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-
-            <!-- Tab 2: Write -->
-            <div id="tab-content-write" class="hidden animate-fadeIn">
-                {% if user.is_authenticated %}
-                <div class="max-w-3xl mx-auto bg-neutral-900/50 border border-neutral-800 rounded-[2rem] p-10">
-                    <form method="POST" enctype="multipart/form-data" action="{% url 'products:add_or_edit_review' product.slug %}" class="space-y-6">
-                        {% csrf_token %}
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div class="space-y-2">
-                                <label class="text-[10px] font-black uppercase tracking-widest text-neutral-500">Gear Rating</label>
-                                <select name="rating" required class="w-full bg-black border border-neutral-800 rounded-xl px-5 py-4 text-xs font-bold focus:border-white outline-none appearance-none">
-                                    <option value="5">★★★★★ (EXCELLENT)</option>
-                                    <option value="4">★★★★☆ (GOOD)</option>
-                                    <option value="3">★★★☆☆ (AVERAGE)</option>
-                                    <option value="2">★★☆☆☆ (POOR)</option>
-                                    <option value="1">★☆☆☆☆ (BAD)</option>
-                                </select>
-                            </div>
-                            <div class="space-y-2">
-                                <label class="text-[10px] font-black uppercase tracking-widest text-neutral-500">Headline</label>
-                                <input type="text" name="title" placeholder="E.G. PERFECT FIT" class="w-full bg-black border border-neutral-800 rounded-xl px-5 py-4 text-xs font-bold focus:border-white outline-none">
-                            </div>
-                        </div>
-                        <div class="space-y-2">
-                            <label class="text-[10px] font-black uppercase tracking-widest text-neutral-500">Detailed Review</label>
-                            <textarea name="comment" rows="6" placeholder="DESCRIBE YOUR EXPERIENCE..." class="w-full bg-black border border-neutral-800 rounded-xl px-5 py-4 text-xs font-bold focus:border-white outline-none resize-none"></textarea>
-                        </div>
-                        <div class="lg:col-span-5">
-                            <label class="text-[10px] uppercase font-bold text-neutral-500 block mb-2">
-                                Review Images (Min 2 - Max 5)
-                            </label>
-
-                            <div class="grid grid-cols-5 gap-2">
-
-                                {% for i in "12345" %}
-                                <label class="relative aspect-square border-2 border-dashed border-neutral-800 rounded-xl flex items-center justify-center cursor-pointer hover:bg-neutral-900 transition overflow-hidden group">
-
-                                    <input type="file" name="images" accept="image/*"
-                                           class="sr-only review-image-input">
-
-                                    <!-- Image Preview -->
-                                    <div class="preview-container absolute inset-0 hidden">
-                                        <img src="" class="w-full h-full object-cover">
-                                    </div>
-
-                                    <!-- Plus Icon -->
-                                    <div class="placeholder-icon text-neutral-600 group-hover:text-neutral-400">
-                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                  stroke-width="2" d="M12 4v16m8-8H4"></path>
-                                        </svg>
-                                    </div>
-
-                                </label>
-                                {% endfor %}
-
-                            </div>
-
-                            <p id="review-image-error" class="text-red-500 text-xs mt-2 hidden">
-                                Please upload at least 2 images
-                            </p>
-                        </div>
-                        <button type="submit" class="w-full bg-white text-black px-8 py-5 rounded-full font-black uppercase tracking-[0.2em] text-[10px] hover:bg-neutral-200 transition shadow-xl">Deploy Review</button>
-                    </form>
+                {% if variant.stock <= 0 %}
+                <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div class="w-full h-[1px] bg-neutral-600 -rotate-45"></div>
                 </div>
                 {% endif %}
+              </label>
+              {% endfor %}
             </div>
-        </div>
+          </div>
 
-        <!-- RECOMMENDED GEAR -->
-        {% if related_products %}
-        <div class="mt-32 pt-16 border-t border-neutral-800">
-            <h2 class="text-3xl font-black uppercase italic tracking-tighter mb-12">Recommended Gear</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {% for related in related_products %}
-                <div class="group relative">
-                    <div class="relative aspect-[4/5] bg-neutral-900 border border-neutral-800 rounded-3xl overflow-hidden p-6 transition-all duration-500 group-hover:border-neutral-600">
-                        <a href="{% url 'products:users_product_detail' related.slug %}" class="block w-full h-full">
-                            {% with rv=related.variants.first %}
-                                {% if rv and rv.images.first %}<img src="{{ rv.images.first.image.url }}" class="w-full h-full object-contain transition-transform duration-700 group-hover:scale-110">{% endif %}
-                            {% endwith %}
-                        </a>
-                    </div>
-                    <div class="mt-4 px-2">
-                        <h3 class="text-xs font-bold text-white group-hover:text-neutral-400 transition mb-1 uppercase">{{ related.name }}</h3>
-                        {% with rv=related.variants.first %}{% if rv %}<p class="text-[10px] font-black italic text-neutral-400 tracking-wider">₹{{ rv.price }}</p>{% endif %}{% endwith %}
-                    </div>
-                </div>
-                {% endfor %}
+          {# Quantity + Add to Cart + Wishlist #}
+          <div class="flex flex-col sm:flex-row gap-4 pt-4">
+
+            {# Quantity stepper #}
+            <div class="flex border border-neutral-800 rounded-full overflow-hidden h-14 bg-neutral-900/30">
+              <button type="button"
+                      onclick="this.nextElementSibling.stepDown()"
+                      class="px-6 text-neutral-500 font-bold hover:text-white transition">—</button>
+              <input type="number" name="quantity" value="1" min="1" max="10"
+                     class="w-12 bg-transparent text-center border-none focus:ring-0 font-black text-lg">
+              <button type="button"
+                      onclick="this.previousElementSibling.stepUp()"
+                      class="px-6 text-neutral-500 font-bold hover:text-white transition">+</button>
             </div>
+
+            {# Add to Cart #}
+            <button id="add-to-cart-btn" type="submit"
+                    class="flex-1 bg-white text-black font-black uppercase tracking-[0.2em] text-xs h-14 rounded-full hover:bg-neutral-200 transition disabled:opacity-40">
+              Add to Equipment Bag
+            </button>
+
+            {# Wishlist toggle — CSS drives all states via data-wishlisted attr #}
+            <button type="button"
+                    id="wishlist-btn"
+                    onclick="toggleWishlist()"
+                    title="{% if is_wishlisted %}Remove from Wishlist{% else %}Save to Wishlist{% endif %}"
+                    data-wishlisted="{% if is_wishlisted %}true{% else %}false{% endif %}"
+                    class="wl-btn shrink-0 w-14 h-14 flex items-center justify-center rounded-full border transition-all duration-300">
+              <svg id="wishlist-icon"
+                   class="w-5 h-5"
+                   fill="{% if is_wishlisted %}currentColor{% else %}none{% endif %}"
+                   stroke="currentColor"
+                   stroke-width="1.8"
+                   viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682
+                         a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318
+                         a4.5 4.5 0 00-6.364 0z"/>
+              </svg>
+            </button>
+
+          </div>
+        </form>
+
+        {# Wishlist form — kept OUTSIDE the cart form to avoid illegal nesting #}
+        <form id="wishlist-form"
+              method="POST"
+              action="{% url 'products:toggle_wishlist' product.id %}"
+              class="hidden">
+          {% csrf_token %}
+          <input type="hidden" name="variant_id" id="wishlist-variant-id" value="{{ default_variant.id }}">
+        </form>
+
+      </div>
+      {# END right column #}
+
+    </div>
+    {# END product grid #}
+
+    {# ─── Reviews Section ──────────────────────────────────────────────── #}
+    <div class="mt-32 pt-16 border-t border-neutral-800" id="reviews-section">
+
+      {# Header #}
+      <div class="text-center mb-16">
+        <h2 class="text-4xl font-black uppercase italic tracking-tighter mb-8">Verified Reviews</h2>
+        <div class="flex flex-col items-center justify-center gap-6">
+          <div class="flex items-center gap-6">
+            <span class="text-6xl font-black italic">{{ avg_rating|floatformat:1 }}</span>
+            <div class="text-left">
+              <div class="text-yellow-400 text-xl tracking-tighter mb-1">
+                ★★★★<span class="text-neutral-800">★</span>
+              </div>
+              <p class="text-[10px] font-black uppercase tracking-widest text-neutral-500">
+                Based on {{ review_count }} reviews
+              </p>
+            </div>
+          </div>
+          <div class="flex gap-3">
+            <span class="inline-flex items-center px-4 py-1.5 rounded-full border border-neutral-800 text-neutral-400 text-[10px] font-black uppercase tracking-widest bg-neutral-900/50">
+              Verified Gear
+            </span>
+            <span class="inline-flex items-center px-4 py-1.5 rounded-full bg-white text-black text-[10px] font-black uppercase tracking-widest italic">
+              JUDGE.ME TRUSTED
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {# Tab nav #}
+      <div class="flex justify-center border-b border-neutral-800 mb-16">
+        <button onclick="switchReviewTab('view')" id="tab-btn-view"
+                class="px-10 py-5 border-b-2 border-white text-white font-black uppercase tracking-widest text-xs transition-all">
+          All Reviews
+        </button>
+        <button onclick="switchReviewTab('write')" id="tab-btn-write"
+                class="px-10 py-5 border-b-2 border-transparent text-neutral-600 font-black uppercase tracking-widest text-xs hover:text-white transition-all">
+          Write a Review
+        </button>
+      </div>
+
+      {# Tab: All Reviews #}
+      <div id="tab-content-view" class="block animate-fadeIn">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {% for review in reviews %}
+          <div class="bg-neutral-900/30 border border-neutral-800 rounded-[2rem] p-8 flex flex-col justify-between hover:border-neutral-700 transition-colors">
+            <div>
+              <div class="flex justify-between items-start mb-6">
+                <div>
+                  <div class="flex items-center gap-3">
+                    <span class="font-black uppercase text-sm tracking-tight text-white">
+                      {{ review.user.username }}
+                    </span>
+                    <span class="text-[9px] bg-white text-black px-2 py-0.5 rounded-sm font-black uppercase italic">
+                      VERIFIED
+                    </span>
+                  </div>
+                  <p class="text-[10px] text-neutral-600 font-bold uppercase tracking-widest mt-1">
+                    {{ review.created_at|date:"M d, Y" }}
+                  </p>
+                </div>
+                <div class="text-yellow-400 flex text-sm">
+                  {% for i in "12345" %}
+                    <span class="{% if forloop.counter <= review.rating %}text-yellow-400{% else %}text-neutral-800{% endif %}">★</span>
+                  {% endfor %}
+                </div>
+              </div>
+
+              <h4 class="text-sm font-black uppercase tracking-tight mb-3">
+                {{ review.title|default:"Quality Gear" }}
+              </h4>
+              <p class="text-neutral-400 text-sm leading-relaxed mb-6 font-medium">
+                {{ review.comment }}
+              </p>
+
+              {% if review.images.all %}
+              <div class="flex gap-3 mb-4">
+                {% for img in review.images.all|slice:":2" %}
+                <img src="{{ img.image.url }}"
+                     onclick="openImageModal(this.src)"
+                     class="w-20 h-20 object-cover rounded-xl border border-neutral-800 cursor-zoom-in hover:opacity-80 transition">
+                {% endfor %}
+              </div>
+              {% endif %}
+            </div>
+          </div>
+          {% empty %}
+          <div class="col-span-2 py-20 text-center">
+            <p class="text-neutral-600 font-black uppercase tracking-widest text-xs italic">
+              No Gear Reports Yet.
+            </p>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      {# Tab: Write a Review #}
+      <div id="tab-content-write" class="hidden animate-fadeIn">
+        {% if user.is_authenticated %}
+        <div class="max-w-3xl mx-auto bg-neutral-900/50 border border-neutral-800 rounded-[2rem] p-10">
+          <form id="review-form"
+                method="POST"
+                enctype="multipart/form-data"
+                action="{% url 'products:add_or_edit_review' product.slug %}"
+                class="space-y-6">
+            {% csrf_token %}
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="space-y-2">
+                <label class="text-[10px] font-black uppercase tracking-widest text-neutral-500">
+                  Gear Rating
+                </label>
+                <select name="rating" required
+                        class="w-full bg-black border border-neutral-800 rounded-xl px-5 py-4 text-xs font-bold focus:border-white outline-none appearance-none">
+                  <option value="5">★★★★★ (EXCELLENT)</option>
+                  <option value="4">★★★★☆ (GOOD)</option>
+                  <option value="3">★★★☆☆ (AVERAGE)</option>
+                  <option value="2">★★☆☆☆ (POOR)</option>
+                  <option value="1">★☆☆☆☆ (BAD)</option>
+                </select>
+              </div>
+              <div class="space-y-2">
+                <label class="text-[10px] font-black uppercase tracking-widest text-neutral-500">
+                  Headline
+                </label>
+                <input type="text" name="title" placeholder="E.G. PERFECT FIT"
+                       class="w-full bg-black border border-neutral-800 rounded-xl px-5 py-4 text-xs font-bold focus:border-white outline-none">
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <label class="text-[10px] font-black uppercase tracking-widest text-neutral-500">
+                Detailed Review
+              </label>
+              <textarea name="comment" rows="6" placeholder="DESCRIBE YOUR EXPERIENCE..."
+                        class="w-full bg-black border border-neutral-800 rounded-xl px-5 py-4 text-xs font-bold focus:border-white outline-none resize-none"></textarea>
+            </div>
+
+            {# Review image upload grid #}
+            <div>
+              <label class="text-[10px] uppercase font-bold text-neutral-500 block mb-2">
+                Review Images (Min 2 – Max 5)
+              </label>
+              <div class="grid grid-cols-5 gap-2">
+                {% for i in "12345" %}
+                <label class="relative aspect-square border-2 border-dashed border-neutral-800 rounded-xl flex items-center justify-center cursor-pointer hover:bg-neutral-900 transition overflow-hidden group">
+                  <input type="file" name="images" accept="image/*"
+                         class="sr-only review-image-input">
+                  <div class="preview-container absolute inset-0 hidden">
+                    <img src="" class="w-full h-full object-cover">
+                  </div>
+                  <div class="placeholder-icon text-neutral-600 group-hover:text-neutral-400">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                  </div>
+                </label>
+                {% endfor %}
+              </div>
+              <p id="review-image-error" class="text-red-500 text-xs mt-2 hidden">
+                Please upload at least 2 images.
+              </p>
+            </div>
+
+            <button type="submit"
+                    class="w-full bg-white text-black px-8 py-5 rounded-full font-black uppercase tracking-[0.2em] text-[10px] hover:bg-neutral-200 transition shadow-xl">
+              Deploy Review
+            </button>
+          </form>
         </div>
         {% endif %}
+      </div>
 
     </div>
-</div>
+    {# END reviews #}
 
-<!-- MODAL -->
-<div id="imageModal" class="fixed inset-0 bg-black/98 z-50 hidden items-center justify-center p-6">
-    <button onclick="closeImageModal()" class="absolute top-8 right-8 text-white text-2xl font-black z-50">✕</button>
-    <div class="relative max-w-5xl w-full flex items-center justify-center">
-        <img id="zoomedImage" src="" class="max-h-[90vh] w-auto object-contain cursor-zoom-in transition-transform duration-300">
+    {# ─── Recommended Gear ─────────────────────────────────────────────── #}
+    {% if related_products %}
+    <div class="mt-32 pt-16 border-t border-neutral-800">
+      <h2 class="text-3xl font-black uppercase italic tracking-tighter mb-12">Recommended Gear</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {% for related in related_products %}
+        <div class="group relative">
+          <div class="relative aspect-[4/5] bg-neutral-900 border border-neutral-800 rounded-3xl overflow-hidden p-6 transition-all duration-500 group-hover:border-neutral-600">
+            <a href="{% url 'products:users_product_detail' related.slug %}" class="block w-full h-full">
+              {% with rv=related.variants.first %}
+                {% if rv and rv.images.first %}
+                  <img src="{{ rv.images.first.image.url }}"
+                       class="w-full h-full object-contain transition-transform duration-700 group-hover:scale-110">
+                {% endif %}
+              {% endwith %}
+            </a>
+          </div>
+          <div class="mt-4 px-2">
+            <h3 class="text-xs font-bold text-white group-hover:text-neutral-400 transition mb-1 uppercase">
+              {{ related.name }}
+            </h3>
+            {% with rv=related.variants.first %}
+              {% if rv %}
+                <p class="text-[10px] font-black italic text-neutral-400 tracking-wider">₹{{ rv.price }}</p>
+              {% endif %}
+            {% endwith %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
     </div>
+    {% endif %}
+
+  </div>
 </div>
 
+{# ─── Image Zoom Modal ─────────────────────────────────────────────────── #}
+<div id="imageModal"
+     class="fixed inset-0 bg-black/98 z-50 hidden items-center justify-center p-6">
+  <button onclick="closeImageModal()"
+          class="absolute top-8 right-8 text-white text-2xl font-black z-50">✕</button>
+  <div class="relative max-w-5xl w-full flex items-center justify-center">
+    <img id="zoomedImage" src="" class="max-h-[90vh] w-auto object-contain">
+  </div>
+</div>
+
+{# ─── Scripts ──────────────────────────────────────────────────────────── #}
 <script>
-function switchReviewTab(t) {
-    const vT = document.getElementById('tab-content-view'), wT = document.getElementById('tab-content-write');
-    const vB = document.getElementById('tab-btn-view'), wB = document.getElementById('tab-btn-write');
-    vT.classList.toggle('hidden', t !== 'view'); wT.classList.toggle('hidden', t === 'view');
-    vB.className = t === 'view' ? 'px-10 py-5 border-b-2 border-white text-white font-black uppercase tracking-widest text-xs' : 'px-10 py-5 border-b-2 border-transparent text-neutral-600 font-black uppercase tracking-widest text-xs';
-    wB.className = t === 'write' ? 'px-10 py-5 border-b-2 border-white text-white font-black uppercase tracking-widest text-xs' : 'px-10 py-5 border-b-2 border-transparent text-neutral-600 font-black uppercase tracking-widest text-xs';
-}
+  // ── Review tabs ──────────────────────────────────────────────────────
+  function switchReviewTab(tab) {
+    const isView = tab === 'view';
+    document.getElementById('tab-content-view').classList.toggle('hidden', !isView);
+    document.getElementById('tab-content-write').classList.toggle('hidden', isView);
 
-function changeImage(u) { document.getElementById("main-image").src = u; }
+    const activeClass  = 'px-10 py-5 border-b-2 border-white text-white font-black uppercase tracking-widest text-xs transition-all';
+    const inactiveClass = 'px-10 py-5 border-b-2 border-transparent text-neutral-600 font-black uppercase tracking-widest text-xs hover:text-white transition-all';
+    document.getElementById('tab-btn-view').className  = isView  ? activeClass : inactiveClass;
+    document.getElementById('tab-btn-write').className = !isView ? activeClass : inactiveClass;
+  }
 
-function toggleHighlights() {
-    const c = document.getElementById('highlight-content');
-    const v = document.getElementById('highlight-chevron');
+  // ── Image gallery ────────────────────────────────────────────────────
+  function changeImage(url) {
+    document.getElementById('main-image').src = url;
+  }
 
-    if (!c.style.maxHeight || c.style.maxHeight === '0px') {
-        c.style.maxHeight = c.scrollHeight + "px";
-        v.style.transform = "rotate(180deg)";
+  function openImageModal(url) {
+    document.getElementById('zoomedImage').src = url;
+    document.getElementById('imageModal').classList.replace('hidden', 'flex');
+  }
+
+  function closeImageModal() {
+    document.getElementById('imageModal').classList.replace('flex', 'hidden');
+  }
+
+  // ── Accordion helpers ────────────────────────────────────────────────
+  function toggleAccordion(contentId, chevronId) {
+    const content = document.getElementById(contentId);
+    const chevron = document.getElementById(chevronId);
+    const isOpen  = content.style.maxHeight && content.style.maxHeight !== '0px';
+    content.style.maxHeight = isOpen ? '0px' : content.scrollHeight + 'px';
+    chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+  }
+
+  function toggleHighlights()  { toggleAccordion('highlight-content', 'highlight-chevron'); }
+  function toggleDescription() { toggleAccordion('desc-content', 'desc-chevron'); }
+
+  // ── Variant stock sync ───────────────────────────────────────────────
+  document.querySelectorAll('.variant-radio').forEach(function(radio) {
+    radio.addEventListener('change', function() {
+      const inStock = parseInt(this.dataset.stock) > 0;
+      const btn     = document.getElementById('add-to-cart-btn');
+      const label   = document.getElementById('stock-text');
+      btn.disabled        = !inStock;
+      label.textContent   = inStock ? 'In Stock' : 'Out of Stock';
+      label.className     = inStock
+        ? 'text-green-500 text-sm font-bold mt-2'
+        : 'text-red-500 text-sm font-bold mt-2';
+
+      // Keep wishlist variant in sync
+      document.getElementById('wishlist-variant-id').value = this.value;
+    });
+  });
+
+  // ── Wishlist toggle — data-attribute driven, no classList swapping ───
+  function toggleWishlist() {
+    const btn      = document.getElementById('wishlist-btn');
+    const icon     = document.getElementById('wishlist-icon');
+    const isActive = btn.dataset.wishlisted === 'true';
+
+    // Flip state — CSS handles all visual changes via [data-wishlisted] selector
+    btn.dataset.wishlisted = isActive ? 'false' : 'true';
+    btn.title = isActive ? 'Save to Wishlist' : 'Remove from Wishlist';
+    icon.setAttribute('fill', isActive ? 'none' : 'currentColor');
+
+    // Spring pop for tactile feedback
+    icon.style.transition = 'transform 0.2s cubic-bezier(0.34,1.56,0.64,1)';
+    icon.style.transform  = 'scale(1.3)';
+    setTimeout(function() { icon.style.transform = 'scale(1)'; }, 200);
+
+    // Submit after animation lands
+    setTimeout(function() {
+      document.getElementById('wishlist-form').submit();
+    }, 260);
+  }
+
+  // ── Review image previews ────────────────────────────────────────────
+  document.querySelectorAll('.review-image-input').forEach(function(input) {
+    input.addEventListener('change', function() {
+      const file = this.files[0];
+      if (!file) return;
+
+      const label       = this.closest('label');
+      const preview     = label.querySelector('.preview-container');
+      const previewImg  = preview.querySelector('img');
+      const placeholder = label.querySelector('.placeholder-icon');
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        previewImg.src = e.target.result;
+        preview.classList.remove('hidden');
+        placeholder.classList.add('hidden');
+      };
+      reader.readAsDataURL(file);
+    });
+  });
+
+  // ── Review form: minimum 2 images validation ─────────────────────────
+  document.getElementById('review-form').addEventListener('submit', function(e) {
+    const inputs   = document.querySelectorAll('.review-image-input');
+    const errorEl  = document.getElementById('review-image-error');
+    const count    = Array.from(inputs).filter(i => i.files.length > 0).length;
+
+    if (count < 2) {
+      e.preventDefault();
+      errorEl.classList.remove('hidden');
     } else {
-        c.style.maxHeight = "0px";
-        v.style.transform = "rotate(0deg)";
+      errorEl.classList.add('hidden');
     }
-}
-
-function toggleDescription() {
-    const c = document.getElementById('desc-content');
-    const v = document.getElementById('desc-chevron');
-
-    if (!c.style.maxHeight || c.style.maxHeight === '0px') {
-        c.style.maxHeight = c.scrollHeight + "px";
-        v.style.transform = "rotate(180deg)";
-    } else {
-        c.style.maxHeight = "0px";
-        v.style.transform = "rotate(0deg)";
-    }
-}
-
-document.querySelectorAll(".variant-radio").forEach(r => {
-    r.addEventListener("change", function() {
-        const s = parseInt(this.dataset.stock);
-        document.getElementById("add-to-cart-btn").disabled = s <= 0;
-        document.getElementById("stock-text").innerText = s > 0 ? "In Stock" : "Out of Stock";
-        document.getElementById("stock-text").className = s > 0 ? "text-green-500 text-sm font-bold mt-2" : "text-red-500 text-sm font-bold mt-2";
-    });
-});
-
-function openImageModal(s) { document.getElementById("zoomedImage").src = s; document.getElementById("imageModal").classList.replace("hidden", "flex"); }
-function closeImageModal() { document.getElementById("imageModal").classList.replace("flex", "hidden"); }
-
-const inputs = document.querySelectorAll(".review-image-input");
-const error = document.getElementById("review-image-error");
-
-inputs.forEach(input => {
-    input.addEventListener("change", function(){
-        const file = this.files[0];
-        if(!file) return;
-
-        const container = this.closest("label");
-        const preview = container.querySelector(".preview-container");
-        const img = preview.querySelector("img");
-        const placeholder = container.querySelector(".placeholder-icon");
-
-        const reader = new FileReader();
-        reader.onload = function(e){
-            img.src = e.target.result;
-            preview.classList.remove("hidden");
-            placeholder.classList.add("hidden");
-        }
-        reader.readAsDataURL(file);
-    });
-});
-
-/* Minimum image validation */
-const form = document.querySelector("review-form");
-form.addEventListener("submit", function(e){
-    let count = 0;
-    inputs.forEach(input=>{
-        if(input.files.length > 0){
-            count++;
-        }
-    });
-
-    if(count < 2){
-        e.preventDefault();
-        error.classList.remove("hidden");
-    }
-});
+  });
 </script>
 
 <style>
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-.animate-fadeIn { animation: fadeIn 0.4s ease forwards; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fadeIn { animation: fadeIn 0.4s ease forwards; }
+
+  /* Wishlist button — two clear states, no ambiguity */
+
+  /* DEFAULT (not wishlisted) — dark outline, hollow heart */
+  .wl-btn[data-wishlisted="false"] {
+    background: transparent;
+    border-color: #404040;   /* neutral-700 — visible but not harsh */
+    color: #737373;          /* neutral-500 */
+  }
+  .wl-btn[data-wishlisted="false"]:hover {
+    border-color: #d4d4d4;   /* neutral-300 */
+    color: #ffffff;
+  }
+
+  /* ACTIVE (wishlisted) — solid white, filled heart, black icon */
+  .wl-btn[data-wishlisted="true"] {
+    background: #ffffff;
+    border-color: #ffffff;
+    color: #000000;
+  }
+  .wl-btn[data-wishlisted="true"]:hover {
+    background: #e5e5e5;
+    border-color: #e5e5e5;
+    color: #000000;
+  }
 </style>
 
 {% endblock %}

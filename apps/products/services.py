@@ -1,4 +1,4 @@
-from .models import Cart, CartItem
+from .models import Cart, CartItem,WishlistItem
 from django.db import transaction
 
 
@@ -113,3 +113,58 @@ def remove_cart_item(user, cart_item):
 
     cart_item.delete()
     return _response(True, "Item removed")
+
+# ===================
+# Whislist
+# ===================
+
+def toggle_wishlist(user, product, variant=None):
+    item, created = WishlistItem.objects.get_or_create(
+        user=user,
+        product=product,
+        variant=variant
+    )
+
+    if not created:
+        item.delete()
+        return _response(False, "Removed from wishlist")
+
+    return _response(True, "Added to wishlist")
+
+
+def remove_wishlist_item(user, item_id):
+    try:
+        item = WishlistItem.objects.get(id=item_id, user=user)
+        item.delete()
+        return _response(True, "Removed from wishlist")
+    except WishlistItem.DoesNotExist:
+        return _response(False, "Item not found")
+
+
+def move_to_cart(user, item, get_or_create_cart):
+    cart = get_or_create_cart(user)
+
+    # ✅ Get correct price
+    if item.variant:
+        price = item.variant.price
+    else:
+        return _response(False, "Variant required for this product")
+
+    cart_item, created = CartItem.objects.get_or_create(
+        cart=cart,
+        product=item.product,
+        variant=item.variant,
+        defaults={
+            "quantity": 1,
+            "price": price
+        }
+    )
+
+    if not created:
+        cart_item.quantity += 1
+        cart_item.save(update_fields=["quantity"])
+
+    # ✅ Delete wishlist item after moving
+    item.delete()
+
+    return _response(True, "Moved to cart")

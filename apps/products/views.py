@@ -1,6 +1,6 @@
 from django.shortcuts import render,redirect,get_object_or_404
 from django.core.paginator import Paginator
-from .models import Category,ProductImage,Product,ProductVariant,Review,ReviewImage,Brand,Cart,CartItem
+from .models import Category,ProductImage,Product,ProductVariant,Review,ReviewImage,Brand,Cart,CartItem,WishlistItem
 from .forms import ProductForm
 from django.views.decorators.http import require_POST
 from django.contrib import messages
@@ -17,7 +17,14 @@ from .services import (
     add_to_cart,
     update_cart_item,
     remove_cart_item,
-    get_or_create_cart
+    get_or_create_cart,
+    toggle_wishlist,
+    remove_wishlist_item,
+    move_to_cart,
+
+
+
+
 )
 from decimal import Decimal
 
@@ -1232,3 +1239,73 @@ def remove_cart_view(request, item_id):
     _handle_message(request, result)
 
     return redirect("products:cart_view")
+
+
+# ====================================================
+# Whislist
+# ====================================================
+
+# -------------------------
+# Add or Remove item 
+# -------------------------
+# views.py
+
+@login_required
+def toggle_wishlist_view(request, product_id):
+    product = get_object_or_404(Product, id=product_id)
+    variant_id = request.POST.get("variant_id")
+
+    variant = None
+    if variant_id:
+        variant = ProductVariant.objects.filter(id=variant_id).first()
+
+    result = toggle_wishlist(request.user, product, variant)
+
+    _handle_message(request, result)
+
+    return redirect(request.META.get("HTTP_REFERER", "home"))
+
+# -------------------------
+# Remove item 
+# -------------------------
+
+@login_required
+def remove_wishlist_view(request, item_id):
+    result = remove_wishlist_item(request.user, item_id)
+
+    _handle_message(request, result)
+
+    return redirect("products:wishlist")
+
+# -------------------------
+# Move to cart
+# -------------------------
+
+
+@login_required
+def move_to_cart_view(request, item_id):
+    item = get_object_or_404(WishlistItem, id=item_id, user=request.user)
+
+    result = move_to_cart(
+        request.user,
+        item,
+        get_or_create_cart
+    )
+
+    _handle_message(request, result)
+
+    return redirect("products:wishlist")
+
+
+# -------------------------
+# Wishlist page view
+# -------------------------
+
+@login_required
+def wishlist_view(request):
+    items = WishlistItem.objects.filter(user=request.user)\
+        .select_related("product", "variant")
+
+    return render(request, "users/wishlist/wishlist.html", {
+        "items": items
+    })

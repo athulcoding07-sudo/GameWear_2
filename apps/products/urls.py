@@ -50,5 +50,14 @@ urlpatterns = [
     path("cart-add/<int:product_id>/", views.add_to_cart_view, name="add_to_cart"),
     path("cart-update/<int:item_id>/<str:action>/", views.update_cart_view, name="update_cart"),
     path("cart-remove/<int:item_id>/", views.remove_cart_view, name="remove_cart"),
+
+    # =========================
+    # WHSILIST
+    # =========================
+
+    path("wishlist/", views.wishlist_view, name="wishlist"),
+    path("wishlist/toggle/<int:product_id>/", views.toggle_wishlist_view, name="toggle_wishlist"),
+    path("wishlist/remove/<int:item_id>/", views.remove_wishlist_view, name="remove_wishlist"),
+    path("wishlist/move-to-cart/<int:item_id>/", views.move_to_cart_view, name="move_to_cart"),
     
 ]

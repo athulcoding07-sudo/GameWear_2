@@ -393,3 +393,37 @@ class CartItem(models.Model):
         return self.quantity * self.price
 
 
+class WishlistItem(models.Model):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="wishlist_items"
+    )
+    product = models.ForeignKey(
+        "Product",
+        on_delete=models.CASCADE,
+        related_name="wishlist_products"
+    )
+    variant = models.ForeignKey(
+        "ProductVariant",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "product", "variant"],
+                name="unique_user_product_variant_wishlist"
+            )
+        ]
+        indexes = [
+            models.Index(fields=["user"]),
+            models.Index(fields=["product"]),
+        ]
+
+    def __str__(self):
+        return f"{self.user} ❤️ {self.product} ({self.variant})"
