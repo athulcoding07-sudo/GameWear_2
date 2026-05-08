@@ -1,32 +1,71 @@
-from django.shortcuts import render,redirect,get_object_or_404
-from django.core.paginator import Paginator
-from .models import Category,ProductImage,Product,ProductVariant,Review,ReviewImage,Brand,Cart,CartItem,WishlistItem
-from .forms import ProductForm
-from django.views.decorators.http import require_POST
-from django.contrib import messages
-from PIL import Image
-from io import BytesIO
-from django.core.files.uploadedfile import InMemoryUploadedFile
-import sys
-from django.db.models import Q,Count,Sum,Prefetch,Min,Avg
-from django.db import transaction
-from django.contrib.auth.decorators import login_required
-from apps.common.decorators import admin_required
+from __future__ import annotations
+
+import json
+import logging
 import re
+import sys
+from dataclasses import dataclass, field
+from decimal import Decimal
+from io import BytesIO
+from typing import TYPE_CHECKING
+
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.core.paginator import Paginator
+from django.db import transaction
+from django.db.models import Avg, Count, Min, Prefetch, Q, Sum
+from django.http import HttpRequest, HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
+from PIL import Image
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.lib.units import mm
+from reportlab.platypus import (
+    HRFlowable,
+    Paragraph,
+    SimpleDocTemplate,
+    Spacer,
+    Table,
+    TableStyle,
+)
+
+from apps.common.decorators import admin_required
+from apps.users.models import Address
+
+from .forms import ProductForm
+from .models import (
+    Brand,
+    Cart,
+    CartItem,
+    Category,
+    Order,
+    OrderItem,
+    Product,
+    ProductImage,
+    ProductVariant,
+    Review,
+    ReviewImage,
+    WishlistItem,
+)
 from .services import (
     add_to_cart,
-    update_cart_item,
-    remove_cart_item,
+    calculate_cart_totals,
     get_or_create_cart,
-    toggle_wishlist,
-    remove_wishlist_item,
     move_to_cart,
-
-
-
-
+    remove_cart_item,
+    remove_wishlist_item,
+    toggle_wishlist,
+    update_cart_item,
 )
-from decimal import Decimal
+
+if TYPE_CHECKING:
+    pass
+
+logger = logging.getLogger(__name__)
+
 
 
 @admin_required
@@ -83,9 +122,6 @@ def resize_image(image_file, size=(800, 800)):
         charset=None,
     )
 
-from django.views.decorators.http import require_POST
-from django.shortcuts import redirect, get_object_or_404
-from django.contrib import messages
 
 @admin_required
 @require_POST
@@ -374,7 +410,7 @@ def product_add(request):
             variant_images = images[image_index:image_index + 3]
 
             for idx, img in enumerate(variant_images):
-                resized_img = resize_image(img)  # ⭐ resize applied
+                resized_img = resize_image(img)  #  resize applied
 
                 ProductImage.objects.create(
                     variant=variant,
@@ -589,7 +625,7 @@ def product_edit(request, product_id=None):
         product.save()
 
         messages.success(request, "Product saved successfully.")
-        return redirect("products:product_list")
+        
 
     # =========================
     # GET
@@ -1210,6 +1246,7 @@ def add_to_cart_view(request, product_id):
 # -------------------------
 # Update Quantity
 # -------------------------
+@login_required
 @require_POST
 def update_cart_view(request, item_id, action):
     cart_item = get_object_or_404(
@@ -1218,15 +1255,60 @@ def update_cart_view(request, item_id, action):
         cart__user=request.user
     )
 
+    # Save cart reference BEFORE potential delete (decrease to 0 deletes the item)
+    cart = cart_item.cart
+
     result = update_cart_item(cart_item, action)
-    _handle_message(request, result)
+
+    #  Fix #1: helper returns "status", not "success"
+    if not result.get("status"):
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return JsonResponse(
+                {"success": False, "error": result.get("message", "Update failed.")},
+                status=400
+            )
+        return redirect("products:cart_view")
+
+    # AJAX path
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+
+        #  Fix #2: item may have been deleted by decrease-to-zero
+        removed = False
+        new_quantity = 0
+        new_subtotal = "0.00"
+
+        try:
+            cart_item.refresh_from_db()
+            new_quantity = cart_item.quantity
+            #  Fix #3: compute subtotal manually — don't assume a model property
+            new_subtotal = "{:.2f}".format(cart_item.quantity * cart_item.price)
+            removed = False
+        except CartItem.DoesNotExist:
+            removed = True
+
+        #  Fix #2: use the correct function name and key names
+        cart_items = cart.items.select_related("variant").all()
+        totals = calculate_cart_totals(cart_items)
+
+        return JsonResponse({
+            "success":         True,
+            "removed":         removed,
+            "item_id":         item_id,
+            "quantity":        new_quantity,
+            "subtotal":        new_subtotal,
+            #  map to what the JS expects
+            "cart_subtotal":   "{:.2f}".format(totals["subtotal"]),
+            "discount_amount": "{:.2f}".format(totals["discount"]),
+            "grand_total":     "{:.2f}".format(totals["final"]),
+            "item_count":      cart_items.count(),
+        })
 
     return redirect("products:cart_view")
-
 
 # -------------------------
 # Remove Item
 # -------------------------
+@login_required
 @require_POST
 def remove_cart_view(request, item_id):
     cart_item = get_object_or_404(
@@ -1234,12 +1316,33 @@ def remove_cart_view(request, item_id):
         id=item_id,
         cart__user=request.user
     )
+    cart = cart_item.cart
 
+    # Use the service — it also checks ownership
     result = remove_cart_item(request.user, cart_item)
-    _handle_message(request, result)
+
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        if not result.get("status"):
+            return JsonResponse(
+                {"success": False, "error": result.get("message", "Remove failed.")},
+                status=400
+            )
+
+        # Item is deleted — recount remaining items
+        cart_items = cart.items.select_related("variant").all()
+        totals = calculate_cart_totals(cart_items)
+
+        return JsonResponse({
+            "success":         True,
+            "removed":         True,
+            "item_id":         item_id,
+            "cart_subtotal":   "{:.2f}".format(totals["subtotal"]),
+            "discount_amount": "{:.2f}".format(totals["discount"]),
+            "grand_total":     "{:.2f}".format(totals["final"]),
+            "item_count":      cart_items.count(),
+        })
 
     return redirect("products:cart_view")
-
 
 # ====================================================
 # Whislist
@@ -1309,3 +1412,798 @@ def wishlist_view(request):
     return render(request, "users/wishlist/wishlist.html", {
         "items": items
     })
+
+
+@login_required
+def checkout_view(request):
+    cart = get_or_create_cart(request.user)
+    items = cart.items.all()
+
+    addresses = Address.objects.filter(user=request.user)
+
+    totals = calculate_cart_totals(items)
+
+    context = {
+        "items": items,
+        "addresses": addresses,
+        "totals": totals
+    }
+
+    return render(request, "users/checkout/checkout.html", context)
+
+
+@login_required
+def place_order(request):
+    if request.method != "POST":
+        return redirect("checkout")
+
+    cart = get_or_create_cart(request.user)
+    items = cart.items.all()
+
+    if not items.exists():
+        return redirect("products:cart_view")
+
+    address_id = request.POST.get("address")
+    address = Address.objects.get(id=address_id, user=request.user)
+
+    totals = calculate_cart_totals(items)
+
+    order = Order.objects.create(
+        user=request.user,
+        address=address,
+        total_amount=totals["subtotal"],
+        tax=totals["tax"],
+        shipping=totals["shipping"],
+        discount=totals["discount"],
+        final_amount=totals["final"],
+    )
+
+    for item in items:
+        OrderItem.objects.create(
+            order=order,
+            product=item.product,
+            variant=item.variant,
+            quantity=item.quantity,
+            price=item.price
+        )
+
+        item.variant.stock -= item.quantity
+        item.variant.save()
+
+    items.delete()
+
+    return redirect("products:order_success", order_id=order.id)
+
+
+@login_required
+def order_success(request, order_id):
+    order = get_object_or_404(
+        Order,
+        id=order_id,
+        user=request.user
+    )
+
+    return render(
+        request,
+        "users/checkout/order_success.html",
+        {"order": order}
+    )
+
+
+@login_required
+def order_detail(request, order_id):
+    order = get_object_or_404(
+        Order.objects.prefetch_related("items"),
+        id=order_id,
+        user=request.user
+    )
+
+    return_reasons = [
+        "Wrong item received",
+        "Damaged / defective product",
+        "Size doesn't fit",
+        "Changed my mind",
+        "Late delivery",
+    ]
+
+    context = {
+        "order": order,
+        "return_reasons": return_reasons,
+    }
+
+    return render(
+        request,
+        "users/checkout/order_detail.html",
+        context
+    )
+
+
+@login_required
+def order_history(request):
+    orders = (
+        Order.objects
+        .filter(user=request.user)
+        .prefetch_related("items__product", "items__variant")
+        .order_by("-created_at")
+    )
+
+    statuses = Order.STATUS_CHOICES
+
+    context = {
+        "orders": orders,
+        "statuses": statuses,
+    }
+
+    return render(
+        request,
+        "users/checkout/order_history.html",
+        context
+    )
+
+@login_required
+@transaction.atomic
+def cancel_order_item(request, item_id):
+    item = get_object_or_404(
+        OrderItem,
+        id=item_id,
+        order__user=request.user
+    )
+
+    # Allow only POST
+    if request.method != "POST":
+        return redirect(
+            "products:order_detail",
+            item.order.id
+        )
+
+    # Allowed statuses for cancellation
+    cancellable_statuses = [
+        "PENDING",
+        "CONFIRMED",
+        "PACKED",
+    ]
+
+    # Already cancelled
+    if item.status == "CANCELLED":
+        messages.warning(
+            request,
+            "This item is already cancelled."
+        )
+        return redirect(
+            "products:order_detail",
+            item.order.id
+        )
+
+    # Not allowed to cancel
+    if item.status not in cancellable_statuses:
+        messages.error(
+            request,
+            "This item cannot be cancelled now."
+        )
+        return redirect(
+            "products:order_detail",
+            item.order.id
+        )
+
+    # Cancel item
+    item.status = "CANCELLED"
+    item.save()
+
+    # Restore stock
+    if item.variant:
+        item.variant.stock += item.quantity
+        item.variant.save()
+
+    # Check active items in same order
+    active_items = item.order.items.exclude(
+        status="CANCELLED"
+    )
+
+    # Update order status
+    if active_items.exists():
+        item.order.status = "PARTIAL_CANCELLED"
+    else:
+        item.order.status = "CANCELLED"
+
+    item.order.save()
+
+    messages.success(
+        request,
+        "Order item cancelled successfully."
+    )
+
+    return redirect(
+        "products:order_detail",
+        item.order.id
+    )
+
+@login_required
+def return_order(request, order_id):
+    order = get_object_or_404(
+        Order,
+        id=order_id,
+        user=request.user
+    )
+
+    # Allow only POST
+    if request.method != "POST":
+        return redirect("products:order_history")
+
+    # Return allowed only after delivery
+    if order.status != "DELIVERED":
+        messages.error(
+            request,
+            "Return is only available for delivered orders."
+        )
+        return redirect("products:order_history")
+
+    reason = request.POST.get(
+        "reason",
+        ""
+    ).strip()
+
+    if not reason:
+        messages.error(
+            request,
+            "Return reason is required."
+        )
+        return redirect("products:order_history")
+
+    # User requests return
+    order.items.update(
+        status="RETURN_REQUESTED",
+        return_reason=reason
+    )
+
+    order.status = "RETURN_REQUESTED"
+    order.save()
+
+    messages.success(
+        request,
+        "Return request submitted successfully."
+    )
+
+    return redirect(
+        "products:order_history"
+    )
+
+
+
+@login_required
+def search_orders(request):
+    query = request.GET.get("q", "").strip()
+
+    orders = Order.objects.filter(
+        user=request.user
+    )
+
+    if query:
+        orders = orders.filter(
+            order_id__icontains=query
+        )
+
+    orders = orders.order_by("-created_at")
+
+    return render(
+        request,
+        "users/checkout/order_history.html",
+        {"orders": orders, "query": query}
+    )
+
+
+
+
+
+
+
+
+
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+ 
+INVOICE_BLOCKED_STATUSES: frozenset[str] = frozenset(
+    {
+        "PENDING",
+        "CANCELLED",
+        "RETURN_REQUESTED",
+        "RETURNED",
+        "REFUNDED",
+    }
+)
+ 
+# Brand palette
+_BRAND_BLACK = colors.HexColor("#111111")
+_BRAND_ACCENT = colors.HexColor("#1a1a2e")
+_HEADER_BG = colors.HexColor("#f5f5f5")
+_BORDER = colors.HexColor("#cccccc")
+ 
+# ---------------------------------------------------------------------------
+# Invoice builder
+# ---------------------------------------------------------------------------
+ 
+ 
+@dataclass
+class InvoiceBuilder:
+    """
+    Builds a ReportLab PDF invoice for a given Order.
+ 
+    Keeps all PDF-generation logic isolated from the view layer so it can
+    be reused in management commands, async tasks, or tests without an
+    HTTP request in scope.
+ 
+    Usage::
+ 
+        builder = InvoiceBuilder(order)
+        builder.build(response)   # writes PDF bytes into *response*
+    """
+ 
+    order: "Order"
+    _styles: dict = field(default_factory=dict, init=False, repr=False)
+ 
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
+ 
+    def build(self, buffer) -> None:
+        """Render the full invoice PDF into *buffer*."""
+        doc = SimpleDocTemplate(
+            buffer,
+            pagesize=A4,
+            rightMargin=15 * mm,
+            leftMargin=15 * mm,
+            topMargin=15 * mm,
+            bottomMargin=12 * mm,
+        )
+        self._styles = self._build_styles()
+        doc.build(self._collect_elements())
+ 
+    # ------------------------------------------------------------------
+    # Private helpers
+    # ------------------------------------------------------------------
+ 
+    def _build_styles(self) -> dict:
+        base = getSampleStyleSheet()
+        extra = {
+            "brand_title": ParagraphStyle(
+                "brand_title",
+                parent=base["Title"],
+                fontSize=26,
+                textColor=_BRAND_BLACK,
+                spaceAfter=2,
+                fontName="Helvetica-Bold",
+            ),
+            "brand_subtitle": ParagraphStyle(
+                "brand_subtitle",
+                parent=base["Normal"],
+                fontSize=10,
+                textColor=colors.HexColor("#666666"),
+                spaceAfter=0,
+            ),
+            "section_heading": ParagraphStyle(
+                "section_heading",
+                parent=base["Heading2"],
+                fontSize=11,
+                textColor=_BRAND_BLACK,
+                spaceBefore=10,
+                spaceAfter=4,
+                fontName="Helvetica-Bold",
+            ),
+            "body": ParagraphStyle(
+                "body",
+                parent=base["Normal"],
+                fontSize=9,
+                leading=14,
+            ),
+            "footer": ParagraphStyle(
+                "footer",
+                parent=base["Normal"],
+                fontSize=8,
+                textColor=colors.HexColor("#888888"),
+                alignment=1,  # centre
+            ),
+        }
+        base.add(extra["brand_title"])
+        base.add(extra["brand_subtitle"])
+        base.add(extra["section_heading"])
+        base.add(extra["body"])
+        base.add(extra["footer"])
+        return base
+ 
+    def _collect_elements(self) -> list:
+        elements: list = []
+        elements += self._header_section()
+        elements += self._invoice_meta_section()
+        elements += self._customer_section()
+        elements += self._address_section()
+        elements += self._line_items_section()
+        elements += self._totals_section()
+        elements += self._footer_section()
+        return elements
+ 
+    # ---- Header -----------------------------------------------------------
+ 
+    def _header_section(self) -> list:
+        return [
+            Paragraph("GAMEWEAR", self._styles["brand_title"]),
+            Paragraph("Premium Fashion Store", self._styles["brand_subtitle"]),
+            Spacer(1, 4 * mm),
+            HRFlowable(
+                width="100%",
+                thickness=1.5,
+                color=_BRAND_BLACK,
+                spaceAfter=4 * mm,
+            ),
+        ]
+ 
+    # ---- Invoice meta -----------------------------------------------------
+ 
+    def _invoice_meta_section(self) -> list:
+        order = self.order
+        data = [
+            ["Invoice Number", str(order.order_id)],
+            ["Order Date", order.created_at.strftime("%d %B %Y")],
+            ["Order Status", order.get_status_display()],
+            ["Payment Method", order.payment_method],
+        ]
+        table = Table(data, colWidths=[60 * mm, 110 * mm])
+        table.setStyle(
+            TableStyle(
+                [
+                    ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+                    ("FONTSIZE", (0, 0), (-1, -1), 9),
+                    ("BACKGROUND", (0, 0), (0, -1), _HEADER_BG),
+                    ("GRID", (0, 0), (-1, -1), 0.5, _BORDER),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("ROWBACKGROUNDS", (1, 0), (1, -1), [colors.white, colors.white]),
+                    ("TOPPADDING", (0, 0), (-1, -1), 5),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+                ]
+            )
+        )
+        return [table, Spacer(1, 6 * mm)]
+ 
+    # ---- Customer ---------------------------------------------------------
+ 
+    def _customer_section(self) -> list:
+        user = self.order.user
+        return [
+            Paragraph("Bill To", self._styles["section_heading"]),
+            Paragraph(
+                f"<b>{getattr(user, 'full_name', str(user))}</b>",
+                self._styles["body"],
+            ),
+            Paragraph(user.email, self._styles["body"]),
+            Spacer(1, 4 * mm),
+        ]
+ 
+    # ---- Shipping address -------------------------------------------------
+ 
+    def _address_section(self) -> list:
+        """Render shipping address from the order.address FK."""
+        address = self.order.address
+        if not address:
+            return []
+        # Build a readable single line from Address fields — adjust field
+        # names below if your Address model uses different attribute names.
+        parts = [
+            getattr(address, "full_name", ""),
+            getattr(address, "address_line1", "") or getattr(address, "street", ""),
+            getattr(address, "address_line2", "") or "",
+            getattr(address, "city", ""),
+            getattr(address, "state", ""),
+            getattr(address, "pincode", "") or getattr(address, "postal_code", ""),
+        ]
+        address_str = ", ".join(p for p in parts if p)
+        return [
+            Paragraph("Ship To", self._styles["section_heading"]),
+            Paragraph(address_str or str(address), self._styles["body"]),
+            Spacer(1, 4 * mm),
+        ]
+ 
+    # ---- Line items -------------------------------------------------------
+ 
+    def _line_items_section(self) -> list:
+        header = [["#", "Product", "Qty", "Unit Price", "Total"]]
+        rows = [
+            [
+                str(idx),
+                item.product.name,
+                str(item.quantity),
+                f"\u20b9{item.price:,.2f}",
+                f"\u20b9{item.price * item.quantity:,.2f}",
+            ]
+            for idx, item in enumerate(self.order.items.select_related("product"), 1)
+        ]
+        col_widths = [10 * mm, 80 * mm, 20 * mm, 35 * mm, 35 * mm]
+        table = Table(header + rows, colWidths=col_widths, repeatRows=1)
+        table.setStyle(
+            TableStyle(
+                [
+                    # Header row
+                    ("BACKGROUND", (0, 0), (-1, 0), _BRAND_ACCENT),
+                    ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                    ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                    ("FONTSIZE", (0, 0), (-1, -1), 9),
+                    ("ALIGN", (0, 0), (-1, 0), "CENTER"),
+                    # Data rows
+                    ("ALIGN", (2, 1), (-1, -1), "RIGHT"),
+                    ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, _HEADER_BG]),
+                    ("GRID", (0, 0), (-1, -1), 0.5, _BORDER),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("TOPPADDING", (0, 0), (-1, -1), 5),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+                ]
+            )
+        )
+        return [
+            Paragraph("Order Items", self._styles["section_heading"]),
+            table,
+            Spacer(1, 4 * mm),
+        ]
+ 
+    # ---- Totals -----------------------------------------------------------
+ 
+    def _totals_section(self) -> list:
+        order = self.order
+        rows: list[list] = []
+ 
+        # order.total_amount = subtotal before discount/tax/shipping
+        rows.append(["Subtotal", f"\u20b9{order.total_amount:,.2f}"])
+ 
+        if order.discount:
+            rows.append(["Discount", f"- \u20b9{order.discount:,.2f}"])
+ 
+        if order.tax:
+            rows.append(["Tax / GST", f"\u20b9{order.tax:,.2f}"])
+ 
+        if order.shipping:
+            rows.append(["Shipping", f"\u20b9{order.shipping:,.2f}"])
+ 
+        rows.append(["Total Payable", f"\u20b9{order.final_amount:,.2f}"])
+ 
+        col_widths = [110 * mm, 70 * mm]
+        table = Table(rows, colWidths=col_widths)
+        table.setStyle(
+            TableStyle(
+                [
+                    ("FONTSIZE", (0, 0), (-1, -1), 9),
+                    ("ALIGN", (1, 0), (1, -1), "RIGHT"),
+                    ("GRID", (0, 0), (-1, -1), 0.5, _BORDER),
+                    ("TOPPADDING", (0, 0), (-1, -1), 5),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+                    # Highlight total row
+                    ("BACKGROUND", (0, -1), (-1, -1), _BRAND_ACCENT),
+                    ("TEXTCOLOR", (0, -1), (-1, -1), colors.white),
+                    ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
+                ]
+            )
+        )
+        return [table, Spacer(1, 8 * mm)]
+ 
+    # ---- Footer -----------------------------------------------------------
+ 
+    def _footer_section(self) -> list:
+        return [
+            HRFlowable(width="100%", thickness=0.5, color=_BORDER, spaceAfter=3 * mm),
+            Paragraph(
+                "Thank you for shopping with GAMEWEAR.",
+                self._styles["footer"],
+            ),
+            Paragraph(
+                "This is a computer-generated invoice and does not require a signature.",
+                self._styles["footer"],
+            ),
+        ]
+ 
+ 
+# ---------------------------------------------------------------------------
+# View
+# ---------------------------------------------------------------------------
+ 
+ 
+@login_required
+def download_invoice(request: HttpRequest, order_id: int) -> HttpResponse:
+    """
+    Stream a PDF invoice for *order_id* to the authenticated user.
+ 
+    Returns a 302 redirect with an error message when the order
+    is not in a billable state.
+    """
+    order: Order = get_object_or_404(Order, id=order_id, user=request.user)
+ 
+    if order.status in INVOICE_BLOCKED_STATUSES:
+        messages.error(request, "Invoice is not available for this order.")
+        return redirect("products:order_detail", order_id=order.id)  # adjust kwarg to match your order_detail URL
+ 
+    try:
+        response = HttpResponse(content_type="application/pdf")
+        response["Content-Disposition"] = (
+            f'attachment; filename="Invoice-{order.order_id}.pdf"'
+        )
+        InvoiceBuilder(order).build(response)
+    except Exception:
+        logger.exception(
+            "Failed to generate invoice for order %s (user=%s)",
+            order.order_id,
+            request.user.id,
+        )
+        messages.error(
+            request,
+            "We could not generate your invoice right now. Please try again later.",
+        )
+        return redirect("products:order_detail", order_id=order.id)
+ 
+    return response
+
+
+
+
+
+# -------------------------
+# Admin orders listing
+# -------------------------
+
+@admin_required
+def admin_order_list(request):
+
+    orders = Order.objects.select_related(
+        "user"
+    ).order_by("-created_at")
+
+    search = request.GET.get("search")
+
+    if search:
+        orders = orders.filter(
+            Q(order_id__icontains=search) |
+            Q(user__email__icontains=search)
+        )
+
+    status = request.GET.get("status")
+
+    if status:
+        orders = orders.filter(status=status)
+
+    sort = request.GET.get("sort")
+
+    if sort == "oldest":
+        orders = orders.order_by("created_at")
+
+    paginator = Paginator(orders, 5)
+
+    page_number = request.GET.get("page")
+
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        "page_obj": page_obj
+    }
+
+    return render(
+        request,
+        "adminpanel/orders/order_list.html",
+        context
+    )
+
+
+@admin_required
+def admin_order_detail(request, order_id):
+
+    order = get_object_or_404(
+        Order.objects.prefetch_related("items"),
+        id=order_id
+    )
+
+    steps = [
+        "PENDING",
+        "CONFIRMED",
+        "PACKED",
+        "SHIPPED",
+        "OUT_FOR_DELIVERY",
+        "DELIVERED",
+    ]
+
+    context = {
+        "order": order,
+        "steps": steps
+    }
+
+    return render(
+        request,
+        "adminpanel/orders/order_detail.html",
+        context
+    )
+
+@admin_required
+def admin_update_order_status(request, order_id):
+
+    order = get_object_or_404(
+        Order.objects.prefetch_related("items__variant"),
+        id=order_id
+    )
+
+    if request.method != "POST":
+        return render(
+            request,
+            "adminpanel/orders/update_order_status.html",
+            {
+                "order": order,
+                "status_choices": Order.STATUS_CHOICES
+            }
+        )
+
+    new_status = request.POST.get("status")
+
+    valid_statuses = dict(Order.STATUS_CHOICES)
+
+    if new_status not in valid_statuses:
+        messages.error(request, "Invalid status.")
+        return redirect(
+            "products:admin_order_detail",
+            order_id=order.id
+        )
+
+    if order.status == "CANCELLED":
+        messages.error(
+            request,
+            "Cancelled orders cannot be modified."
+        )
+        return redirect(
+            "products:admin_order_detail",
+            order_id=order.id
+        )
+
+    with transaction.atomic():
+
+        if (
+            new_status == "CANCELLED"
+            and order.status != "CANCELLED"
+        ):
+
+            for item in order.items.all():
+
+                if item.variant:
+                    item.variant.stock = F("stock") + item.quantity
+                    item.variant.save()
+
+                item.status = "CANCELLED"
+                item.save()
+
+        elif (
+            new_status == "RETURNED"
+            and order.status != "RETURNED"
+        ):
+
+            return_items = order.items.filter(
+                status="RETURN_REQUESTED"
+            )
+
+            for item in return_items:
+
+                if item.variant:
+                    item.variant.stock = F("stock") + item.quantity
+                    item.variant.save()
+
+                item.status = "RETURNED"
+                item.save()
+
+        else:
+
+            order.items.exclude(
+                status__in=["CANCELLED", "RETURNED"]
+            ).update(
+                status=new_status
+            )
+
+        order.status = new_status
+        order.save()
+
+    messages.success(
+        request,
+        "Order status updated successfully."
+    )
+
+    return redirect(
+        "products:admin_order_detail",
+        order_id=order.id
+    )

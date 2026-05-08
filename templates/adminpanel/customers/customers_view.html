@@ -148,7 +148,7 @@
                                 <td class="px-6 py-4 font-mono text-xs text-white">#{{ order.id|stringformat:"04d" }}</td>
                                 <td class="px-6 py-4 text-neutral-400">{{ order.created_at|date:"M d, Y" }}</td>
                                 <td class="px-6 py-4 text-neutral-400">{{ order.items_summary|default:"Order Items" }}</td>
-                                <td class="px-6 py-4 font-bold text-white">${{ order.total_price }}</td>
+                                <td class="px-6 py-4 font-bold text-white">${{ order.total_amount }}</td>
                                 <td class="px-6 py-4">
                                     <span class="text-[10px] font-bold px-2 py-0.5 rounded 
                                         {% if order.status == 'SHIPPED' %}text-blue-400 bg-blue-900/10

@@ -1,5 +1,6 @@
 from .models import Cart, CartItem,WishlistItem
 from django.db import transaction
+from decimal import Decimal, ROUND_HALF_UP
 
 
 
@@ -164,7 +165,32 @@ def move_to_cart(user, item, get_or_create_cart):
         cart_item.quantity += 1
         cart_item.save(update_fields=["quantity"])
 
-    # ✅ Delete wishlist item after moving
+    # Delete wishlist item after moving
     item.delete()
 
     return _response(True, "Moved to cart")
+
+
+
+
+
+def calculate_cart_totals(cart_items):
+    subtotal = sum(item.quantity * item.price for item in cart_items)
+
+    subtotal = subtotal.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    tax = (subtotal * Decimal("0.05")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+    shipping = Decimal("50.00") if subtotal < Decimal("1000.00") else Decimal("0.00")
+    discount = Decimal("0.00")
+
+    final = (subtotal + tax + shipping - discount).quantize(
+        Decimal("0.01"), rounding=ROUND_HALF_UP
+    )
+
+    return {
+        "subtotal": subtotal,
+        "tax": tax,
+        "shipping": shipping,
+        "discount": discount,
+        "final": final
+    }

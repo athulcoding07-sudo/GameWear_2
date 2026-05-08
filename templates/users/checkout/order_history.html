@@ -1,0 +1,351 @@
+{% extends 'users/user_dashboard_base.html' %}
+{% load static %}
+
+{% block title %}GameWear — My Orders{% endblock %}
+
+{% block content %}
+
+<style>
+  @keyframes rise {
+    from { transform: translateY(28px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  .a1 { animation: rise 0.5s ease both 0.05s; }
+  .a2 { animation: rise 0.5s ease both 0.15s; }
+  .a3 { animation: rise 0.5s ease both 0.25s; }
+
+  /* Row stagger */
+  .order-row { animation: rise 0.45s ease both; }
+
+  /* Status badges */
+  .badge-pending   { background:rgba(234,179,8,0.1);  border-color:rgba(234,179,8,0.35);  color:#facc15; }
+  .badge-confirmed { background:rgba(59,130,246,0.1); border-color:rgba(59,130,246,0.35); color:#60a5fa; }
+  .badge-preparing { background:rgba(249,115,22,0.1); border-color:rgba(249,115,22,0.35); color:#fb923c; }
+  .badge-shipped   { background:rgba(168,85,247,0.1); border-color:rgba(168,85,247,0.35); color:#c084fc; }
+  .badge-delivered { background:rgba(34,197,94,0.1);  border-color:rgba(34,197,94,0.35);  color:#4ade80; }
+  .badge-cancelled { background:rgba(239,68,68,0.1);  border-color:rgba(239,68,68,0.35);  color:#f87171; }
+
+  /* Filter pills */
+  .filter-pill { transition: all 0.2s; }
+  .filter-pill.active,
+  .filter-pill[data-active="true"] {
+    background: white;
+    color: black;
+    border-color: white;
+  }
+
+  /* Expandable item list */
+  .items-collapse {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s cubic-bezier(0.4,0,0.2,1);
+  }
+  .items-collapse.open { max-height: 600px; }
+
+  /* Image stack */
+  .img-stack > div { transition: transform 0.2s ease; }
+  .group:hover .img-stack > div:nth-child(1) { transform: translateX(-6px); }
+  .group:hover .img-stack > div:nth-child(2) { transform: translateX(0);    }
+  .group:hover .img-stack > div:nth-child(3) { transform: translateX(6px);  }
+</style>
+
+<!-- ── PAGE HEADER ──────────────────────────────────────────────── -->
+<div class="a1 relative -mt-10 mb-10 w-full overflow-hidden rounded-3xl bg-neutral-900 border border-neutral-800 px-8 md:px-12 py-10">
+  <div class="absolute top-0 right-0 -mr-16 -mt-16 w-72 h-72 bg-white rounded-full blur-[110px] opacity-[0.04] pointer-events-none"></div>
+  <div class="absolute inset-0 opacity-[0.025] pointer-events-none"
+    style="background-image:repeating-linear-gradient(45deg,white 0,white 1px,transparent 0,transparent 50%);background-size:18px 18px;"></div>
+
+  <div class="relative flex flex-col md:flex-row md:items-end md:justify-between gap-5">
+    <div>
+      <span class="text-neutral-500 font-bold tracking-[0.3em] uppercase text-[10px]">Your Account</span>
+      <h1 class="text-4xl md:text-6xl font-black italic uppercase text-white tracking-tighter leading-none mt-2">
+        My<br />
+        <span class="text-transparent bg-clip-text bg-gradient-to-r from-white to-neutral-600">Orders.</span>
+      </h1>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <!-- Order count pill -->
+      <div class="flex items-center gap-2 border border-neutral-700 rounded-full px-5 py-3">
+        <span class="text-white font-black text-sm">{{ orders|length }}</span>
+        <span class="text-neutral-500 text-[10px] font-bold uppercase tracking-widest">
+          Order{{ orders|length|pluralize }}
+        </span>
+      </div>
+
+      <a href="{% url 'products:users_product_listing' %}"
+        class="inline-flex items-center gap-2 bg-white text-black font-black uppercase tracking-widest text-[10px] px-6 py-3 rounded-full hover:bg-neutral-200 transition-all">
+        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+        </svg>
+        Shop More
+      </a>
+    </div>
+  </div>
+</div>
+
+{% if orders %}
+
+<!-- ── FILTER BAR ───────────────────────────────────────────────── -->
+<div class="a2 flex items-center gap-2 flex-wrap mb-6" id="filter-bar">
+  <button
+    data-filter="all"
+    onclick="filterOrders('all')"
+    class="filter-pill active border border-white bg-white text-black font-black uppercase tracking-widest text-[9px] px-5 py-2.5 rounded-full cursor-pointer">
+    All
+  </button>
+
+  {% for value, label in statuses %}
+  <button
+    data-filter="{{ value|lower }}"
+    onclick="filterOrders('{{ value|lower }}')"
+    class="filter-pill border border-neutral-800 text-neutral-500 hover:text-white hover:border-neutral-600 font-black uppercase tracking-widest text-[9px] px-5 py-2.5 rounded-full cursor-pointer">
+    {{ label }}
+  </button>
+  {% endfor %}
+</div>
+
+<!-- ── ORDERS LIST ──────────────────────────────────────────────── -->
+<div class="a3 space-y-4 mb-24" id="orders-list">
+
+  {% for order in orders %}
+  <div
+    class="order-row group relative bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden hover:border-neutral-700 transition-all duration-300"
+    data-status="{{ order.status|lower }}"
+    style="animation-delay: {{ forloop.counter0 }}00ms; animation-fill-mode: both;"
+  >
+
+    <!-- ── TOP ROW ──────────────────────────────────────────── -->
+    <div class="flex flex-col md:flex-row md:items-center gap-4 px-6 py-5">
+
+      <!-- Image stack + meta -->
+      <div class="flex items-center gap-5 flex-1 min-w-0">
+
+        <!-- Stacked product images -->
+        <div class="img-stack relative flex shrink-0" style="width:72px; height:56px;">
+          {% for item in order.items.all|slice:":3" %}
+          {% with img=item.variant.images.all|first %}
+          <div class="absolute w-12 h-14 rounded-xl overflow-hidden bg-black border border-neutral-800 shadow-lg"
+            style="left: {{ forloop.counter0|add:forloop.counter0|add:forloop.counter0 }}px; z-index: {{ forloop.revcounter }};">
+            <img
+              src="{% if img %}{{ img.image.url }}{% else %}https://campeonsports.com/cdn/shop/files/33AE88D9-C2F3-4676-B489-E566B284B2DB.jpg?v=1767157312&width=720{% endif %}"
+              alt="{{ item.product.name }}"
+              class="w-full h-full object-contain"
+            />
+          </div>
+          {% endwith %}
+          {% endfor %}
+
+          {% if order.items.count > 3 %}
+          <div class="absolute w-12 h-14 rounded-xl bg-neutral-800 border border-neutral-700 flex items-center justify-center"
+            style="left:18px; z-index:0;">
+            <span class="text-neutral-400 font-black text-[10px]">+{{ order.items.count|add:"-3" }}</span>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Order meta -->
+        <div class="min-w-0">
+          <div class="flex flex-wrap items-center gap-2 mb-1">
+            <span class="text-white font-black italic text-base tracking-tight"></span>
+            <!-- Status badge -->
+            {% with s=order.status|lower %}
+            <span class="badge-{{ s }} border text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full">
+              {{ order.status }}
+            </span>
+            {% endwith %}
+          </div>
+          <p class="text-neutral-600 text-[10px] font-bold uppercase tracking-widest">
+            {{ order.created_at|date:"d M Y" }}
+            <span class="mx-1 text-neutral-800">·</span>
+            {{ order.items.count }} item{{ order.items.count|pluralize }}
+          </p>
+          <!-- First item name hint -->
+          {% with first=order.items.first %}
+          {% if first %}
+          <p class="text-neutral-500 text-[10px] mt-1 truncate max-w-xs">
+            {{ first.product.name }}{% if order.items.count > 1 %} + {{ order.items.count|add:"-1" }} more{% endif %}
+          </p>
+          {% endif %}
+          {% endwith %}
+        </div>
+      </div>
+
+      <!-- Total + actions -->
+      <div class="flex items-center gap-4 shrink-0 ml-auto">
+        <div class="text-right">
+          <p class="text-[9px] font-bold uppercase tracking-widest text-neutral-600">Total</p>
+          <p class="text-white font-black italic text-xl">₹{{ order.final_amount }}</p>
+        </div>
+
+        <!-- Expand toggle -->
+        <button
+          onclick="toggleItems(this, 'collapse-{{ order.id }}')"
+          class="expand-btn w-9 h-9 rounded-full border border-neutral-700 hover:border-neutral-500 flex items-center justify-center text-neutral-500 hover:text-white transition-all shrink-0">
+          <svg class="w-4 h-4 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </button>
+
+        <!-- View detail -->
+        <a href="{% url 'products:order_detail' order.id %}"
+          class="shrink-0 inline-flex items-center gap-2 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 hover:border-neutral-600 text-white font-black uppercase tracking-widest text-[9px] px-5 py-2.5 rounded-full transition-all">
+          Details
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+          </svg>
+        </a>
+      </div>
+
+    </div>
+
+    <!-- ── EXPANDABLE ITEMS ──────────────────────────────────── -->
+    <div class="items-collapse border-t border-neutral-800" id="collapse-{{ order.id }}">
+      <div class="px-6 py-4 space-y-3">
+
+        {% for item in order.items.all %}
+        <div class="flex items-center gap-4 bg-neutral-800/40 rounded-xl px-4 py-3 border border-neutral-800">
+
+          <div class="shrink-0 w-10 h-12 bg-black rounded-lg overflow-hidden border border-neutral-700">
+            {% with img=item.variant.images.all|first %}
+            <img
+              src="{% if img %}{{ img.image.url }}{% else %}https://campeonsports.com/cdn/shop/files/33AE88D9-C2F3-4676-B489-E566B284B2DB.jpg?v=1767157312&width=720{% endif %}"
+              alt="{{ item.product.name }}"
+              class="w-full h-full object-contain"
+            />
+            {% endwith %}
+          </div>
+
+          <div class="flex-1 min-w-0">
+            <p class="text-white font-black uppercase italic text-xs tracking-tight truncate">{{ item.product.name }}</p>
+            <div class="flex flex-wrap items-center gap-2 mt-1">
+              {% if item.variant.size %}
+              <span class="text-[9px] font-bold uppercase tracking-widest bg-neutral-700 text-neutral-400 px-2 py-0.5 rounded-full">{{ item.variant.size }}</span>
+              {% endif %}
+              {% if item.variant.color %}
+              <span class="text-[9px] font-bold uppercase tracking-widest bg-neutral-700 text-neutral-400 px-2 py-0.5 rounded-full">{{ item.variant.color }}</span>
+              {% endif %}
+              <span class="text-neutral-600 text-[9px] font-bold">× {{ item.quantity }}</span>
+            </div>
+          </div>
+
+          <p class="text-white font-black italic text-sm shrink-0">₹{{ item.price }}</p>
+
+        </div>
+        {% endfor %}
+
+        <!-- Mini summary footer -->
+        <div class="flex items-center justify-between pt-2 px-1">
+          <div class="flex items-center gap-4">
+            {% if order.discount %}
+            <span class="text-green-400 text-[9px] font-black uppercase tracking-widest">Discount −₹{{ order.discount }}</span>
+            {% endif %}
+            {% if order.shipping %}
+            <span class="text-neutral-600 text-[9px] font-bold uppercase tracking-widest">Shipping ₹{{ order.shipping }}</span>
+            {% endif %}
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-neutral-500 text-[9px] font-bold uppercase tracking-widest">Order Total</span>
+            <span class="text-white font-black italic">₹{{ order.final_amount }}</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── PROGRESS BAR STRIP (bottom) ──────────────────────── -->
+    {% if order.status|lower != "cancelled" %}
+    {% with s=order.status|lower %}
+    <div class="h-0.5 w-full bg-neutral-800 relative overflow-hidden">
+      <div class="absolute left-0 top-0 h-full bg-white transition-all duration-700
+        {% if s == 'pending'   %}w-[10%]
+        {% elif s == 'confirmed' %}w-[30%]
+        {% elif s == 'preparing' %}w-[55%]
+        {% elif s == 'shipped'   %}w-[80%]
+        {% elif s == 'delivered' %}w-full
+        {% else %}w-0{% endif %}">
+      </div>
+    </div>
+    {% endwith %}
+    {% else %}
+    <div class="h-0.5 w-full bg-red-900/50"></div>
+    {% endif %}
+
+  </div>
+  {% endfor %}
+
+</div>
+
+<!-- ── EMPTY FILTERED STATE ─────────────────────────────────────── -->
+<div id="empty-filter" class="hidden mb-24 flex flex-col items-center justify-center py-16 bg-neutral-900/40 border border-dashed border-neutral-800 rounded-3xl text-center px-6">
+  <p class="text-neutral-600 font-black uppercase tracking-widest text-sm">No orders with this status</p>
+</div>
+
+{% else %}
+
+<!-- ── FULLY EMPTY STATE ─────────────────────────────────────────── -->
+<div class="a2 mb-24 flex flex-col items-center justify-center py-28 bg-neutral-900/40 border border-dashed border-neutral-800 rounded-3xl text-center px-6">
+  <div class="w-20 h-20 rounded-full bg-neutral-900 border border-neutral-800 flex items-center justify-center mb-8">
+    <svg class="w-8 h-8 text-neutral-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+    </svg>
+  </div>
+  <h2 class="text-3xl md:text-5xl font-black uppercase italic text-white tracking-tighter mb-3">No Orders Yet</h2>
+  <p class="text-neutral-500 text-sm max-w-sm mb-10">
+    You haven't placed any orders yet. Hit the store and find your colours.
+  </p>
+  <a href="{% url 'products:users_product_listing' %}"
+    class="bg-white text-black font-black uppercase tracking-widest text-xs px-10 py-4 rounded-full hover:bg-neutral-200 transition-all transform hover:-translate-y-1 shadow-[0_0_20px_rgba(255,255,255,0.2)]">
+    Browse Jerseys
+  </a>
+</div>
+
+{% endif %}
+
+<!-- ── JS: filter + expand ──────────────────────────────────────── -->
+<script>
+  // ── Status filter ────────────────────────────────────────
+  function filterOrders(status) {
+    // update pill styles
+    document.querySelectorAll('.filter-pill').forEach(btn => {
+      const isActive = btn.dataset.filter === status;
+      btn.classList.toggle('active',      isActive);
+      btn.classList.toggle('bg-white',    isActive);
+      btn.classList.toggle('text-black',  isActive);
+      btn.classList.toggle('border-white',isActive);
+      btn.classList.toggle('text-neutral-500',  !isActive);
+      btn.classList.toggle('border-neutral-800', !isActive);
+    });
+
+    const rows    = document.querySelectorAll('.order-row');
+    const emptyEl = document.getElementById('empty-filter');
+    let   visible = 0;
+
+    rows.forEach((row, i) => {
+      const match = status === 'all' || row.dataset.status === status;
+      row.style.display = match ? '' : 'none';
+      if (match) {
+        // re-trigger stagger
+        row.style.animationDelay = `₹{visible * 60}ms`;
+        visible++;
+      }
+    });
+
+    if (emptyEl) emptyEl.classList.toggle('hidden', visible > 0);
+  }
+
+  // ── Expand / collapse items ──────────────────────────────
+  function toggleItems(btn, collapseId) {
+    const panel = document.getElementById(collapseId);
+    const arrow = btn.querySelector('svg');
+    const isOpen = panel.classList.toggle('open');
+    arrow.style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+  }
+</script>
+
+{% endblock %}

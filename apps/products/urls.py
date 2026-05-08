@@ -48,8 +48,8 @@ urlpatterns = [
 
     path("cart-view/", views.cart_view, name="cart_view"),
     path("cart-add/<int:product_id>/", views.add_to_cart_view, name="add_to_cart"),
-    path("cart-update/<int:item_id>/<str:action>/", views.update_cart_view, name="update_cart"),
-    path("cart-remove/<int:item_id>/", views.remove_cart_view, name="remove_cart"),
+    path("cart/update/<int:item_id>/<str:action>/",views.update_cart_view, name="update_cart"),
+    path("cart/remove/<int:item_id>/",views.remove_cart_view, name="remove_cart"),
 
     # =========================
     # WHSILIST
@@ -59,5 +59,38 @@ urlpatterns = [
     path("wishlist/toggle/<int:product_id>/", views.toggle_wishlist_view, name="toggle_wishlist"),
     path("wishlist/remove/<int:item_id>/", views.remove_wishlist_view, name="remove_wishlist"),
     path("wishlist/move-to-cart/<int:item_id>/", views.move_to_cart_view, name="move_to_cart"),
+
+
+    # =========================
+    # ORDER MANAGEMENT
+    # =========================
+
+    path("checkout/", views.checkout_view, name="checkout"),
+    path("place-order/", views.place_order, name="place_order"),
+    path("success/<int:order_id>/", views.order_success, name="order_success"),
+    path("orders/<int:order_id>/",views.order_detail,name="order_detail"),
+    path("orders/history/",views.order_history,name="order_history"),
+    path("order/cancel-item/<int:item_id>/", views.cancel_order_item, name="cancel_order_item"),
+    path("order/return/<int:order_id>/", views.return_order, name="return_order"),
+    path("orders/search/", views.search_orders, name="search_orders"),
+    path("order/invoice/<int:order_id>/", views.download_invoice, name="download_invoice"),
+
+
+    # =========================
+    # ADMIN ORDER MANAGEMENTT
+    # =========================
+
+    path("orders/admin-order-list/", views.admin_order_list, name="admin_order_list"),
+    path("orders/admin-order-detail/<int:order_id>/", views.admin_order_detail, name="admin_order_detail"),
+    path("orders/admin-update-order/<int:order_id>/status/", views.admin_update_order_status, name="admin_update_order_status"),
+
+
+
+
+
+    
+
+
+
     
 ]

@@ -5,6 +5,8 @@ from cloudinary.models import CloudinaryField
 from django.conf import settings
 from django.db.models import Avg
 from django.core.exceptions import ValidationError
+from apps.users.models import User,Address
+
 # Create your models here.
 
 
@@ -427,3 +429,178 @@ class WishlistItem(models.Model):
 
     def __str__(self):
         return f"{self.user} ❤️ {self.product} ({self.variant})"
+
+
+
+
+
+class Order(models.Model):
+
+    STATUS_CHOICES = (
+        ("PENDING", "Pending"),
+        ("CONFIRMED", "Confirmed"),
+        ("PACKED", "Packed"),
+        ("SHIPPED", "Shipped"),
+        ("OUT_FOR_DELIVERY", "Out for Delivery"),
+        ("DELIVERED", "Delivered"),
+
+        ("CANCELLED", "Cancelled"),
+        ("PARTIAL_CANCELLED", "Partial Cancelled"),
+
+        ("RETURN_REQUESTED", "Return Requested"),
+        ("RETURNED", "Returned"),
+        ("PARTIAL_RETURNED", "Partial Returned"),
+
+        ("REFUNDED", "Refunded"),
+    )
+
+    order_id = models.CharField(
+        max_length=20,
+        unique=True,
+        editable=False
+    )
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE
+    )
+
+    address = models.ForeignKey(
+        Address,
+        on_delete=models.SET_NULL,
+        null=True
+    )
+
+    total_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2
+    )
+
+    tax = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0
+    )
+
+    shipping = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0
+    )
+
+    discount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0
+    )
+
+    final_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2
+    )
+
+    payment_method = models.CharField(
+        max_length=20,
+        default="COD"
+    )
+
+    status = models.CharField(
+        max_length=30,
+        choices=STATUS_CHOICES,
+        default="PENDING"
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    def save(self, *args, **kwargs):
+        if not self.order_id:
+            self.order_id = f"ORD-{uuid.uuid4().hex[:8].upper()}"
+        super().save(*args, **kwargs)
+
+    def update_status(self):
+        items = self.items.all()
+
+        if all(item.status == "CANCELLED" for item in items):
+            self.status = "CANCELLED"
+
+        elif any(item.status == "CANCELLED" for item in items):
+            self.status = "PARTIAL_CANCELLED"
+
+        elif all(item.status == "RETURNED" for item in items):
+            self.status = "RETURNED"
+
+        elif any(item.status == "RETURNED" for item in items):
+            self.status = "PARTIAL_RETURNED"
+
+        elif all(item.status == "DELIVERED" for item in items):
+            self.status = "DELIVERED"
+
+        self.save()
+
+    def __str__(self):
+        return self.order_id
+
+
+class OrderItem(models.Model):
+
+    STATUS_CHOICES = (
+        ("PENDING", "Pending"),
+        ("CONFIRMED", "Confirmed"),
+        ("PACKED", "Packed"),
+        ("SHIPPED", "Shipped"),
+        ("OUT_FOR_DELIVERY", "Out for Delivery"),
+        ("DELIVERED", "Delivered"),
+
+        ("CANCELLED", "Cancelled"),
+
+        ("RETURN_REQUESTED", "Return Requested"),
+        ("RETURNED", "Returned"),
+
+        ("REFUNDED", "Refunded"),
+    )
+
+    order = models.ForeignKey(
+        Order,
+        on_delete=models.CASCADE,
+        related_name="items"
+    )
+
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.SET_NULL,
+        null=True
+    )
+
+    variant = models.ForeignKey(
+        ProductVariant,
+        on_delete=models.SET_NULL,
+        null=True
+    )
+
+    quantity = models.PositiveIntegerField()
+
+    price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2
+    )
+
+    status = models.CharField(
+        max_length=30,
+        choices=STATUS_CHOICES,
+        default="PENDING"
+    )
+
+    cancellation_reason = models.TextField(
+        blank=True,
+        null=True
+    )
+
+    return_reason = models.TextField(
+        blank=True,
+        null=True
+    )
+
+    def __str__(self):
+        return f"{self.order.order_id} - {self.product.name}"
