@@ -1,0 +1,375 @@
+{% extends 'users/user_dashboard_base.html' %}
+{% load static %}
+
+{% block title %}GameWear — Checkout{% endblock %}
+
+{% block content %}
+
+<!-- ── PAGE HEADER ──────────────────────────────────────────────────── -->
+<div class="relative -mt-10 mb-12 w-full overflow-hidden rounded-3xl bg-neutral-900 border border-neutral-800 px-8 md:px-12 py-10">
+  <div class="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-white rounded-full blur-[100px] opacity-5 pointer-events-none"></div>
+  <div class="relative flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+    <div>
+      <span class="text-neutral-400 font-bold tracking-[0.3em] uppercase text-xs">Almost There</span>
+      <h1 class="text-4xl md:text-6xl font-black italic uppercase text-white tracking-tighter leading-none mt-2">
+        Check<br />
+        <span class="text-transparent bg-clip-text bg-gradient-to-r from-white to-neutral-500">Out.</span>
+      </h1>
+    </div>
+    <a href="{% url 'products:cart_view' %}"
+      class="self-start md:self-end inline-flex items-center gap-2 border border-neutral-700 text-neutral-400 hover:text-white hover:border-white font-bold uppercase tracking-widest text-[10px] px-6 py-3 rounded-full transition-all">
+      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+      </svg>
+      Back to Cart
+    </a>
+  </div>
+</div>
+
+<!-- ── STEP INDICATOR ───────────────────────────────────────────────── -->
+<div class="flex items-center gap-0 mb-10 px-1">
+  <!-- Step 1: Cart (done) -->
+  <div class="flex items-center gap-2">
+    <div class="w-7 h-7 rounded-full bg-white flex items-center justify-center shrink-0">
+      <svg class="w-3.5 h-3.5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+      </svg>
+    </div>
+    <span class="text-[10px] font-black uppercase tracking-widest text-white hidden sm:block">Cart</span>
+  </div>
+  <div class="flex-1 mx-3 h-px bg-white opacity-30"></div>
+  <!-- Step 2: Checkout (active) -->
+  <div class="flex items-center gap-2">
+    <div class="w-7 h-7 rounded-full bg-white flex items-center justify-center shrink-0 ring-4 ring-white/20">
+      <span class="text-black font-black text-[10px]">2</span>
+    </div>
+    <span class="text-[10px] font-black uppercase tracking-widest text-white hidden sm:block">Checkout</span>
+  </div>
+  <div class="flex-1 mx-3 h-px bg-neutral-700"></div>
+  <!-- Step 3: Confirm (pending) -->
+  <div class="flex items-center gap-2">
+    <div class="w-7 h-7 rounded-full border border-neutral-700 flex items-center justify-center shrink-0">
+      <span class="text-neutral-600 font-black text-[10px]">3</span>
+    </div>
+    <span class="text-[10px] font-black uppercase tracking-widest text-neutral-600 hidden sm:block">Confirm</span>
+  </div>
+</div>
+
+<!-- ── MAIN LAYOUT ──────────────────────────────────────────────────── -->
+<form method="POST" action="{% url 'products:place_order' %}" id="checkout-form">
+  {% csrf_token %}
+
+  <div class="flex flex-col xl:flex-row gap-8 mb-24">
+
+    <!-- ────────────────────── LEFT COLUMN ────────────────────── -->
+    <div class="flex-1 min-w-0 space-y-6">
+
+      <!-- ── DELIVERY ADDRESS ──────────────────────────────────── -->
+      <section>
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0">
+              <svg class="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+              </svg>
+            </div>
+            <h2 class="text-sm font-black uppercase tracking-widest text-white">Delivery Address</h2>
+          </div>
+          <a href="{% url 'users:add_address' %}?next=products:checkout"
+            class="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-neutral-400 hover:text-white border border-neutral-700 hover:border-neutral-500 px-4 py-2 rounded-full transition-all">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
+            </svg>
+            Add New
+          </a>
+        </div>
+
+        {% if addresses %}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="address-grid">
+          {% for address in addresses %}
+          <label for="addr-{{ address.id }}"
+            class="address-card relative cursor-pointer block bg-neutral-900 border border-neutral-800 rounded-2xl p-5 transition-all duration-200 hover:border-neutral-600 has-[:checked]:border-white has-[:checked]:bg-neutral-800/60 has-[:checked]:shadow-[0_0_0_1px_white]">
+
+            <input
+              type="radio"
+              id="addr-{{ address.id }}"
+              name="address"
+              value="{{ address.id }}"
+              class="sr-only"
+              {% if forloop.first %}checked{% endif %}
+              required
+            />
+
+            <!-- Selected badge -->
+            <div class="selected-badge absolute top-4 right-4 w-5 h-5 rounded-full border border-neutral-700 bg-neutral-800 flex items-center justify-center transition-all duration-200">
+              <div class="w-2.5 h-2.5 rounded-full bg-white opacity-0 transition-opacity duration-200 check-dot"></div>
+            </div>
+
+            {% if address.is_default %}
+            <span class="inline-block mb-2 text-[9px] font-black uppercase tracking-widest bg-white text-black px-2 py-0.5 rounded-full">Default</span>
+            {% endif %}
+
+            <p class="text-white font-black text-sm tracking-tight">{{ address.full_name }}</p>
+            <p class="text-neutral-400 text-[11px] leading-relaxed mt-1">
+              {{ address.address_line1 }}<br />
+              {% if address.address_line2 %}{{ address.address_line2 }}<br />{% endif %}
+              {{ address.city }}, {{ address.state }} — {{ address.pincode }}<br />
+              {{ address.country }}
+            </p>
+            {% if address.phone %}
+            <p class="text-neutral-600 text-[10px] uppercase tracking-widest mt-2 font-bold">
+              📞 {{ address.phone }}
+            </p>
+            {% endif %}
+          </label>
+          {% endfor %}
+        </div>
+
+        {% else %}
+        <div class="flex flex-col items-center justify-center py-14 bg-neutral-900/40 border border-dashed border-neutral-800 rounded-2xl text-center px-6">
+          <svg class="w-8 h-8 text-neutral-700 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+          </svg>
+          <p class="text-neutral-400 text-xs font-bold uppercase tracking-widest mb-4">No addresses saved yet</p>
+          <a href="{% url 'users:add_address' %}?next=checkout"
+            class="bg-white text-black font-black uppercase tracking-widest text-[10px] px-8 py-3 rounded-full hover:bg-neutral-200 transition-all">
+            Add Address
+          </a>
+        </div>
+        {% endif %}
+      </section>
+
+      <!-- ── PAYMENT METHOD ──────────────────────────────────────── -->
+      <section>
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0">
+            <svg class="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+            </svg>
+          </div>
+          <h2 class="text-sm font-black uppercase tracking-widest text-white">Payment Method</h2>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+
+          <!-- Cash on Delivery -->
+          <label for="pay-cod"
+            class="relative cursor-pointer block bg-neutral-900 border border-neutral-800 rounded-2xl p-5 transition-all duration-200 hover:border-neutral-600 has-[:checked]:border-white has-[:checked]:bg-neutral-800/60 has-[:checked]:shadow-[0_0_0_1px_white]">
+            <input type="radio" id="pay-cod" name="payment_method" value="cod" class="sr-only" checked />
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-neutral-800 border border-neutral-700 flex items-center justify-center text-lg shrink-0">💵</div>
+              <div>
+                <p class="text-white font-black text-sm">Cash on Delivery</p>
+                <p class="text-neutral-500 text-[10px] uppercase tracking-widest font-bold mt-0.5">Pay when you receive</p>
+              </div>
+            </div>
+          </label>
+
+          <!-- Online (disabled/coming soon) -->
+          <label
+            class="relative block bg-neutral-900/40 border border-dashed border-neutral-800 rounded-2xl p-5 opacity-40 cursor-not-allowed">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-neutral-800 border border-neutral-700 flex items-center justify-center text-lg shrink-0">💳</div>
+              <div>
+                <p class="text-white font-black text-sm">Online Payment</p>
+                <p class="text-neutral-500 text-[10px] uppercase tracking-widest font-bold mt-0.5">Coming soon</p>
+              </div>
+            </div>
+          </label>
+
+        </div>
+      </section>
+
+      <!-- ── ORDER ITEMS (review) ──────────────────────────────── -->
+      <section>
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0">
+            <svg class="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+            </svg>
+          </div>
+          <h2 class="text-sm font-black uppercase tracking-widest text-white">
+            Review Items
+            <span class="ml-2 text-neutral-600 font-bold">({{ items|length }})</span>
+          </h2>
+        </div>
+
+        <div class="space-y-3">
+          {% for item in items %}
+          <div class="flex items-center gap-4 bg-neutral-900 border border-neutral-800 rounded-2xl p-4">
+
+            <div class="shrink-0 w-16 h-20 bg-black rounded-xl overflow-hidden border border-neutral-800">
+              {% with primary_image=item.variant.images.all|first %}
+              <img
+                src="{% if primary_image %}{{ primary_image.image.url }}{% else %}https://campeonsports.com/cdn/shop/files/33AE88D9-C2F3-4676-B489-E566B284B2DB.jpg?v=1767157312&width=720{% endif %}"
+                alt="{{ item.product.name }}"
+                class="w-full h-full object-contain"
+              />
+              {% endwith %}
+            </div>
+
+            <div class="flex-1 min-w-0">
+              <p class="text-[9px] font-bold uppercase text-neutral-500 tracking-widest">{{ item.product.category.name|default:"Jersey" }}</p>
+              <h3 class="text-white font-black uppercase italic tracking-tight text-sm leading-tight truncate mt-0.5">{{ item.product.name }}</h3>
+              <div class="flex flex-wrap items-center gap-2 mt-1.5">
+                {% if item.variant.size %}
+                <span class="text-[9px] font-bold uppercase tracking-widest bg-neutral-800 text-neutral-400 px-2 py-0.5 rounded-full border border-neutral-700">{{ item.variant.size }}</span>
+                {% endif %}
+                {% if item.variant.color %}
+                <span class="text-[9px] font-bold uppercase tracking-widest bg-neutral-800 text-neutral-400 px-2 py-0.5 rounded-full border border-neutral-700">{{ item.variant.color }}</span>
+                {% endif %}
+                <span class="text-[9px] font-bold uppercase tracking-widest text-neutral-600">Qty: {{ item.quantity }}</span>
+              </div>
+            </div>
+
+            <div class="shrink-0 text-right">
+              <p class="text-white font-black italic text-base">₹{{ item.subtotal }}</p>
+              <p class="text-neutral-600 text-[10px] mt-0.5">₹{{ item.price }} ea.</p>
+            </div>
+
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ────────────────────── RIGHT COLUMN ───────────────────── -->
+    <div class="w-full xl:w-96 shrink-0">
+      <div class="sticky top-6 bg-neutral-900 border border-neutral-800 rounded-3xl overflow-hidden">
+
+        <div class="px-8 py-6 border-b border-neutral-800">
+          <h2 class="text-xl font-black uppercase italic text-white tracking-tighter">Order Summary</h2>
+        </div>
+
+        <div class="px-8 py-6 space-y-4">
+
+          <div class="flex justify-between items-center">
+            <span class="text-neutral-500 text-xs uppercase tracking-widest font-bold">
+              Subtotal ({{ items|length }} item{{ items|length|pluralize }})
+            </span>
+            <span class="text-white font-black italic">₹{{ totals.subtotal }}</span>
+          </div>
+
+          {% if totals.discount %}
+          <div class="flex justify-between items-center">
+            <span class="text-green-400 text-xs uppercase tracking-widest font-bold">Discount</span>
+            <span class="text-green-400 font-black italic">−₹{{ totals.discount }}</span>
+          </div>
+          {% endif %}
+
+          <div class="flex justify-between items-center">
+            <span class="text-neutral-500 text-xs uppercase tracking-widest font-bold">Shipping</span>
+            {% if totals.shipping %}
+              <span class="text-white font-black italic">₹{{ totals.shipping }}</span>
+            {% else %}
+              <span class="text-green-400 font-bold text-[10px] uppercase tracking-widest">Free</span>
+            {% endif %}
+          </div>
+
+          <div class="flex justify-between items-center">
+            <span class="text-neutral-500 text-xs uppercase tracking-widest font-bold">Tax</span>
+            {% if totals.tax %}
+              <span class="text-white font-black italic">₹{{ totals.tax }}</span>
+            {% else %}
+              <span class="text-neutral-400 font-bold text-[10px] uppercase tracking-widest">Included</span>
+            {% endif %}
+          </div>
+
+        </div>
+
+        <div class="mx-8 border-t border-neutral-800"></div>
+
+        <div class="px-8 py-6 flex justify-between items-center">
+          <span class="text-white font-black uppercase tracking-widest text-sm">Total</span>
+          <span class="text-3xl font-black italic text-white">₹{{ totals.final }}</span>
+        </div>
+
+        <!-- ── Selected address preview ── -->
+        <div class="mx-8 mb-4 bg-neutral-800/60 border border-neutral-700 rounded-2xl px-5 py-4" id="address-preview">
+          <p class="text-[9px] uppercase tracking-widest font-bold text-neutral-500 mb-1">Delivering To</p>
+          <p class="text-white font-black text-xs" id="preview-name">
+            {% if addresses %}{{ addresses.0.full_name }}{% endif %}
+          </p>
+          <p class="text-neutral-400 text-[10px] leading-relaxed mt-0.5" id="preview-addr">
+            {% if addresses %}
+              {{ addresses.0.address_line1 }}, {{ addresses.0.city }}
+            {% endif %}
+          </p>
+        </div>
+
+        <div class="px-8 pb-8 space-y-3">
+          {% if addresses %}
+          <button type="submit"
+            class="block w-full bg-white text-black text-center font-black uppercase tracking-widest text-xs py-4 rounded-full hover:bg-neutral-200 transition-all transform hover:-translate-y-0.5 shadow-[0_0_20px_rgba(255,255,255,0.15)] cursor-pointer">
+            Place Order &rarr;
+          </button>
+          {% else %}
+          <button type="button" disabled
+            class="block w-full bg-neutral-800 text-neutral-600 text-center font-black uppercase tracking-widest text-xs py-4 rounded-full cursor-not-allowed">
+            Add Address to Continue
+          </button>
+          {% endif %}
+          <a href="{% url 'products:cart_view' %}"
+            class="block w-full border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-600 text-center font-bold uppercase tracking-widest text-[10px] py-3.5 rounded-full transition-all">
+            ← Edit Cart
+          </a>
+        </div>
+
+        <!-- ── Trust badges ── -->
+        <div class="border-t border-neutral-800 px-8 py-5 grid grid-cols-3 gap-3 text-center">
+          <div>
+            <svg class="w-4 h-4 text-neutral-600 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+            </svg>
+            <p class="text-[9px] uppercase tracking-widest font-bold text-neutral-700">Secure</p>
+          </div>
+          <div>
+            <svg class="w-4 h-4 text-neutral-600 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z"/>
+            </svg>
+            <p class="text-[9px] uppercase tracking-widest font-bold text-neutral-700">Returns</p>
+          </div>
+          <div>
+            <svg class="w-4 h-4 text-neutral-600 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
+            </svg>
+            <p class="text-[9px] uppercase tracking-widest font-bold text-neutral-700">Fast Ship</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</form>
+
+<!-- ── SCRIPTS: Address radio card UI ──────────────────────────────── -->
+<style>
+  input[type="radio"]:checked ~ .check-dot { opacity: 1; }
+  .address-card:has(input:checked) .selected-badge {
+    border-color: white;
+    background-color: white;
+  }
+  .address-card:has(input:checked) .check-dot {
+    opacity: 1;
+    background-color: black;
+  }
+</style>
+
+<script>
+  // Live update "Delivering To" preview when address radio changes
+  document.querySelectorAll('input[name="address"]').forEach(radio => {
+    radio.addEventListener('change', function () {
+      const card = this.closest('.address-card');
+      const name = card.querySelector('p.text-white.font-black')?.innerText || '';
+      const lines = [...card.querySelectorAll('p.text-neutral-400')];
+      const addr = lines[0]?.innerText?.split('\n')[0] || '';
+      document.getElementById('preview-name').innerText = name;
+      document.getElementById('preview-addr').innerText = addr;
+    });
+  });
+</script>
+
+{% endblock %}

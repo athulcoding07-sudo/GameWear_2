@@ -15,25 +15,32 @@
 
             <!-- Actions (Cart, Account, Login) -->
             <div class="flex items-center space-x-4">
-                <!-- Cart Icon -->
-                <button class="p-2 rounded-full hover:bg-neutral-900 transition duration-200 focus:outline-none">
-                    <svg class="w-6 h-6 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z">
-                        </path>
-                    </svg>
-                </button>
-                <!-- Wishlist Icon -->
-                <button
-                    class="p-2 rounded-full hover:bg-neutral-900 transition duration-200 focus:outline-none hidden sm:block">
-                    <svg class="w-6 h-6 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z">
-                        </path>
-                    </svg>
-                </button>
+                <!-- ✦ Favourite Icon -->
+      <a href="#" class="relative group text-neutral-400 hover:text-white transition duration-200" aria-label="Wishlist">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+        </svg>
+        <!-- Badge (optional: show count) -->
+        {% if wishlist_count and wishlist_count > 0 %}
+          <span class="absolute -top-1.5 -right-1.5 bg-white text-black text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center leading-none">
+            {{ wishlist_count }}
+          </span>
+        {% endif %}
+      </a>
+                <!-- ✦ Cart Icon -->
+      <a href="{% url 'products:cart_view' %}" class="relative group text-neutral-400 hover:text-white transition duration-200" aria-label="Cart">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+          <line x1="3" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="1.8" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M16 10a4 4 0 0 1-8 0" />
+        </svg>
+        <!-- Badge -->
+        {% if cart_count and cart_count > 0 %}
+          <span class="absolute -top-1.5 -right-1.5 bg-white text-black text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center leading-none">
+            {{ cart_count }}
+          </span>
+        {% endif %}
+      </a>
                 <!-- Login Button -->
                 <a href="{% url 'users:login' %}"
                     class="bg-white text-black px-4 py-2 rounded-lg font-semibold hover:bg-neutral-200 transition duration-200 shadow-md">

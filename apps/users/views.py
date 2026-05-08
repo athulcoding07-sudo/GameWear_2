@@ -449,24 +449,43 @@ def address_view(request):
 
 @login_required
 def add_address(request):
-    if request.method == "POST":
+    next_page = request.GET.get("next") or request.POST.get("next")
 
+    if request.method == "POST":
         form = AddressForm(request.POST)
+
         if form.is_valid():
             address = form.save(commit=False)
             address.user = request.user
-            # If setting default, unset others
+
+            # If setting default, unset other default addresses
             if address.is_default:
                 request.user.addresses.update(is_default=False)
+
             address.save()
             messages.success(request, "Address saved successfully.")
-            return redirect("users:address_view")  # change to your page
+
+            # If user came from checkout, return there
+            if next_page:
+                return redirect(next_page)
+
+            # Otherwise go to address page
+            return redirect("users:address_view")
+
         else:
-            messages.error(request,'form is not valid')
+            messages.error(request, "Form is not valid")
+
     else:
         form = AddressForm()
 
-    return render(request, "users/profile/address/address_view.html", {"form": form})
+    return render(
+        request,
+        "users/profile/address/address_view.html",
+        {
+            "form": form,
+            "next_page": next_page
+        }
+    )
 
 
 @login_required

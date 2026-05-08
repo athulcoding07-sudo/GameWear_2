@@ -1,0 +1,665 @@
+{% extends 'adminpanel/dashboard.html' %}
+
+{% block title %}Order #{{ order.order_id }} | GameWear{% endblock %}
+
+{% block content %}
+
+
+<div class="max-w-7xl mx-auto">
+
+    
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+        <div>
+            <div class="flex items-center gap-3 mb-1">
+                <a href="{% url 'products:admin_order_list' %}" class="text-neutral-500 hover:text-white transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                    </svg>
+                </a>
+                <h1 class="text-2xl font-bold">Order Detail</h1>
+                <span class="font-mono text-sm text-neutral-400 bg-neutral-900 border border-neutral-800 px-3 py-1 rounded-lg">
+                    #{{ order.order_id }}
+                </span>
+            </div>
+            <p class="text-neutral-500 text-sm">Placed on {{ order.created_at|date:"d M Y" }} at {{ order.created_at|time:"h:i A" }}</p>
+        </div>
+    </div>
+
+    
+    {% with order.status as s %}
+    <div class="bg-black border border-neutral-900 rounded-2xl p-6 mb-6">
+
+        {# ── Top row: label + current status badge ── #}
+        <div class="flex items-center justify-between mb-6">
+            <p class="text-xs text-neutral-500 uppercase tracking-widest font-bold">Order Progress</p>
+
+            {# Current status pill — colour-coded by meaning #}
+            {% if s == 'PENDING' %}
+                <span class="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-amber-400 bg-amber-950/40 border border-amber-900/40 px-3 py-1.5 rounded-full">
+                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>Awaiting Confirmation
+                </span>
+            {% elif s == 'CONFIRMED' %}
+                <span class="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-sky-400 bg-sky-950/40 border border-sky-900/40 px-3 py-1.5 rounded-full">
+                    <span class="w-1.5 h-1.5 rounded-full bg-sky-400"></span>Confirmed
+                </span>
+            {% elif s == 'PACKED' %}
+                <span class="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-sky-400 bg-sky-950/40 border border-sky-900/40 px-3 py-1.5 rounded-full">
+                    <span class="w-1.5 h-1.5 rounded-full bg-sky-400"></span>Packed & Ready
+                </span>
+            {% elif s == 'SHIPPED' %}
+                <span class="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-blue-400 bg-blue-950/40 border border-blue-900/40 px-3 py-1.5 rounded-full">
+                    <span class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></span>Shipped
+                </span>
+            {% elif s == 'OUT_FOR_DELIVERY' %}
+                <span class="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-violet-400 bg-violet-950/40 border border-violet-900/40 px-3 py-1.5 rounded-full">
+                    <span class="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse"></span>Out for Delivery
+                </span>
+            {% elif s == 'DELIVERED' %}
+                <span class="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-950/40 border border-emerald-900/40 px-3 py-1.5 rounded-full">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>Delivered
+                </span>
+            {% elif s == 'CANCELLED' %}
+                <span class="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-rose-400 bg-rose-950/40 border border-rose-900/40 px-3 py-1.5 rounded-full">
+                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>Cancelled
+                </span>
+            {% elif s == 'PARTIAL_CANCELLED' %}
+                <span class="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-orange-400 bg-orange-950/40 border border-orange-900/40 px-3 py-1.5 rounded-full">
+                    <span class="w-1.5 h-1.5 rounded-full bg-orange-400"></span>Partially Cancelled
+                </span>
+            {% elif s == 'RETURN_REQUESTED' %}
+                <span class="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-amber-400 bg-amber-950/40 border border-amber-900/40 px-3 py-1.5 rounded-full">
+                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>Return Requested
+                </span>
+            {% elif s == 'PARTIAL_RETURNED' %}
+                <span class="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-orange-400 bg-orange-950/40 border border-orange-900/40 px-3 py-1.5 rounded-full">
+                    <span class="w-1.5 h-1.5 rounded-full bg-orange-400"></span>Partially Returned
+                </span>
+            {% elif s == 'RETURNED' %}
+                <span class="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-orange-400 bg-orange-950/40 border border-orange-900/40 px-3 py-1.5 rounded-full">
+                    <span class="w-1.5 h-1.5 rounded-full bg-orange-400"></span>Returned
+                </span>
+            {% elif s == 'REFUNDED' %}
+                <span class="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-teal-400 bg-teal-950/40 border border-teal-900/40 px-3 py-1.5 rounded-full">
+                    <span class="w-1.5 h-1.5 rounded-full bg-teal-400"></span>Refunded
+                </span>
+            {% endif %}
+        </div>
+
+       
+        {% if s == 'PENDING' or s == 'CONFIRMED' or s == 'PACKED' or s == 'SHIPPED' or s == 'OUT_FOR_DELIVERY' or s == 'DELIVERED' %}
+
+       
+
+        <div class="flex items-center">
+
+            
+            <div class="flex flex-col items-center gap-2 shrink-0">
+                <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center
+                    {% if s == 'PENDING' %}border-white bg-white ring-4 ring-white/10
+                    {% else %}border-emerald-600 bg-emerald-600{% endif %}">
+                    {% if s == 'PENDING' %}
+                        <span class="w-2.5 h-2.5 rounded-full bg-black"></span>
+                    {% else %}
+                        <svg class="w-3.5 h-3.5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                        </svg>
+                    {% endif %}
+                </div>
+                <span class="text-[9px] font-bold uppercase tracking-wider
+                    {% if s == 'PENDING' %}text-white{% else %}text-emerald-500{% endif %}">
+                    Pending
+                </span>
+            </div>
+
+            {# connector 1→2 #}
+            <div class="h-0.5 flex-1
+                {% if s == 'PENDING' %}bg-neutral-800{% else %}bg-emerald-600{% endif %}
+            "></div>
+
+            {# ── STEP 2: CONFIRMED ── #}
+            <div class="flex flex-col items-center gap-2 shrink-0">
+                <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center
+                    {% if s == 'CONFIRMED' %}border-white bg-white ring-4 ring-white/10
+                    {% elif s == 'PACKED' or s == 'SHIPPED' or s == 'OUT_FOR_DELIVERY' or s == 'DELIVERED' %}border-emerald-600 bg-emerald-600
+                    {% else %}border-neutral-800 bg-neutral-950{% endif %}">
+                    {% if s == 'CONFIRMED' %}
+                        <span class="w-2.5 h-2.5 rounded-full bg-black"></span>
+                    {% elif s == 'PACKED' or s == 'SHIPPED' or s == 'OUT_FOR_DELIVERY' or s == 'DELIVERED' %}
+                        <svg class="w-3.5 h-3.5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                        </svg>
+                    {% else %}
+                        <span class="w-2 h-2 rounded-full bg-neutral-700"></span>
+                    {% endif %}
+                </div>
+                <span class="text-[9px] font-bold uppercase tracking-wider
+                    {% if s == 'CONFIRMED' %}text-white
+                    {% elif s == 'PACKED' or s == 'SHIPPED' or s == 'OUT_FOR_DELIVERY' or s == 'DELIVERED' %}text-emerald-500
+                    {% else %}text-neutral-600{% endif %}">
+                    Confirmed
+                </span>
+            </div>
+
+            {# connector 2→3 #}
+            <div class="h-0.5 flex-1
+                {% if s == 'PACKED' or s == 'SHIPPED' or s == 'OUT_FOR_DELIVERY' or s == 'DELIVERED' %}bg-emerald-600
+                {% else %}bg-neutral-800{% endif %}
+            "></div>
+
+            {# ── STEP 3: PACKED ── #}
+            <div class="flex flex-col items-center gap-2 shrink-0">
+                <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center
+                    {% if s == 'PACKED' %}border-white bg-white ring-4 ring-white/10
+                    {% elif s == 'SHIPPED' or s == 'OUT_FOR_DELIVERY' or s == 'DELIVERED' %}border-emerald-600 bg-emerald-600
+                    {% else %}border-neutral-800 bg-neutral-950{% endif %}">
+                    {% if s == 'PACKED' %}
+                        <span class="w-2.5 h-2.5 rounded-full bg-black"></span>
+                    {% elif s == 'SHIPPED' or s == 'OUT_FOR_DELIVERY' or s == 'DELIVERED' %}
+                        <svg class="w-3.5 h-3.5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                        </svg>
+                    {% else %}
+                        <span class="w-2 h-2 rounded-full bg-neutral-700"></span>
+                    {% endif %}
+                </div>
+                <span class="text-[9px] font-bold uppercase tracking-wider
+                    {% if s == 'PACKED' %}text-white
+                    {% elif s == 'SHIPPED' or s == 'OUT_FOR_DELIVERY' or s == 'DELIVERED' %}text-emerald-500
+                    {% else %}text-neutral-600{% endif %}">
+                    Packed
+                </span>
+            </div>
+
+            {# connector 3→4 #}
+            <div class="h-0.5 flex-1
+                {% if s == 'SHIPPED' or s == 'OUT_FOR_DELIVERY' or s == 'DELIVERED' %}bg-emerald-600
+                {% else %}bg-neutral-800{% endif %}
+            "></div>
+
+            {# ── STEP 4: SHIPPED ── #}
+            <div class="flex flex-col items-center gap-2 shrink-0">
+                <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center
+                    {% if s == 'SHIPPED' %}border-white bg-white ring-4 ring-white/10
+                    {% elif s == 'OUT_FOR_DELIVERY' or s == 'DELIVERED' %}border-emerald-600 bg-emerald-600
+                    {% else %}border-neutral-800 bg-neutral-950{% endif %}">
+                    {% if s == 'SHIPPED' %}
+                        <span class="w-2.5 h-2.5 rounded-full bg-black"></span>
+                    {% elif s == 'OUT_FOR_DELIVERY' or s == 'DELIVERED' %}
+                        <svg class="w-3.5 h-3.5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                        </svg>
+                    {% else %}
+                        <span class="w-2 h-2 rounded-full bg-neutral-700"></span>
+                    {% endif %}
+                </div>
+                <span class="text-[9px] font-bold uppercase tracking-wider
+                    {% if s == 'SHIPPED' %}text-white
+                    {% elif s == 'OUT_FOR_DELIVERY' or s == 'DELIVERED' %}text-emerald-500
+                    {% else %}text-neutral-600{% endif %}">
+                    Shipped
+                </span>
+            </div>
+
+            {# connector 4→5 #}
+            <div class="h-0.5 flex-1
+                {% if s == 'OUT_FOR_DELIVERY' or s == 'DELIVERED' %}bg-emerald-600
+                {% else %}bg-neutral-800{% endif %}
+            "></div>
+
+            {# ── STEP 5: OUT FOR DELIVERY ── #}
+            <div class="flex flex-col items-center gap-2 shrink-0">
+                <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center
+                    {% if s == 'OUT_FOR_DELIVERY' %}border-white bg-white ring-4 ring-white/10
+                    {% elif s == 'DELIVERED' %}border-emerald-600 bg-emerald-600
+                    {% else %}border-neutral-800 bg-neutral-950{% endif %}">
+                    {% if s == 'OUT_FOR_DELIVERY' %}
+                        <span class="w-2.5 h-2.5 rounded-full bg-black"></span>
+                    {% elif s == 'DELIVERED' %}
+                        <svg class="w-3.5 h-3.5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                        </svg>
+                    {% else %}
+                        <span class="w-2 h-2 rounded-full bg-neutral-700"></span>
+                    {% endif %}
+                </div>
+                <span class="text-[9px] font-bold uppercase tracking-wider text-center leading-tight
+                    {% if s == 'OUT_FOR_DELIVERY' %}text-white
+                    {% elif s == 'DELIVERED' %}text-emerald-500
+                    {% else %}text-neutral-600{% endif %}">
+                    Out for<br>Delivery
+                </span>
+            </div>
+
+            {# connector 5→6 #}
+            <div class="h-0.5 flex-1
+                {% if s == 'DELIVERED' %}bg-emerald-600{% else %}bg-neutral-800{% endif %}
+            "></div>
+
+            {# ── STEP 6: DELIVERED ── #}
+            <div class="flex flex-col items-center gap-2 shrink-0">
+                <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center
+                    {% if s == 'DELIVERED' %}border-emerald-600 bg-emerald-600
+                    {% else %}border-neutral-800 bg-neutral-950{% endif %}">
+                    {% if s == 'DELIVERED' %}
+                        <svg class="w-3.5 h-3.5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                        </svg>
+                    {% else %}
+                        <span class="w-2 h-2 rounded-full bg-neutral-700"></span>
+                    {% endif %}
+                </div>
+                <span class="text-[9px] font-bold uppercase tracking-wider
+                    {% if s == 'DELIVERED' %}text-emerald-400{% else %}text-neutral-600{% endif %}">
+                    Delivered
+                </span>
+            </div>
+
+        </div>{# end normal flow flex #}
+
+        
+        {% elif s == 'CANCELLED' or s == 'PARTIAL_CANCELLED' %}
+
+        {# Ghosted main timeline to show context #}
+        <div class="flex items-center opacity-20 pointer-events-none mb-5">
+            <div class="flex flex-col items-center gap-2 shrink-0">
+                <div class="w-8 h-8 rounded-full border-2 border-neutral-700 bg-neutral-900 flex items-center justify-center">
+                    <span class="w-2 h-2 rounded-full bg-neutral-600"></span>
+                </div>
+                <span class="text-[9px] font-bold uppercase tracking-wider text-neutral-600">Pending</span>
+            </div>
+            <div class="h-0.5 flex-1 bg-neutral-800"></div>
+            <div class="flex flex-col items-center gap-2 shrink-0">
+                <div class="w-8 h-8 rounded-full border-2 border-neutral-700 bg-neutral-900 flex items-center justify-center">
+                    <span class="w-2 h-2 rounded-full bg-neutral-600"></span>
+                </div>
+                <span class="text-[9px] font-bold uppercase tracking-wider text-neutral-600">Confirmed</span>
+            </div>
+            <div class="h-0.5 flex-1 bg-neutral-800"></div>
+            <div class="flex flex-col items-center gap-2 shrink-0">
+                <div class="w-8 h-8 rounded-full border-2 border-neutral-700 bg-neutral-900 flex items-center justify-center">
+                    <span class="w-2 h-2 rounded-full bg-neutral-600"></span>
+                </div>
+                <span class="text-[9px] font-bold uppercase tracking-wider text-neutral-600">Packed</span>
+            </div>
+            <div class="h-0.5 flex-1 bg-neutral-800"></div>
+            <div class="flex flex-col items-center gap-2 shrink-0">
+                <div class="w-8 h-8 rounded-full border-2 border-neutral-700 bg-neutral-900 flex items-center justify-center">
+                    <span class="w-2 h-2 rounded-full bg-neutral-600"></span>
+                </div>
+                <span class="text-[9px] font-bold uppercase tracking-wider text-neutral-600">Shipped</span>
+            </div>
+            <div class="h-0.5 flex-1 bg-neutral-800"></div>
+            <div class="flex flex-col items-center gap-2 shrink-0">
+                <div class="w-8 h-8 rounded-full border-2 border-neutral-700 bg-neutral-900 flex items-center justify-center">
+                    <span class="w-2 h-2 rounded-full bg-neutral-600"></span>
+                </div>
+                <span class="text-[9px] font-bold uppercase tracking-wider text-neutral-600 text-center leading-tight">Out for<br>Delivery</span>
+            </div>
+            <div class="h-0.5 flex-1 bg-neutral-800"></div>
+            <div class="flex flex-col items-center gap-2 shrink-0">
+                <div class="w-8 h-8 rounded-full border-2 border-neutral-700 bg-neutral-900 flex items-center justify-center">
+                    <span class="w-2 h-2 rounded-full bg-neutral-600"></span>
+                </div>
+                <span class="text-[9px] font-bold uppercase tracking-wider text-neutral-600">Delivered</span>
+            </div>
+        </div>
+
+        {# Cancellation notice panel #}
+        <div class="rounded-xl border border-rose-900/40 bg-rose-950/20 px-5 py-4">
+            <div class="flex items-start gap-3">
+                <div class="w-8 h-8 rounded-full bg-rose-950 border border-rose-800/50 flex items-center justify-center shrink-0 mt-0.5">
+                    <svg class="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-rose-400 text-xs font-bold uppercase tracking-wider mb-1">
+                        {% if s == 'CANCELLED' %}Order Cancelled{% else %}Partially Cancelled{% endif %}
+                    </p>
+                    <p class="text-neutral-500 text-xs leading-relaxed">
+                        {% if s == 'CANCELLED' %}
+                            All items in this order have been cancelled. Any payment will be refunded to the original payment method.
+                        {% else %}
+                            Some items were cancelled. The remaining items will continue processing as normal.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+       
+        {% elif s == 'RETURN_REQUESTED' or s == 'PARTIAL_RETURNED' or s == 'RETURNED' or s == 'REFUNDED' %}
+
+        
+        <div class="flex items-center opacity-20 pointer-events-none mb-5">
+            {% for step in steps %}
+                {% if not forloop.first %}<div class="h-0.5 flex-1 bg-emerald-900"></div>{% endif %}
+                <div class="flex flex-col items-center gap-2 shrink-0">
+                    <div class="w-8 h-8 rounded-full border-2 border-emerald-900 bg-emerald-950 flex items-center justify-center">
+                        <svg class="w-3.5 h-3.5 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                        </svg>
+                    </div>
+                    <span class="text-[9px] font-bold uppercase tracking-wider text-emerald-900 text-center leading-tight max-w-[52px]">
+                        {% if step == 'OUT_FOR_DELIVERY' %}Out for<br>Delivery{% else %}{{ step|capfirst|lower|capfirst }}{% endif %}
+                    </span>
+                </div>
+            {% endfor %}
+        </div>
+
+       
+        <div class="rounded-xl border border-amber-900/40 bg-amber-950/20 px-5 py-4">
+            <p class="text-amber-400 text-[10px] font-bold uppercase tracking-widest mb-4 flex items-center gap-2">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6-6M3 10l6 6"/>
+                </svg>
+                Return Process
+            </p>
+
+            <div class="flex items-center">
+
+                
+                <div class="flex flex-col items-center gap-2 shrink-0">
+                    <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center
+                        {% if s == 'RETURN_REQUESTED' %}border-amber-400 bg-amber-400 ring-4 ring-amber-400/10
+                        {% else %}border-amber-600 bg-amber-600{% endif %}">
+                        {% if s == 'RETURN_REQUESTED' %}
+                            <span class="w-2.5 h-2.5 rounded-full bg-black"></span>
+                        {% else %}
+                            <svg class="w-3.5 h-3.5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                            </svg>
+                        {% endif %}
+                    </div>
+                    <span class="text-[9px] font-bold uppercase tracking-wider text-center leading-tight text-amber-400">
+                        Return<br>Requested
+                    </span>
+                </div>
+
+                
+                <div class="h-0.5 flex-1
+                    {% if s == 'RETURNED' or s == 'PARTIAL_RETURNED' or s == 'REFUNDED' %}bg-amber-600
+                    {% else %}bg-neutral-800{% endif %}
+                "></div>
+
+               
+                <div class="flex flex-col items-center gap-2 shrink-0">
+                    <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center
+                        {% if s == 'RETURNED' or s == 'PARTIAL_RETURNED' %}border-white bg-white ring-4 ring-white/10
+                        {% elif s == 'REFUNDED' %}border-amber-600 bg-amber-600
+                        {% else %}border-neutral-800 bg-neutral-950{% endif %}">
+                        {% if s == 'RETURNED' or s == 'PARTIAL_RETURNED' %}
+                            <span class="w-2.5 h-2.5 rounded-full bg-black"></span>
+                        {% elif s == 'REFUNDED' %}
+                            <svg class="w-3.5 h-3.5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                            </svg>
+                        {% else %}
+                            <span class="w-2 h-2 rounded-full bg-neutral-700"></span>
+                        {% endif %}
+                    </div>
+                    <span class="text-[9px] font-bold uppercase tracking-wider
+                        {% if s == 'RETURNED' or s == 'PARTIAL_RETURNED' %}text-white
+                        {% elif s == 'REFUNDED' %}text-amber-400
+                        {% else %}text-neutral-600{% endif %}">
+                        Returned
+                    </span>
+                </div>
+
+                
+                <div class="h-0.5 flex-1
+                    {% if s == 'REFUNDED' %}bg-amber-600{% else %}bg-neutral-800{% endif %}
+                "></div>
+
+                
+                <div class="flex flex-col items-center gap-2 shrink-0">
+                    <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center
+                        {% if s == 'REFUNDED' %}border-teal-500 bg-teal-500
+                        {% else %}border-neutral-800 bg-neutral-950{% endif %}">
+                        {% if s == 'REFUNDED' %}
+                            <svg class="w-3.5 h-3.5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                            </svg>
+                        {% else %}
+                            <span class="w-2 h-2 rounded-full bg-neutral-700"></span>
+                        {% endif %}
+                    </div>
+                    <span class="text-[9px] font-bold uppercase tracking-wider
+                        {% if s == 'REFUNDED' %}text-teal-400{% else %}text-neutral-600{% endif %}">
+                        Refunded
+                    </span>
+                </div>
+
+            </div>{# end return flex #}
+
+            {% if s == 'PARTIAL_RETURNED' %}
+            <p class="text-amber-600/70 text-xs mt-3 leading-relaxed">
+                Some items have been returned. A refund for those items is being processed.
+            </p>
+            {% endif %}
+
+        </div>{# end return panel #}
+
+        {% endif %}{# end branch switch #}
+
+    </div>{# end timeline card #}
+    {% endwith %}
+
+
+   
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        {# ── LEFT: Order Items ── #}
+        <div class="lg:col-span-2 space-y-6">
+
+            <div class="bg-black border border-neutral-900 rounded-2xl overflow-hidden">
+                <div class="px-6 py-4 border-b border-neutral-900 flex items-center justify-between">
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-neutral-400">Items Ordered</h2>
+                    <span class="text-xs text-neutral-600 font-bold">{{ order.items.count }} item{{ order.items.count|pluralize }}</span>
+                </div>
+
+                <div class="divide-y divide-neutral-900">
+                    {% for item in order.items.all %}
+                    <div class="flex items-center gap-4 px-6 py-4 hover:bg-neutral-900/30 transition">
+
+                        {% if item.variant.images.first %}
+                        <img src="{{ item.variant.images.first.image.url }}"
+                             class="w-14 h-14 rounded-xl object-cover border border-neutral-800 shrink-0">
+                        {% else %}
+                        <div class="w-14 h-14 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-center shrink-0">
+                            <svg class="w-6 h-6 text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4-4 4 4 4-6 4 6M4 20h16"/>
+                            </svg>
+                        </div>
+                        {% endif %}
+
+                        <div class="flex-1 min-w-0">
+                            <p class="font-bold text-white truncate">{{ item.variant.product.name }}</p>
+                            <div class="flex items-center gap-2 mt-1 flex-wrap">
+                                {% if item.variant.color %}
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-neutral-500 bg-neutral-900 border border-neutral-800 px-2 py-0.5 rounded-md">
+                                    {{ item.variant.color }}
+                                </span>
+                                {% endif %}
+                                {% if item.variant.size %}
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-neutral-500 bg-neutral-900 border border-neutral-800 px-2 py-0.5 rounded-md">
+                                    {{ item.variant.size }}
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="text-right shrink-0">
+                            <p class="font-bold text-white">₹{{ item.price|floatformat:2 }}</p>
+                            <p class="text-xs text-neutral-500 mt-0.5">Qty: {{ item.quantity }}</p>
+                        </div>
+
+                        <div class="text-right shrink-0 w-24 hidden sm:block">
+                            <p class="font-bold text-white">₹{% widthratio item.price 1 item.quantity %}</p>
+                            <p class="text-xs text-neutral-600 mt-0.5">subtotal</p>
+                        </div>
+
+                    </div>
+                    {% empty %}
+                    <div class="px-6 py-12 text-center text-neutral-600 italic text-sm">
+                        No items found for this order.
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="border-t border-neutral-900 px-6 py-4 space-y-2.5 bg-neutral-950">
+                    <div class="flex justify-between text-sm text-neutral-400">
+                        <span>Subtotal</span>
+                        <span class="font-medium text-white">₹{{ order.total_amount|floatformat:2 }}</span>
+                    </div>
+                    {% if order.discount %}
+                    <div class="flex justify-between text-sm text-emerald-400">
+                        <span>Discount</span>
+                        <span class="font-medium">- ₹{{ order.discount|floatformat:2 }}</span>
+                    </div>
+                    {% endif %}
+                    {% if order.shipping %}
+                    <div class="flex justify-between text-sm text-neutral-400">
+                        <span>Shipping</span>
+                        <span class="font-medium text-white">₹{{ order.shipping|floatformat:2 }}</span>
+                    </div>
+                    {% endif %}
+                    {% if order.tax %}
+                    <div class="flex justify-between text-sm text-neutral-400">
+                        <span>Tax</span>
+                        <span class="font-medium text-white">₹{{ order.tax|floatformat:2 }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="flex justify-between text-base font-bold text-white border-t border-neutral-800 pt-3 mt-1">
+                        <span>Total</span>
+                        <span>₹{{ order.final_amount|floatformat:2 }}</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+       
+        <div class="space-y-6">
+
+            {# Customer #}
+            <div class="bg-black border border-neutral-900 rounded-2xl overflow-hidden">
+                <div class="px-6 py-4 border-b border-neutral-900">
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-neutral-400">Customer</h2>
+                </div>
+                <div class="px-6 py-5">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 rounded-full overflow-hidden border border-neutral-700 shrink-0">
+                            {% if order.user.profile_image %}
+                                <img src="{{ order.user.profile_image.url }}" alt="Customer" class="w-full h-full object-cover">
+                            {% else %}
+                                <div class="w-full h-full bg-neutral-800 flex items-center justify-center text-sm font-bold text-white">
+                                    {{ order.user.email|first|upper }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <p class="font-bold text-white leading-tight">{{ order.user.get_full_name|default:order.user.email }}</p>
+                            <p class="text-neutral-500 text-xs mt-0.5">{{ order.user.email }}</p>
+                        </div>
+                    </div>
+                    <a href="{% url 'adminpanel:customers_view' order.user.id %}" class="block w-full text-center text-xs font-bold text-neutral-400 border border-neutral-800 rounded-xl py-2.5 hover:bg-neutral-900 hover:text-white transition">
+                        View Customer Profile →
+                    </a>
+                </div>
+            </div>
+
+          
+            <div class="bg-black border border-neutral-900 rounded-2xl overflow-hidden">
+                <div class="px-6 py-4 border-b border-neutral-900">
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-neutral-400">Order Info</h2>
+                </div>
+                <div class="px-6 py-5 space-y-4">
+
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs text-neutral-500 uppercase tracking-wider font-bold">Status</span>
+                        {% with order.status as s %}
+                        <span class="text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5
+                            {% if s == 'DELIVERED' %}text-emerald-400
+                            {% elif s == 'OUT_FOR_DELIVERY' %}text-violet-400
+                            {% elif s == 'SHIPPED' %}text-blue-400
+                            {% elif s == 'PACKED' %}text-sky-400
+                            {% elif s == 'CONFIRMED' %}text-sky-400
+                            {% elif s == 'PENDING' %}text-amber-400
+                            {% elif s == 'CANCELLED' %}text-rose-500
+                            {% elif s == 'PARTIAL_CANCELLED' %}text-orange-400
+                            {% elif s == 'RETURN_REQUESTED' %}text-amber-400
+                            {% elif s == 'PARTIAL_RETURNED' %}text-orange-400
+                            {% elif s == 'RETURNED' %}text-orange-400
+                            {% elif s == 'REFUNDED' %}text-teal-400
+                            {% else %}text-neutral-500{% endif %}
+                        ">
+                            <span class="w-1.5 h-1.5 rounded-full
+                                {% if s == 'DELIVERED' %}bg-emerald-400
+                                {% elif s == 'OUT_FOR_DELIVERY' %}bg-violet-400
+                                {% elif s == 'SHIPPED' %}bg-blue-400
+                                {% elif s == 'PACKED' %}bg-sky-400
+                                {% elif s == 'CONFIRMED' %}bg-sky-400
+                                {% elif s == 'PENDING' %}bg-amber-400
+                                {% elif s == 'CANCELLED' %}bg-rose-500
+                                {% elif s == 'PARTIAL_CANCELLED' %}bg-orange-400
+                                {% elif s == 'RETURN_REQUESTED' %}bg-amber-400
+                                {% elif s == 'PARTIAL_RETURNED' %}bg-orange-400
+                                {% elif s == 'RETURNED' %}bg-orange-400
+                                {% elif s == 'REFUNDED' %}bg-teal-400
+                                {% else %}bg-neutral-700{% endif %}
+                            "></span>
+                            {{ s|capfirst|lower|title }}
+                        </span>
+                        {% endwith %}
+                    </div>
+
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs text-neutral-500 uppercase tracking-wider font-bold">Payment</span>
+                        <span class="text-xs font-bold text-white">{{ order.payment_method|default:"N/A"|upper }}</span>
+                    </div>
+
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs text-neutral-500 uppercase tracking-wider font-bold">Placed On</span>
+                        <span class="text-xs font-bold text-white">{{ order.created_at|date:"d M Y" }}</span>
+                    </div>
+
+                </div>
+            </div>
+
+            {# Shipping Address #}
+            {% if order.address %}
+            <div class="bg-black border border-neutral-900 rounded-2xl overflow-hidden">
+                <div class="px-6 py-4 border-b border-neutral-900">
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-neutral-400">Shipping Address</h2>
+                </div>
+                <div class="px-6 py-5">
+                    <address class="not-italic space-y-1 text-sm text-neutral-300 leading-relaxed">
+                        <p class="font-bold text-white">{{ order.address.full_name|default:order.user.get_full_name }}</p>
+                        <p>{{ order.address.address_line1 }}</p>
+                        {% if order.address.address_line2 %}
+                        <p>{{ order.address.address_line2 }}</p>
+                        {% endif %}
+                        <p>{{ order.address.city }}, {{ order.address.state }} — {{ order.address.pincode }}</p>
+                        <p>{{ order.address.country }}</p>
+                        {% if order.address.phone %}
+                        <p class="text-neutral-500 pt-1 flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                            </svg>
+                            {{ order.address.phone }}
+                        </p>
+                        {% endif %}
+                    </address>
+                </div>
+            </div>
+            {% endif %}
+
+            
+            
+
+        </div>{# end sidebar #}
+    </div>{# end main grid #}
+
+</div>
+{% endblock %}

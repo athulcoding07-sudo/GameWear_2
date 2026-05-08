@@ -1,0 +1,291 @@
+{% extends 'adminpanel/dashboard.html' %}
+
+{% block title %}Order Management | GameWear{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+
+    <!-- Header Section -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+        <div>
+            <div class="flex items-center gap-3 mb-1">
+                <h1 class="text-2xl font-bold">Order Management</h1>
+            </div>
+            <p class="text-neutral-500 text-sm">
+                Track, filter, and manage all customer orders.
+            </p>
+        </div>
+
+        <!-- Optional export button for polish -->
+       
+    </div>
+
+    <!-- Search & Filter Bar -->
+    <div class="bg-black border border-neutral-900 rounded-2xl p-4 mb-8">
+        <form method="GET" action="" class="flex flex-col lg:flex-row gap-4 items-center">
+
+            <!-- Search Input -->
+            <div class="relative flex-1 w-full flex gap-2">
+                <div class="relative flex-1">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-neutral-500">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </span>
+                    <input type="text"
+                           name="search"
+                           value="{{ request.GET.search|default:'' }}"
+                           placeholder="Search by Order ID or customer email..."
+                           class="bg-neutral-950 border border-neutral-800 text-sm rounded-xl block w-full pl-10 p-3 text-white focus:border-white outline-none">
+                </div>
+
+                <button type="submit"
+                        class="px-5 py-3 bg-white text-black text-xs font-bold rounded-xl hover:bg-neutral-200 transition">
+                    Search
+                </button>
+
+                {% if request.GET.search %}
+                <a href="?{% if request.GET.status %}status={{ request.GET.status }}{% endif %}"
+                   class="px-5 py-3 bg-neutral-900 border border-neutral-800 text-white text-xs font-bold rounded-xl hover:bg-neutral-800 transition flex items-center">
+                    Cancel
+                </a>
+                {% endif %}
+            </div>
+
+            <!-- Status Filter -->
+            <div class="flex gap-2 w-full lg:w-auto">
+                <select name="status"
+                        onchange="this.form.submit()"
+                        class="flex-1 lg:flex-none bg-neutral-950 border border-neutral-800 text-sm rounded-xl px-4 py-3 text-white focus:border-white outline-none cursor-pointer">
+                    <option value="">All Statuses</option>
+                    <option value="pending"    {% if request.GET.status == 'pending'    %}selected{% endif %}>Pending</option>
+                    <option value="confirmed"  {% if request.GET.status == 'confirmed'  %}selected{% endif %}>Confirmed</option>
+                    <option value="shipped"    {% if request.GET.status == 'shipped'    %}selected{% endif %}>Shipped</option>
+                    <option value="delivered"  {% if request.GET.status == 'delivered'  %}selected{% endif %}>Delivered</option>
+                    <option value="cancelled"  {% if request.GET.status == 'cancelled'  %}selected{% endif %}>Cancelled</option>
+                    <option value="returned"   {% if request.GET.status == 'returned'   %}selected{% endif %}>Returned</option>
+                </select>
+
+                <!-- Sort Filter -->
+                <select name="sort"
+                        onchange="this.form.submit()"
+                        class="flex-1 lg:flex-none bg-neutral-950 border border-neutral-800 text-sm rounded-xl px-4 py-3 text-white focus:border-white outline-none cursor-pointer">
+                    <option value=""       {% if request.GET.sort == ''       %}selected{% endif %}>Newest First</option>
+                    <option value="oldest" {% if request.GET.sort == 'oldest' %}selected{% endif %}>Oldest First</option>
+                </select>
+            </div>
+        </form>
+    </div>
+
+    <!-- Orders Table -->
+    <div class="bg-black border border-neutral-900 rounded-2xl overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left">
+                <thead class="text-xs text-neutral-500 bg-neutral-950 uppercase border-b border-neutral-900">
+                    <tr>
+                        <th class="px-6 py-4">Order ID</th>
+                        <th class="px-6 py-4">Customer</th>
+                        <th class="px-6 py-4 text-center">Items</th>
+                        <th class="px-6 py-4 text-right">Total</th>
+                        <th class="px-6 py-4">Status</th>
+                        <th class="px-6 py-4">Date</th>
+                        <th class="px-6 py-4 text-right">Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody class="text-sm divide-y divide-neutral-900">
+                    {% for order in page_obj %}
+                    <tr class="hover:bg-neutral-900/40 transition-colors">
+
+                        <!-- Order ID -->
+                        <td class="px-6 py-4">
+                            <span class="font-mono text-xs text-neutral-300 bg-neutral-900 px-2.5 py-1.5 rounded-lg border border-neutral-800">
+                                #{{ order.order_id }}
+                            </span>
+                        </td>
+
+                        <!-- Customer -->
+<td class="px-6 py-4">
+    <div class="flex items-center gap-3">
+
+        <!-- Profile Image -->
+        <div class="w-8 h-8 rounded-full overflow-hidden border border-neutral-700 shrink-0">
+            {% if order.user.profile_image %}
+                <img src="{{ order.user.profile_image.url }}"
+                     alt="Profile"
+                     class="w-full h-full object-cover">
+            {% else %}
+            <!-- Fallback Initial -->
+            <img src="https://res.cloudinary.com/dlywferjc/image/upload/v1772945926/avatar_i3zuyc.avif"
+                style="width:100%;height:100%;object-fit:cover;">
+            {% endif %}
+        </div>
+
+        <div>
+            <p class="font-medium text-white leading-tight">
+                {{ order.user.get_full_name|default:order.user.email }}
+            </p>
+            <p class="text-neutral-500 text-xs mt-0.5">
+                {{ order.user.email }}
+            </p>
+        </div>
+    </div>
+</td>
+
+                        <!-- Items Count -->
+                        <td class="px-6 py-4 text-center text-neutral-300 font-bold">
+                            {{ order.items.count }}
+                        </td>
+
+                        <!-- Total -->
+                        <td class="px-6 py-4 text-right font-bold text-white">
+                            ₹{{ order.total_amount|floatformat:2 }}
+                        </td>
+
+                        <!-- Status Badge -->
+                        <td class="px-6 py-4">
+                            {% with order.status as s %}
+                            <span class="
+                                text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 w-max
+                                {% if s == 'delivered' %}text-emerald-500
+                                {% elif s == 'shipped' %}text-blue-400
+                                {% elif s == 'confirmed' %}text-sky-400
+                                {% elif s == 'pending' %}text-amber-400
+                                {% elif s == 'cancelled' %}text-rose-500
+                                {% elif s == 'returned' %}text-orange-400
+                                {% else %}text-neutral-500{% endif %}
+                            ">
+                                <span class="w-1.5 h-1.5 rounded-full
+                                    {% if s == 'delivered' %}bg-emerald-500
+                                    {% elif s == 'shipped' %}bg-blue-400
+                                    {% elif s == 'confirmed' %}bg-sky-400
+                                    {% elif s == 'pending' %}bg-amber-400
+                                    {% elif s == 'cancelled' %}bg-rose-500
+                                    {% elif s == 'returned' %}bg-orange-400
+                                    {% else %}bg-neutral-700{% endif %}
+                                "></span>
+                                {{ order.status|capfirst }}
+                            </span>
+                            {% endwith %}
+                        </td>
+
+                        <!-- Date -->
+                        <td class="px-6 py-4 text-neutral-400 text-xs whitespace-nowrap">
+                            {{ order.created_at|date:"d M Y" }}<br>
+                            <span class="text-neutral-600">{{ order.created_at|time:"h:i A" }}</span>
+                        </td>
+
+                        <!-- Actions -->
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex justify-end items-center gap-4">
+                                <!-- View Detail -->
+                                <a href="{% url 'products:admin_order_detail' order_id=order.id %}"
+                                   class="text-neutral-400 hover:text-white transition-all"
+                                   title="View Order">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                    </svg>
+                                </a>
+                                <!-- Update Status -->
+                                <a href="{% url 'products:admin_update_order_status' order.id %}"
+                                   class="text-neutral-400 hover:text-blue-400 transition-all"
+                                   title="Update Status">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                              d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                                    </svg>
+                                </a>
+                            </div>
+                        </td>
+
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="px-6 py-20 text-center text-neutral-600 italic">
+                            No orders found.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 px-2">
+
+        <!-- Count Info -->
+        <p class="text-sm text-neutral-500 order-2 sm:order-1">
+            Showing
+            <span class="text-white font-medium">{{ page_obj.start_index }}</span>
+            to
+            <span class="text-white font-medium">{{ page_obj.end_index }}</span>
+            of
+            <span class="text-white font-medium">{{ page_obj.paginator.count }}</span>
+            orders
+        </p>
+
+        <!-- Page Nav -->
+        <nav class="inline-flex items-center -space-x-px rounded-xl border border-neutral-900 bg-black overflow-hidden order-1 sm:order-2">
+
+            <!-- Previous -->
+            {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}"
+               class="px-4 py-2.5 text-neutral-400 hover:text-white hover:bg-neutral-900 transition flex items-center gap-1 border-r border-neutral-900">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                <span class="text-xs font-bold uppercase tracking-wider">Prev</span>
+            </a>
+            {% else %}
+            <span class="px-4 py-2.5 text-neutral-700 cursor-not-allowed flex items-center gap-1 border-r border-neutral-900">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                <span class="text-xs font-bold uppercase tracking-wider">Prev</span>
+            </span>
+            {% endif %}
+
+            <!-- Page Numbers -->
+            {% for i in page_obj.paginator.page_range %}
+                {% if page_obj.number == i %}
+                    <span class="px-5 py-2.5 bg-white text-black text-xs font-bold border-r border-neutral-900">
+                        {{ i }}
+                    </span>
+                {% elif i > page_obj.number|add:'-3' and i < page_obj.number|add:'3' %}
+                    <a href="?page={{ i }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}"
+                       class="px-5 py-2.5 text-neutral-400 hover:text-white hover:bg-neutral-900 transition text-xs font-bold border-r border-neutral-900">
+                        {{ i }}
+                    </a>
+                {% endif %}
+            {% endfor %}
+
+            <!-- Next -->
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}"
+               class="px-4 py-2.5 text-neutral-400 hover:text-white hover:bg-neutral-900 transition flex items-center gap-1">
+                <span class="text-xs font-bold uppercase tracking-wider">Next</span>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+            </a>
+            {% else %}
+            <span class="px-4 py-2.5 text-neutral-700 cursor-not-allowed flex items-center gap-1">
+                <span class="text-xs font-bold uppercase tracking-wider">Next</span>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+            </span>
+            {% endif %}
+
+        </nav>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
