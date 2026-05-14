@@ -1,0 +1,628 @@
+{% extends 'adminpanel/dashboard.html' %}
+{% load static %}
+
+{% block title %}Coupon Management | GameWear{% endblock %}
+
+{% block content %}
+
+<div class="max-w-6xl mx-auto">
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-6 right-6 z-[200] hidden">
+        <div id="toast-inner"
+            class="flex items-center gap-3 px-5 py-3.5 rounded-xl border shadow-2xl text-sm font-semibold transition-all">
+            <svg id="toast-icon" class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"></svg>
+            <span id="toast-msg"></span>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+        <div>
+            <div class="flex items-center gap-3 mb-1">
+                <h1 class="text-2xl font-bold text-white">Coupon Management</h1>
+            </div>
+            <p class="text-neutral-500 text-sm">Create and manage discount coupons for your store.</p>
+        </div>
+        <button type="button" onclick="openModal()"
+            class="flex-1 sm:flex-none bg-white text-black text-sm font-bold py-2.5 px-6 rounded-lg hover:bg-neutral-200 transition flex items-center justify-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Add Coupon
+        </button>
+    </div>
+
+    <!-- Search & Filter -->
+    <div class="bg-black border border-neutral-900 rounded-2xl p-4 mb-8">
+        <form method="GET" action="" class="flex flex-col md:flex-row gap-4">
+            <div class="relative flex-1">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-neutral-500">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </span>
+                <input type="text" name="search" value="{{ request.GET.search }}" placeholder="Search by coupon code..."
+                    class="bg-neutral-950 border border-neutral-800 text-sm rounded-xl block w-full pl-10 p-3 focus:border-white outline-none transition text-white placeholder-neutral-600">
+            </div>
+            <div class="flex gap-2">
+                <button type="submit"
+                    class="bg-neutral-800 text-white px-6 py-3 rounded-xl text-sm font-bold hover:bg-neutral-700 transition">Search</button>
+                <select name="status" onchange="this.form.submit()"
+                    class="bg-neutral-950 border border-neutral-800 text-sm rounded-xl px-4 py-3 focus:border-white outline-none text-white cursor-pointer">
+                    <option value="all">All Status</option>
+                    <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>Active</option>
+                    <option value="inactive" {% if request.GET.status == 'inactive' %}selected{% endif %}>Inactive
+                    </option>
+                </select>
+            </div>
+        </form>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+        <div class="bg-black border border-neutral-900 rounded-2xl p-4">
+            <p class="text-[10px] uppercase tracking-widest text-neutral-500 font-semibold mb-1">Total Coupons</p>
+            <p class="text-2xl font-bold text-white">{{ coupons|length }}</p>
+        </div>
+        <div class="bg-black border border-neutral-900 rounded-2xl p-4">
+            <p class="text-[10px] uppercase tracking-widest text-neutral-500 font-semibold mb-1">Active</p>
+            <p class="text-2xl font-bold text-emerald-400">{{ coupons|length }}</p>
+        </div>
+        <div class="bg-black border border-neutral-900 rounded-2xl p-4">
+            <p class="text-[10px] uppercase tracking-widest text-neutral-500 font-semibold mb-1">Total Used</p>
+            <p class="text-2xl font-bold text-sky-400">—</p>
+        </div>
+        <div class="bg-black border border-neutral-900 rounded-2xl p-4">
+            <p class="text-[10px] uppercase tracking-widest text-neutral-500 font-semibold mb-1">Expiring Soon</p>
+            <p class="text-2xl font-bold text-amber-400">—</p>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="bg-black border border-neutral-900 rounded-2xl overflow-hidden mb-6">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left">
+                <thead class="text-xs text-neutral-500 bg-neutral-950 uppercase border-b border-neutral-900">
+                    <tr>
+                        <th class="px-6 py-4 font-medium">Code</th>
+                        <th class="px-6 py-4 font-medium">Discount</th>
+                        <th class="px-6 py-4 font-medium">Min / Max</th>
+                        <th class="px-6 py-4 font-medium">Validity</th>
+                        <th class="px-6 py-4 font-medium">Usage</th>
+                        <th class="px-6 py-4 font-medium">Status</th>
+                        <th class="px-6 py-4 font-medium text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="coupon-table-body" class="text-sm divide-y divide-neutral-900">
+                    {% include "adminpanel/coupons/partials/table_rows.html" %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+<!-- ============================================================
+     CREATE / EDIT MODAL
+============================================================ -->
+<div id="coupon-modal" class="fixed inset-0 z-[80] hidden items-center justify-center">
+    <div class="fixed inset-0 bg-black/90 backdrop-blur-sm" onclick="closeModal()"></div>
+    <div class="relative w-full max-w-2xl p-4">
+        <div
+            class="bg-neutral-950 border border-neutral-800 rounded-2xl shadow-2xl overflow-hidden relative z-10 flex flex-col max-h-[92vh]">
+
+            <!-- Modal Header -->
+            <div class="p-6 border-b border-neutral-900 flex justify-between items-center bg-black shrink-0">
+                <div>
+                    <h2 id="modal-title" class="text-xl font-bold text-white">Add New Coupon</h2>
+                    <p id="modal-subtitle" class="text-xs text-neutral-500 mt-0.5">Fill in the details to create a
+                        coupon.</p>
+                </div>
+                <button type="button" onclick="closeModal()" class="text-neutral-500 hover:text-white transition p-1">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Modal Form -->
+            <form id="coupon-form" class="p-6 space-y-5 overflow-y-auto">
+                {% csrf_token %}
+                <input type="hidden" id="coupon-id" value="">
+
+                <!-- Field Error Banner -->
+                <div id="form-errors"
+                    class="hidden bg-rose-500/10 border border-rose-500/20 rounded-xl p-4 text-rose-400 text-xs space-y-1">
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+
+                    <!-- Code -->
+                    <div class="space-y-2 sm:col-span-2">
+                        <label class="text-xs font-semibold text-neutral-500 uppercase tracking-widest">Coupon Code
+                            <span class="text-rose-500">*</span></label>
+                        <div class="flex gap-2">
+                            <input type="text" id="f-code" name="code" required placeholder="e.g. SAVE20"
+                                class="flex-1 bg-black border border-neutral-800 rounded-xl p-3 focus:border-white outline-none transition text-white placeholder-neutral-700 uppercase font-mono tracking-widest text-sm">
+                            <button type="button" onclick="generateCode()"
+                                class="bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-bold px-4 rounded-xl transition whitespace-nowrap">
+                                Auto Generate
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Discount % -->
+                    <div class="space-y-2">
+                        <label class="text-xs font-semibold text-neutral-500 uppercase tracking-widest">Discount % <span
+                                class="text-rose-500">*</span></label>
+                        <div class="relative">
+                            <input type="number" id="f-discount" name="discount_percentage" required min="1" max="100"
+                                placeholder="20"
+                                class="w-full bg-black border border-neutral-800 rounded-xl p-3 pr-10 focus:border-white outline-none transition text-white placeholder-neutral-700">
+                            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 font-bold">%</span>
+                        </div>
+                    </div>
+
+                    <!-- Usage Limit -->
+                    <div class="space-y-2">
+                        <label class="text-xs font-semibold text-neutral-500 uppercase tracking-widest">Usage Limit
+                            <span class="text-rose-500">*</span></label>
+                        <input type="number" id="f-usage-limit" name="usage_limit" required min="1" placeholder="100"
+                            class="w-full bg-black border border-neutral-800 rounded-xl p-3 focus:border-white outline-none transition text-white placeholder-neutral-700">
+                    </div>
+
+                    <!-- Minimum Amount -->
+                    <div class="space-y-2">
+                        <label class="text-xs font-semibold text-neutral-500 uppercase tracking-widest">Minimum Order
+                            (₹) <span class="text-rose-500">*</span></label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 font-bold">₹</span>
+                            <input type="number" id="f-min-amount" name="minimum_amount" required min="0" step="0.01"
+                                placeholder="499.00"
+                                class="w-full bg-black border border-neutral-800 rounded-xl p-3 pl-7 focus:border-white outline-none transition text-white placeholder-neutral-700">
+                        </div>
+                    </div>
+
+                    <!-- Maximum Discount -->
+                    <div class="space-y-2">
+                        <label class="text-xs font-semibold text-neutral-500 uppercase tracking-widest">Maximum Discount
+                            (₹) <span class="text-neutral-700">(Optional)</span></label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 font-bold">₹</span>
+                            <input type="number" id="f-max-discount" name="maximum_discount" min="0" step="0.01"
+                                placeholder="200.00"
+                                class="w-full bg-black border border-neutral-800 rounded-xl p-3 pl-7 focus:border-white outline-none transition text-white placeholder-neutral-700">
+                        </div>
+                    </div>
+
+                    <!-- Valid From -->
+                    <div class="space-y-2">
+                        <label class="text-xs font-semibold text-neutral-500 uppercase tracking-widest">Valid From <span
+                                class="text-rose-500">*</span></label>
+                        <input type="datetime-local" id="f-valid-from" name="valid_from" required
+                            class="w-full bg-black border border-neutral-800 rounded-xl p-3 focus:border-white outline-none transition text-white [color-scheme:dark]">
+                    </div>
+
+                    <!-- Valid To -->
+                    <div class="space-y-2">
+                        <label class="text-xs font-semibold text-neutral-500 uppercase tracking-widest">Valid To <span
+                                class="text-rose-500">*</span></label>
+                        <input type="datetime-local" id="f-valid-to" name="valid_to" required
+                            class="w-full bg-black border border-neutral-800 rounded-xl p-3 focus:border-white outline-none transition text-white [color-scheme:dark]">
+                    </div>
+
+                    <!-- Is Active -->
+                    <div class="sm:col-span-2">
+                        <label class="flex items-center gap-3 cursor-pointer group">
+                            <div class="relative">
+                                <input type="checkbox" id="f-is-active" name="is_active" class="sr-only peer" checked>
+                                <div class="w-11 h-6 bg-neutral-800 peer-checked:bg-white rounded-full transition-all">
+                                </div>
+                                <div
+                                    class="absolute top-0.5 left-0.5 w-5 h-5 bg-neutral-500 peer-checked:bg-black rounded-full transition-all peer-checked:translate-x-5">
+                                </div>
+                            </div>
+                            <div>
+                                <span class="text-sm font-semibold text-white">Active</span>
+                                <p class="text-xs text-neutral-500">Coupon can be applied by customers when enabled.</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Submit -->
+                <div class="flex justify-end gap-3 pt-4 border-t border-neutral-900">
+                    <button type="button" onclick="closeModal()"
+                        class="px-6 py-2.5 text-sm font-bold text-neutral-400 hover:text-white transition">Cancel</button>
+                    <button type="submit" id="submit-btn"
+                        class="bg-white text-black px-8 py-2.5 rounded-xl text-sm font-bold hover:bg-neutral-200 transition flex items-center justify-center gap-2 min-w-[160px] disabled:opacity-50">
+                        <span id="submit-label">Create Coupon</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<!-- ============================================================
+     DELETE CONFIRM MODAL
+============================================================ -->
+<div id="delete-modal" class="fixed inset-0 z-[90] hidden items-center justify-center">
+    <div class="fixed inset-0 bg-black/90 backdrop-blur-sm"></div>
+    <div class="relative w-full max-w-sm p-4 z-10">
+        <div class="bg-neutral-950 border border-neutral-800 rounded-2xl shadow-2xl p-6 text-center">
+            <div
+                class="w-12 h-12 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mx-auto mb-4">
+                <svg class="w-6 h-6 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+            </div>
+            <h3 class="text-white font-bold text-lg mb-1">Delete Coupon?</h3>
+            <p class="text-neutral-500 text-sm mb-6">
+                Are you sure you want to delete <span id="delete-code" class="font-mono font-bold text-white"></span>?
+                This action cannot be undone.
+            </p>
+            <div class="flex gap-3">
+                <button type="button" onclick="closeDeleteModal()"
+                    class="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold bg-neutral-900 text-neutral-400 hover:text-white hover:bg-neutral-800 transition">
+                    Cancel
+                </button>
+                <button type="button" id="confirm-delete-btn" onclick="executeDelete()"
+                    class="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold bg-rose-500 text-white hover:bg-rose-600 transition">
+                    Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    (function () {
+        'use strict';
+
+        /* ─── CSRF ─────────────────────────────────────────────────────────────── */
+        const CSRF = () => document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+
+        const URL_CREATE = "{% url 'coupons:dashboard_coupon_create' %}";
+
+        const URL_LIST = "{% url 'coupons:dashboard_coupon_list' %}";
+
+        const URL_UPDATE_TEMPLATE =
+            "{% url 'coupons:dashboard_coupon_update' 0 %}";
+
+        const URL_DELETE_TEMPLATE =
+            "{% url 'coupons:dashboard_coupon_delete' 0 %}";
+
+        const URL_TOGGLE_TEMPLATE =
+            "{% url 'coupons:dashboard_coupon_toggle' 0 %}";
+
+
+        const URL_UPDATE = (id) =>
+            URL_UPDATE_TEMPLATE.replace("0", id);
+
+        const URL_DELETE = (id) =>
+            URL_DELETE_TEMPLATE.replace("0", id);
+
+        const URL_TOGGLE = (id) =>
+            URL_TOGGLE_TEMPLATE.replace("0", id);
+
+        /* ─── STATE ─────────────────────────────────────────────────────────────── */
+        let pendingDeleteId = null;
+
+        /* ─── TOAST ─────────────────────────────────────────────────────────────── */
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const inner = document.getElementById('toast-inner');
+            const icon = document.getElementById('toast-icon');
+            const msg = document.getElementById('toast-msg');
+
+            const styles = {
+                success: 'bg-emerald-950 border-emerald-700 text-emerald-300',
+                error: 'bg-rose-950 border-rose-700 text-rose-300',
+                info: 'bg-sky-950 border-sky-700 text-sky-300',
+            };
+            const icons = {
+                success: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>',
+                error: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>',
+                info: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 110 20A10 10 0 0112 2z"/>',
+            };
+
+            inner.className = `flex items-center gap-3 px-5 py-3.5 rounded-xl border shadow-2xl text-sm font-semibold ${styles[type]}`;
+            icon.innerHTML = icons[type];
+            msg.textContent = message;
+
+            toast.classList.remove('hidden');
+            toast.classList.add('flex');
+
+            clearTimeout(toast._timer);
+            toast._timer = setTimeout(() => {
+                toast.classList.add('hidden');
+                toast.classList.remove('flex');
+            }, 3500);
+        }
+
+        /* ─── MODAL ─────────────────────────────────────────────────────────────── */
+        function clearForm() {
+            document.getElementById('coupon-id').value = '';
+            document.getElementById('f-code').value = '';
+            document.getElementById('f-discount').value = '';
+            document.getElementById('f-usage-limit').value = '';
+            document.getElementById('f-min-amount').value = '';
+            document.getElementById('f-max-discount').value = '';
+            document.getElementById('f-valid-from').value = '';
+            document.getElementById('f-valid-to').value = '';
+            document.getElementById('f-is-active').checked = true;
+            clearErrors();
+        }
+
+        function clearErrors() {
+            const banner = document.getElementById('form-errors');
+            banner.innerHTML = '';
+            banner.classList.add('hidden');
+        }
+
+        function showErrors(errors) {
+            const banner = document.getElementById('form-errors');
+            banner.innerHTML = Object.values(errors)
+                .flat()
+                .map(e => `<div>• ${e}</div>`)
+                .join('');
+            banner.classList.remove('hidden');
+            banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        // Expose to global scope for inline onclick
+        window.openModal = async function (id = null) {
+            clearForm();
+
+            const modal = document.getElementById('coupon-modal');
+            const title = document.getElementById('modal-title');
+            const subtitle = document.getElementById('modal-subtitle');
+            const label = document.getElementById('submit-label');
+
+            if (id) {
+                title.textContent = 'Edit Coupon';
+                subtitle.textContent = 'Update the details for this coupon.';
+                label.textContent = 'Save Changes';
+                document.getElementById('coupon-id').value = id;
+
+                // Fetch existing coupon data via AJAX
+                try {
+                    const res = await fetch(`${URL_UPDATE(id)}?ajax=1`, {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+                    const data = await res.json();
+
+                    if (data.coupon) {
+                        const c = data.coupon;
+                        document.getElementById('f-code').value = c.code || '';
+                        document.getElementById('f-discount').value = c.discount_percentage || '';
+                        document.getElementById('f-usage-limit').value = c.usage_limit || '';
+                        document.getElementById('f-min-amount').value = c.minimum_amount || '';
+                        document.getElementById('f-max-discount').value = c.maximum_discount || '';
+                        document.getElementById('f-valid-from').value = c.valid_from || '';
+                        document.getElementById('f-valid-to').value = c.valid_to || '';
+                        document.getElementById('f-is-active').checked = c.is_active;
+                    }
+                } catch (err) {
+                    showToast('Failed to load coupon data.', 'error');
+                    return;
+                }
+            } else {
+                title.textContent = 'Add New Coupon';
+                subtitle.textContent = 'Fill in the details to create a coupon.';
+                label.textContent = 'Create Coupon';
+            }
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => document.getElementById('f-code').focus(), 100);
+        };
+
+        window.closeModal = function () {
+            const modal = document.getElementById('coupon-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            clearForm();
+        };
+
+        /* ─── FORM SUBMIT (Create / Update via AJAX) ────────────────────────── */
+        document.getElementById('coupon-form').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const id = document.getElementById('coupon-id').value;
+            const btn = document.getElementById('submit-btn');
+            const label = document.getElementById('submit-label');
+            const origLabel = label.textContent;
+
+            // Loading state
+            btn.disabled = true;
+            label.textContent = id ? 'Saving...' : 'Creating...';
+
+            const payload = {
+                code: document.getElementById('f-code').value.trim().toUpperCase(),
+                discount_percentage: document.getElementById('f-discount').value,
+                usage_limit: document.getElementById('f-usage-limit').value,
+                minimum_amount: document.getElementById('f-min-amount').value,
+                maximum_discount: document.getElementById('f-max-discount').value || null,
+                valid_from: document.getElementById('f-valid-from').value,
+                valid_to: document.getElementById('f-valid-to').value,
+                is_active: document.getElementById('f-is-active').checked,
+            };
+
+            const url = id ? URL_UPDATE(id) : URL_CREATE;
+            const method = 'POST';
+
+            try {
+                const res = await fetch(url, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': CSRF(),
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: JSON.stringify(payload),
+                });
+
+                const data = await res.json();
+
+                if (res.ok && data.success) {
+                    showToast(data.message || (id ? 'Coupon updated!' : 'Coupon created!'), 'success');
+                    closeModal();
+                    // Reload table rows without full page reload
+                    await refreshTable();
+                } else {
+                    // Show field-level errors if provided
+                    if (data.errors) {
+                        showErrors(data.errors);
+                    } else {
+                        showToast(data.message || 'Something went wrong.', 'error');
+                    }
+                }
+            } catch (err) {
+                showToast('Network error. Please try again.', 'error');
+            } finally {
+                btn.disabled = false;
+                label.textContent = origLabel;
+            }
+        });
+
+        /* ─── TOGGLE STATUS ─────────────────────────────────────────────────────── */
+        window.toggleStatus = async function (id, btn) {
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(URL_TOGGLE(id), {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': CSRF(),
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                });
+                const data = await res.json();
+
+                if (res.ok && data.success) {
+                    showToast(data.message || 'Status toggled.', 'info');
+                    await refreshTable();
+                } else {
+                    showToast(data.message || 'Toggle failed.', 'error');
+                }
+            } catch (err) {
+                showToast('Network error.', 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        };
+
+        /* ─── DELETE ─────────────────────────────────────────────────────────────── */
+        window.confirmDelete = function (id, code) {
+            pendingDeleteId = id;
+            document.getElementById('delete-code').textContent = code;
+
+            const modal = document.getElementById('delete-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        };
+
+        window.closeDeleteModal = function () {
+            pendingDeleteId = null;
+            const modal = document.getElementById('delete-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        };
+
+        window.executeDelete = async function () {
+            if (!pendingDeleteId) return;
+
+            const btn = document.getElementById('confirm-delete-btn');
+            btn.disabled = true;
+            btn.textContent = 'Deleting...';
+
+            try {
+                const res = await fetch(URL_DELETE(pendingDeleteId), {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': CSRF(),
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                });
+                const data = await res.json();
+
+                if (res.ok && data.success) {
+                    showToast(data.message || 'Coupon deleted.', 'success');
+                    closeDeleteModal();
+
+                    // Remove row from DOM instantly
+                    const row = document.getElementById(`row-${pendingDeleteId}`);
+                    if (row) {
+                        row.style.transition = 'opacity 0.3s, transform 0.3s';
+                        row.style.opacity = '0';
+                        row.style.transform = 'translateX(20px)';
+                        setTimeout(() => row.remove(), 300);
+                    }
+                } else {
+                    showToast(data.message || 'Delete failed.', 'error');
+                }
+            } catch (err) {
+                showToast('Network error.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Delete';
+                pendingDeleteId = null;
+            }
+        };
+
+        /* ─── REFRESH TABLE ─────────────────────────────────────────────────────── 
+           Fetches the updated table body HTML from the server via a partial-render
+           approach. Your view should detect `?ajax=1` and return just the <tbody>
+           rows. If you prefer, you can also do a full page reload:
+             window.location.reload();
+           Or reconstruct the row from the response JSON — adjust to your backend.
+        ─────────────────────────────────────────────────────────────────────────── */
+        async function refreshTable() {
+            try {
+                const res = await fetch(`${URL_LIST}?ajax=1`, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+
+                // If your backend returns JSON list, rebuild rows from JSON.
+                // If it returns HTML partial, do: tbody.innerHTML = await res.text();
+                // For now we do a graceful full reload as a safe default:
+                const data = await res.json();
+                document.getElementById(
+                    "coupon-table-body"
+                ).innerHTML = data.html;
+
+            } catch (err) {
+                // Silent fail — table will be stale but toast already shown
+                console.warn('Table refresh failed, reload manually.');
+            }
+        }
+
+        /* ─── CODE GENERATOR ────────────────────────────────────────────────────── */
+        window.generateCode = function () {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            const code = Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+            const input = document.getElementById('f-code');
+            input.value = code;
+            input.focus();
+        };
+
+        /* ─── KEYBOARD SHORTCUT ─────────────────────────────────────────────────── */
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+                closeDeleteModal();
+            }
+        });
+
+    })();
+</script>
+{% endblock %}
