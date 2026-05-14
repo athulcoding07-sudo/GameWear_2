@@ -454,6 +454,11 @@ class Order(models.Model):
         ("REFUNDED", "Refunded"),
     )
 
+    PAYMENT_METHOD_CHOICES = (
+        ("COD", "Cash On Delivery"),
+        ("RAZORPAY", "Razorpay"),
+    )
+
     order_id = models.CharField(
         max_length=20,
         unique=True,
@@ -501,6 +506,7 @@ class Order(models.Model):
 
     payment_method = models.CharField(
         max_length=20,
+        choices=PAYMENT_METHOD_CHOICES,
         default="COD"
     )
 

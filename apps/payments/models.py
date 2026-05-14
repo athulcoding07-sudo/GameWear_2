@@ -78,20 +78,20 @@ class Payment(models.Model):
     # Razorpay Data
     # =====================================
 
-    gateway_order_id = models.CharField(
+    razorpay_order_id = models.CharField(
         max_length=255,
         unique=True,
         null=True,
         blank=True
     )
 
-    gateway_payment_id = models.CharField(
+    razorpay_payment_id = models.CharField(
         max_length=255,
         null=True,
         blank=True
     )
 
-    gateway_signature = models.TextField(
+    razorpay_signature = models.TextField(
         null=True,
         blank=True
     )

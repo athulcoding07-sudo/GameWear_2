@@ -1434,17 +1434,27 @@ def checkout_view(request):
 
 @login_required
 def place_order(request):
+
     if request.method != "POST":
-        return redirect("checkout")
+        return redirect("products:checkout")
 
     cart = get_or_create_cart(request.user)
-    items = cart.items.all()
+    items = cart.items.select_related(
+        "product",
+        "variant"
+    )
 
     if not items.exists():
         return redirect("products:cart_view")
 
-    address_id = request.POST.get("address")
-    address = Address.objects.get(id=address_id, user=request.user)
+    payment_method = request.POST.get(
+        "payment_method"
+    )
+
+    address = Address.objects.get(
+        id=request.POST.get("address"),
+        user=request.user
+    )
 
     totals = calculate_cart_totals(items)
 
@@ -1456,9 +1466,11 @@ def place_order(request):
         shipping=totals["shipping"],
         discount=totals["discount"],
         final_amount=totals["final"],
+        payment_method=payment_method,
     )
 
     for item in items:
+
         OrderItem.objects.create(
             order=order,
             product=item.product,
@@ -1472,7 +1484,17 @@ def place_order(request):
 
     items.delete()
 
-    return redirect("products:order_success", order_id=order.id)
+    if payment_method == "COD":
+
+        return redirect(
+            "products:order_success",
+            order_id=order.id
+        )
+
+    return redirect(
+        "payments:checkout",
+        order_id=order.id
+    )
 
 
 @login_required

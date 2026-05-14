@@ -175,16 +175,37 @@ def move_to_cart(user, item, get_or_create_cart):
 
 
 def calculate_cart_totals(cart_items):
-    subtotal = sum(item.quantity * item.price for item in cart_items)
 
-    subtotal = subtotal.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-    tax = (subtotal * Decimal("0.05")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    subtotal = sum(
+        (item.quantity * item.price for item in cart_items),
+        Decimal("0.00")
+    )
 
-    shipping = Decimal("50.00") if subtotal < Decimal("1000.00") else Decimal("0.00")
+    subtotal = subtotal.quantize(
+        Decimal("0.01"),
+        rounding=ROUND_HALF_UP
+    )
+
+    tax = (
+        subtotal * Decimal("0.05")
+    ).quantize(
+        Decimal("0.01"),
+        rounding=ROUND_HALF_UP
+    )
+
+    shipping = (
+        Decimal("50.00")
+        if subtotal < Decimal("1000.00")
+        else Decimal("0.00")
+    )
+
     discount = Decimal("0.00")
 
-    final = (subtotal + tax + shipping - discount).quantize(
-        Decimal("0.01"), rounding=ROUND_HALF_UP
+    final = (
+        subtotal + tax + shipping - discount
+    ).quantize(
+        Decimal("0.01"),
+        rounding=ROUND_HALF_UP
     )
 
     return {
