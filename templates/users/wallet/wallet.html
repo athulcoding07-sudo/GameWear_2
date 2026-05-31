@@ -1,0 +1,272 @@
+{% extends 'users/user_dashboard_base.html' %}
+{% load static %}
+
+{% block title %}My Wallet — GameWear{% endblock %}
+
+{% block content %}
+
+<style>
+  .wallet-animate-pulse { animation: walletPulse 2s ease-in-out infinite; }
+  @keyframes walletPulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+  .wallet-badge-credit {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: #fff; color: #000;
+    font-size: 9px; font-weight: 900; letter-spacing: .1em;
+    text-transform: uppercase; padding: 3px 10px;
+    border-radius: 999px;
+  }
+  .wallet-badge-debit {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: transparent; color: #fff;
+    border: 1px solid rgba(255,255,255,0.2);
+    font-size: 9px; font-weight: 900; letter-spacing: .1em;
+    text-transform: uppercase; padding: 3px 10px;
+    border-radius: 999px;
+  }
+  .wallet-filter-btn {
+    background: transparent; color: #666;
+    border: 1px solid rgba(255,255,255,0.12);
+    font-size: 9px; font-weight: 900; letter-spacing: .15em;
+    text-transform: uppercase; padding: 7px 18px;
+    border-radius: 999px; cursor: pointer;
+    transition: background .2s, color .2s;
+  }
+  .wallet-filter-btn.active,
+  .wallet-filter-btn:hover {
+    background: #fff; color: #000; border-color: #fff;
+  }
+  .wallet-tx-row td { transition: background .15s; }
+  .wallet-tx-row:hover td { background: rgba(255,255,255,0.03); }
+  .wallet-btn-primary {
+    background: #fff; color: #000;
+    font-size: 10px; font-weight: 900;
+    text-transform: uppercase; letter-spacing: .15em;
+    padding: 13px 26px; border-radius: 999px;
+    text-decoration: none; display: inline-flex;
+    align-items: center; gap: 6px;
+    transition: background .2s, transform .15s;
+    box-shadow: 0 0 20px rgba(255,255,255,0.15);
+  }
+  .wallet-btn-primary:hover { background: #e0e0e0; transform: translateY(-1px); }
+  .wallet-btn-secondary {
+    background: transparent; color: #fff;
+    border: 1px solid rgba(255,255,255,0.2);
+    font-size: 10px; font-weight: 900;
+    text-transform: uppercase; letter-spacing: .15em;
+    padding: 13px 26px; border-radius: 999px;
+    text-decoration: none; display: inline-flex;
+    align-items: center; gap: 6px;
+    transition: background .2s, color .2s;
+  }
+  .wallet-btn-secondary:hover { background: #fff; color: #000; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+</style>
+
+<!-- PAGE HEADING -->
+<div class="mb-12">
+  <span class="wallet-animate-pulse"
+    style="display:block; font-size:10px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:#555; margin-bottom:8px;">
+    Digital Wallet
+  </span>
+  <h1 style="font-size: clamp(36px,6vw,68px); font-weight:900; font-style:italic; text-transform:uppercase; letter-spacing:-.03em; line-height:1; color:#fff;">
+    My Wallet
+  </h1>
+  <div style="width:40px; height:3px; background:#fff; margin-top:14px;"></div>
+</div>
+
+<!-- TOP ROW -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6">
+
+  <!-- Balance Card (spans 2 cols) -->
+  <div class="lg:col-span-2 relative overflow-hidden rounded-3xl border border-neutral-800 bg-neutral-900 p-8">
+    <!-- decorative circles -->
+    <div class="absolute -top-10 -right-10 w-44 h-44 rounded-full bg-white opacity-[0.03]"></div>
+    <div class="absolute -bottom-16 left-16 w-60 h-60 rounded-full bg-white opacity-[0.02]"></div>
+
+    <div class="relative flex justify-between items-start mb-8">
+      <div>
+        <p style="font-size:10px; font-weight:900; letter-spacing:.25em; text-transform:uppercase; color:#555; margin-bottom:8px;">
+          Available Balance
+        </p>
+        <p style="font-size:clamp(36px,5vw,56px); font-weight:900; font-style:italic; letter-spacing:-.03em; color:#fff; line-height:1;">
+          ₹{{ wallet.balance }}
+        </p>
+      </div>
+      <div class="rounded-xl border border-neutral-700 bg-neutral-800 p-3">
+        <svg class="w-6 h-6 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+            d="M21 12a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 013 9m18 0V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 013 6v3" />
+        </svg>
+      </div>
+    </div>
+
+    <div class="relative flex flex-wrap gap-3">
+      <a href="{% url 'wallet:add_money' %}" class="wallet-btn-primary">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
+        </svg>
+        Add Money
+      </a>
+      <a href="#" class="wallet-btn-secondary">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25"/>
+        </svg>
+        Withdraw
+      </a>
+    </div>
+  </div>
+
+  <!-- Stat Tiles (stacked) -->
+  <div class="flex flex-col gap-5">
+
+    <div class="flex-1 rounded-2xl border border-neutral-800 bg-neutral-900 p-6">
+      <div class="flex items-center gap-2 mb-3">
+        <svg class="w-4 h-4 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941"/>
+        </svg>
+        <p style="font-size:9px; font-weight:900; letter-spacing:.2em; text-transform:uppercase; color:#555;">Total Credits</p>
+      </div>
+      <p style="font-size:26px; font-weight:900; font-style:italic; color:#fff; line-height:1;">
+        ₹{{ total_credits|default:"—" }}
+      </p>
+      <p style="font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:#444; margin-top:6px;">All time</p>
+    </div>
+
+    <div class="flex-1 rounded-2xl border border-neutral-800 bg-neutral-900 p-6">
+      <div class="flex items-center gap-2 mb-3">
+        <svg class="w-4 h-4 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 6L9 12.75l4.306-4.307a11.95 11.95 0 015.814 5.519l2.74 1.22m0 0l-5.94 2.28m5.94-2.28l-2.28-5.941"/>
+        </svg>
+        <p style="font-size:9px; font-weight:900; letter-spacing:.2em; text-transform:uppercase; color:#555;">Total Spent</p>
+      </div>
+      <p style="font-size:26px; font-weight:900; font-style:italic; color:#fff; line-height:1;">
+        ₹{{ total_debits|default:"—" }}
+      </p>
+      <p style="font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:#444; margin-top:6px;">All time</p>
+    </div>
+
+  </div>
+</div>
+
+<!-- TRANSACTION TABLE -->
+<div class="rounded-3xl border border-neutral-800 bg-neutral-900 overflow-hidden mb-24">
+
+  <!-- Header -->
+  <div class="flex justify-between items-center px-8 py-6 border-b border-neutral-800">
+    <div>
+      <h2 style="font-size:22px; font-weight:900; font-style:italic; text-transform:uppercase; letter-spacing:-.02em; color:#fff;">
+        Recent Transactions
+      </h2>
+      <div style="width:28px; height:2px; background:#fff; margin-top:8px;"></div>
+    </div>
+    <a href="#" style="font-size:9px; font-weight:900; text-transform:uppercase; letter-spacing:.2em; color:#444; text-decoration:none; transition:color .2s;"
+       onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#444'">
+      View All →
+    </a>
+  </div>
+
+  <!-- Filter pills -->
+  <div class="px-8 py-4 border-b border-neutral-800/50 flex gap-2 overflow-x-auto no-scrollbar">
+    <button class="wallet-filter-btn active" onclick="filterTx(this,'all')">All</button>
+    <button class="wallet-filter-btn" onclick="filterTx(this,'credit')">Credits</button>
+    <button class="wallet-filter-btn" onclick="filterTx(this,'debit')">Debits</button>
+  </div>
+
+  <!-- Table -->
+  <div class="overflow-x-auto">
+    <table style="width:100%; border-collapse:collapse; font-size:13px;">
+      <thead>
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.07);">
+          <th style="padding:12px 32px; text-align:left; font-size:9px; font-weight:900; letter-spacing:.2em; text-transform:uppercase; color:#444;">Date</th>
+          <th style="padding:12px 16px; text-align:left; font-size:9px; font-weight:900; letter-spacing:.2em; text-transform:uppercase; color:#444;">Type</th>
+          <th style="padding:12px 16px; text-align:left; font-size:9px; font-weight:900; letter-spacing:.2em; text-transform:uppercase; color:#444;">Description</th>
+          <th style="padding:12px 32px; text-align:right; font-size:9px; font-weight:900; letter-spacing:.2em; text-transform:uppercase; color:#444;">Amount</th>
+        </tr>
+      </thead>
+      <tbody id="tx-body">
+
+        {% for tx in transactions %}
+        <tr class="wallet-tx-row" data-type="{{ tx.transaction_type }}"
+          style="border-bottom:1px solid rgba(255,255,255,0.05);">
+
+          <td style="padding:18px 32px; white-space:nowrap;">
+            <p style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#777;">
+              {{ tx.created_at|date:"d M Y" }}
+            </p>
+            <p style="font-size:10px; color:#444; margin-top:2px;">
+              {{ tx.created_at|date:"H:i" }}
+            </p>
+          </td>
+
+          <td style="padding:18px 16px; white-space:nowrap;">
+            {% if tx.transaction_type == "credit" %}
+              <span class="wallet-badge-credit">
+                <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"/>
+                </svg>
+                Credit
+              </span>
+            {% else %}
+              <span class="wallet-badge-debit">
+                <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 15l7-7 7 7"/>
+                </svg>
+                Debit
+              </span>
+            {% endif %}
+          </td>
+
+          <td style="padding:18px 16px; color:#888; font-size:12px; max-width:220px;">
+            {{ tx.description }}
+          </td>
+
+          <td style="padding:18px 32px; text-align:right; white-space:nowrap;
+            font-size:16px; font-weight:900; font-style:italic;
+            {% if tx.transaction_type == 'credit' %}color:#fff;{% else %}color:#666;{% endif %}">
+            {% if tx.transaction_type == "credit" %}+{% else %}−{% endif %}₹{{ tx.amount }}
+          </td>
+
+        </tr>
+        {% empty %}
+        <tr id="tx-empty">
+          <td colspan="4" style="padding:72px 32px; text-align:center;">
+            <svg class="w-10 h-10 text-neutral-700 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/>
+            </svg>
+            <p style="font-size:10px; font-weight:900; text-transform:uppercase; letter-spacing:.2em; color:#444;">
+              No transactions yet
+            </p>
+            <p style="font-size:12px; color:#333; margin-top:8px;">Add money to your wallet to get started</p>
+          </td>
+        </tr>
+        {% endfor %}
+
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Footer -->
+  {% if transactions %}
+  <div style="padding:18px 32px; border-top:1px solid rgba(255,255,255,0.07); text-align:center;">
+    <a href="#" style="font-size:9px; font-weight:900; text-transform:uppercase; letter-spacing:.2em; color:#444; text-decoration:none;"
+       onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#444'">
+      Load More →
+    </a>
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+  function filterTx(btn, type) {
+    document.querySelectorAll('.wallet-filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('#tx-body .wallet-tx-row').forEach(row => {
+      row.style.display = (type === 'all' || row.dataset.type === type) ? '' : 'none';
+    });
+  }
+</script>
+
+{% endblock %}

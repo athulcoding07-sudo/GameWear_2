@@ -26,8 +26,10 @@ urlpatterns = [
     path("adminpanel/",include("apps.adminpanel.urls")),
     path("accounts/", include("allauth.urls")),
     path('products/', include('apps.products.urls')),
-    path('payments/', include('apps.payments.urls')),
-    path('payments/', include('apps.coupons.urls')),
+    
+    path('coupons/', include('apps.coupons.urls')),
+    path('wallet/', include('apps.wallet.urls')),
+
 
 
 ]

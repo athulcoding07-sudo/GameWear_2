@@ -1,5 +1,7 @@
 from .models import Cart, CartItem,WishlistItem
 from django.db import transaction
+from apps.users.models import Address
+from apps.products.models import Order,OrderItem
 from decimal import Decimal, ROUND_HALF_UP
 
 
@@ -34,6 +36,10 @@ def add_to_cart(user, product, variant, quantity=1):
     if not product.is_active:
         return _response(False, "Product not available")
 
+    # Category validation
+    if not product.category.is_active:
+        return _response(False, "Category not available")
+
     # Stock validation
     if variant.stock <= 0:
         return _response(False, "Out of stock")
@@ -54,7 +60,7 @@ def add_to_cart(user, product, variant, quantity=1):
         variant=variant,
         defaults={
             "price": variant.price,
-            "quantity": 0
+            "quantity": 0,
         }
     )
 
@@ -145,7 +151,7 @@ def remove_wishlist_item(user, item_id):
 def move_to_cart(user, item, get_or_create_cart):
     cart = get_or_create_cart(user)
 
-    # ✅ Get correct price
+    #  Get correct price
     if item.variant:
         price = item.variant.price
     else:
@@ -215,3 +221,6 @@ def calculate_cart_totals(cart_items):
         "discount": discount,
         "final": final
     }
+
+
+

@@ -160,14 +160,23 @@
               Select Color
             </label>
             <div class="flex flex-wrap gap-3">
-              {% for variant in product.variants.all %}
-                {% if variant.color %}
-                <label class="relative cursor-pointer group">
-                  <input type="radio" name="color" value="{{ variant.color }}"
-                         class="hidden peer color-radio" data-variant-id="{{ variant.id }}">
+              {# Regroup variants by color to avoid duplicates in the UI #}
+              {% regroup product.variants.all by color as color_list %}
+              {% for color_group in color_list %}
+                {% if color_group.grouper %}
+                <label class="relative cursor-pointer group color-label" data-color="{{ color_group.grouper }}">
+                  <input type="radio" name="color" value="{{ color_group.grouper }}"
+                         class="hidden peer color-radio"
+                         {% if default_variant.color == color_group.grouper %}checked{% endif %}>
                   <div class="px-6 py-3 border border-neutral-800 rounded-xl text-center text-xs font-bold uppercase transition
-                               peer-checked:bg-white peer-checked:text-black peer-checked:border-white">
-                    {{ variant.color }}
+                               peer-checked:bg-white peer-checked:text-black peer-checked:border-white
+                               [body:has(.color-label.out-of-stock_&)]:opacity-40">
+                    {{ color_group.grouper }}
+                  </div>
+                  
+                  {# Out of stock diagonal line indicator #}
+                  <div class="absolute inset-0 flex items-center justify-center pointer-events-none line-indicator hidden">
+                    <div class="w-full h-[1px] bg-neutral-600 -rotate-45"></div>
                   </div>
                 </label>
                 {% endif %}
@@ -182,7 +191,9 @@
             </label>
             <div class="grid grid-cols-4 gap-3">
               {% for variant in product.variants.all %}
-              <label class="relative cursor-pointer group">
+              <label class="relative cursor-pointer group size-label" 
+                     data-color="{{ variant.color }}" 
+                     data-variant-id="{{ variant.id }}">
                 <input type="radio" name="variant" value="{{ variant.id }}"
                        class="hidden peer variant-radio"
                        data-stock="{{ variant.stock }}"
@@ -193,11 +204,11 @@
                              peer-disabled:opacity-20 peer-disabled:cursor-not-allowed">
                   {{ variant.size|default:"Standard" }}
                 </div>
-                {% if variant.stock <= 0 %}
-                <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                
+                {# Out of stock line indicator #}
+                <div class="absolute inset-0 flex items-center justify-center pointer-events-none line-indicator {% if variant.stock > 0 %}hidden{% endif %}">
                   <div class="w-full h-[1px] bg-neutral-600 -rotate-45"></div>
                 </div>
-                {% endif %}
               </label>
               {% endfor %}
             </div>
@@ -597,6 +608,78 @@
       errorEl.classList.add('hidden');
     }
   });
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const colorRadios = document.querySelectorAll(".color-radio");
+    const sizeLabels = document.querySelectorAll(".size-label");
+    const colorLabels = document.querySelectorAll(".color-label");
+
+    // 1. Initial Check: Cross out colors that are completely out of stock across all sizes
+    colorLabels.forEach(colorLabel => {
+        const color = colorLabel.getAttribute("data-color");
+        const matchingSizes = document.querySelectorAll(`.size-label[data-color="${color}"]`);
+        
+        let totalStockForColor = 0;
+        matchingSizes.forEach(size => {
+            const stock = parseInt(size.querySelector(".variant-radio").getAttribute("data-stock")) || 0;
+            totalStockForColor += stock;
+        });
+
+        if (totalStockForColor === 0) {
+            colorLabel.querySelector(".line-indicator").classList.remove("hidden");
+            colorLabel.querySelector("div:first-of-type").classList.add("opacity-30", "pointer-events-none");
+            colorLabel.querySelector(".color-radio").disabled = true;
+        }
+    });
+
+    // 2. Dynamic Filtering: When color changes, update size availability
+    function updateSizeVisibility() {
+        const selectedColorRadio = document.querySelector(".color-radio:checked");
+        if (!selectedColorRadio) return;
+
+        const selectedColor = selectedColorRadio.value;
+
+        sizeLabels.forEach(sizeLabel => {
+            const sizeColor = sizeLabel.getAttribute("data-color");
+            const radio = sizeLabel.querySelector(".variant-radio");
+            const line = sizeLabel.querySelector(".line-indicator");
+            const stock = parseInt(radio.getAttribute("data-stock")) || 0;
+
+            if (sizeColor === selectedColor) {
+                // Show size for selected color
+                sizeLabel.style.display = "block";
+                if (stock > 0) {
+                    radio.disabled = false;
+                    line.classList.add("hidden");
+                } else {
+                    radio.disabled = true;
+                    line.classList.remove("hidden");
+                }
+            } else {
+                // Hide sizes belonging to other colors
+                sizeLabel.style.display = "none";
+                radio.disabled = true;
+            }
+        });
+
+        // Auto-select the first available size for the newly selected color if current selection is hidden
+        const activeCheckedSize = document.querySelector(".variant-radio:checked");
+        if (activeCheckedSize && activeCheckedSize.closest(".size-label").style.display === "none") {
+            const firstAvailableSize = document.querySelector(`.size-label[data-color="${selectedColor}"] .variant-radio:not([disabled])`);
+            if (firstAvailableSize) {
+                firstAvailableSize.checked = true;
+            }
+        }
+    }
+
+    // Bind event listeners to color radio inputs
+    colorRadios.forEach(radio => {
+        radio.addEventListener("change", updateSizeVisibility);
+    });
+
+    // Run on page load to establish default state
+    updateSizeVisibility();
+});
 </script>
 
 <style>

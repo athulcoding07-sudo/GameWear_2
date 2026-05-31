@@ -66,11 +66,23 @@ class UserSignupForm(forms.ModelForm):
     def clean_phone_number(self):
         phone = self.cleaned_data.get("phone_number")
 
-        if phone and not phone.isdigit():
-            raise forms.ValidationError("Phone number must contain only digits.")
+        if not phone:
+            return phone
 
-        if phone and User.objects.filter(phone_number=phone).exists():
-            raise forms.ValidationError("This phone number is already registered.")
+        # regex validation
+        self.phone_validator(phone)
+
+        # prevent repeating numbers (0000000000, 1111111111, etc.)
+        if len(set(phone)) == 1:
+            raise forms.ValidationError(
+                "Phone number cannot contain the same digit repeated."
+            )
+
+        # unique validation
+        if User.objects.filter(phone_number=phone).exclude(pk=self.instance.pk).exists():
+            raise forms.ValidationError(
+                "This phone number is already in use."
+            )
 
         return phone
 

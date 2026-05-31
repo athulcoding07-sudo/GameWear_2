@@ -266,7 +266,7 @@ def reset_password_view(request):
     return render(request,'users/reset_password.html',{"validlink": True})
 
 
-@login_required
+
 def user_dashboard(request):
     """
     User dashboard — shows active categories with images

@@ -31,7 +31,8 @@ from reportlab.platypus import (
     Table,
     TableStyle,
 )
-
+from apps.coupons.models import Coupon
+from apps.coupons.services.coupon_services import CouponService
 from apps.common.decorators import admin_required
 from apps.users.models import Address
 
@@ -60,6 +61,7 @@ from .services import (
     toggle_wishlist,
     update_cart_item,
 )
+from .utilitys import validate_cart
 
 if TYPE_CHECKING:
     pass
@@ -1119,77 +1121,227 @@ def _handle_message(request, result):
 # -------------------------
 @login_required
 def cart_view(request):
-    cart = get_or_create_cart(request.user)
-    
- 
-    # ── Coupon handling (POST) ────────────────────────────────────────────────
-    coupon_message = None
-    coupon_valid   = False
-    applied_coupon = request.session.get("coupon_code", "")
-    discount_amount = Decimal("0.00")
- 
-    if request.method == "POST" and request.POST.get("action") == "apply_coupon":
-        code = request.POST.get("coupon_code", "").strip().upper()
- 
-        if code:
-            # ── Stub: replace with real Coupon model lookup when ready ────────
-            # try:
-            #     coupon = Coupon.objects.get(code=code, is_active=True)
-            #     request.session["coupon_code"] = code
-            #     coupon_message = f'"{code}" applied — {coupon.discount_percentage}% off!'
-            #     coupon_valid   = True
-            # except Coupon.DoesNotExist:
-            #     request.session.pop("coupon_code", None)
-            #     coupon_message = "Invalid or expired promo code."
-            #     coupon_valid   = False
-            # ── End stub ─────────────────────────────────────────────────────
- 
-            # Temporary placeholder response until Coupon model exists:
-            coupon_message = "Promo codes are not active yet. Check back soon!"
-            coupon_valid   = False
-        else:
-            request.session.pop("coupon_code", None)
-            applied_coupon = ""
- 
-    # ── Items ────────────────────────────────────────────────────────────────
-    # select_related pulls product, variant, category, and variant images
-    # in as few queries as possible.
+
+    cart = get_or_create_cart(
+        request.user
+    )
+    invalid_items = validate_cart(cart)
+
+    if invalid_items:
+        for item in invalid_items:
+                item.delete()
+
+        messages.warning(
+                request,
+                "Some unavailable items were removed from your cart."
+        )
+
+        return redirect("products:cart_view")
+
     items = (
         cart.items
-            .select_related("product", "product__category", "variant")
-            .prefetch_related("variant__images")   # for primary image in template
+        .select_related(
+            "product",
+            "product__category",
+            "variant"
+        )
+        .prefetch_related(
+            "variant__images"
+        )
     )
- 
-    # ── Totals ───────────────────────────────────────────────────────────────
-    # item.subtotal  = item.quantity * item.price  (model property)
-    subtotal = sum(item.subtotal for item in items)
- 
-    # Apply coupon discount (stub — wire up to real Coupon model later)
-    # if coupon_valid:
-    #     discount_amount = (subtotal * coupon.discount_percentage) / 100
- 
-    grand_total = subtotal - discount_amount
- 
-    # Shipping / tax are calculated at checkout; pass None so the template
-    # renders "Calculated at checkout" gracefully.
-    shipping_cost = None
-    tax_amount    = None
- 
-    return render(request, "users/cart_management/cart_view.html", {
-        "cart_items":      items,
- 
-        # ── Summary ──────────────────────────────────────────────────────────
-        "subtotal":        subtotal,
-        "discount_amount": discount_amount if discount_amount else None,
-        "shipping_cost":   shipping_cost,
-        "tax_amount":      tax_amount,
-        "grand_total":     grand_total,
- 
-        # ── Coupon ───────────────────────────────────────────────────────────
-        "applied_coupon":  applied_coupon,
-        "coupon_message":  coupon_message,
-        "coupon_valid":    coupon_valid,
-    })
+
+    subtotal = sum(
+        item.subtotal
+        for item in items
+    )
+
+    coupon_data = _handle_coupon(
+        request=request,
+        subtotal=subtotal
+    )
+
+    final_amount = (
+        subtotal -
+        coupon_data["discount_amount"]
+    )
+
+    context = {
+
+        "cart_items": items,
+
+        "subtotal": subtotal,
+
+        "discount_amount":
+            coupon_data[
+                "discount_amount"
+            ],
+
+        "grand_total":
+            final_amount,
+
+        "final_amount":
+            final_amount,
+
+        "shipping_cost":
+            Decimal("0.00"),
+
+        "tax_amount":
+            Decimal("0.00"),
+
+        "applied_coupon":
+            coupon_data[
+                "applied_coupon"
+            ],
+
+        "coupon_message":
+            coupon_data[
+                "coupon_message"
+            ],
+
+        "coupon_valid":
+            coupon_data[
+                "coupon_valid"
+            ]
+    }
+
+    return render(
+        request,
+        "users/cart_management/cart_view.html",
+        context
+    )
+
+    
+
+
+def _handle_coupon(
+    request,
+    subtotal
+):
+
+    data = {
+        "discount_amount": Decimal("0.00"),
+        "applied_coupon": "",
+        "coupon_message": None,
+        "coupon_valid": False,
+    }
+
+    # Apply / Remove actions
+    if request.method == "POST":
+
+        action = request.POST.get(
+            "action"
+        )
+
+        if action == "apply_coupon":
+
+            code = request.POST.get(
+                "coupon_code",
+                ""
+            )
+
+            result = (
+                CouponService.apply_coupon(
+                    request=request,
+                    cart_total=subtotal,
+                    code=code
+                )
+            )
+
+            return _coupon_response(
+                result
+            )
+
+        elif action == "remove_coupon":
+
+            _clear_coupon_session(
+                request
+            )
+
+            data.update({
+                "coupon_message":
+                    "Coupon removed"
+            })
+
+            return data
+
+
+    # Restore existing coupon
+    coupon_id = request.session.get(
+        "coupon_id"
+    )
+
+    if not coupon_id:
+        return data
+
+    try:
+
+        coupon = Coupon.objects.get(
+            id=coupon_id
+        )
+
+        result = (
+            CouponService.apply_coupon(
+                request=request,
+                cart_total=subtotal,
+                code=coupon.code
+            )
+        )
+
+        if not result["success"]:
+
+            _clear_coupon_session(
+                request
+            )
+
+            return data
+
+        return _coupon_response(
+            result
+        )
+
+    except Coupon.DoesNotExist:
+
+        _clear_coupon_session(
+            request
+        )
+
+        return data
+
+
+def _coupon_response(result):
+
+    return {
+        "discount_amount":
+            result.get("discount", Decimal("0.00")),
+
+        "applied_coupon":
+            (
+                result["coupon"].code
+                if result.get("coupon")
+                else ""
+            ),
+
+        "coupon_message":
+            result.get("message"),
+
+        "coupon_valid":
+            result.get("success", False)
+    }
+
+
+def _clear_coupon_session(
+    request
+):
+
+    request.session.pop(
+        "coupon_id",
+        None
+    )
+
+    request.session.pop(
+        "coupon_code",
+        None
+    )
 
 # -------------------------
 # Add to Cart
@@ -1413,60 +1565,156 @@ def wishlist_view(request):
         "items": items
     })
 
-
 @login_required
 def checkout_view(request):
+
     cart = get_or_create_cart(request.user)
-    items = cart.items.all()
 
-    addresses = Address.objects.filter(user=request.user)
+    items = cart.items.select_related(
+        "product",
+        "product__category",
+        "variant"
+    )
 
-    totals = calculate_cart_totals(items)
+    invalid_items = []
+
+    for item in items:
+
+        if (
+            not item.product.category.is_active or
+            not item.product.is_active or
+            not item.variant.is_active or
+            item.variant.stock <= 0
+        ):
+            invalid_items.append(item)
+
+    if invalid_items:
+
+        for item in invalid_items:
+            item.delete()
+
+        messages.warning(
+            request,
+            "Some unavailable items were removed from your cart."
+        )
+
+        return redirect("products:cart_view")
+
+    subtotal = sum(
+        item.subtotal
+        for item in items
+    )
+
+    coupon_data = _handle_coupon(
+        request=request,
+        subtotal=subtotal
+    )
+
+    totals = {
+        "subtotal": subtotal,
+        "discount": coupon_data["discount_amount"],
+        "shipping": Decimal("0.00"),
+        "tax": Decimal("0.00"),
+        "final_amount": (
+            subtotal -
+            coupon_data["discount_amount"]
+        )
+    }
 
     context = {
         "items": items,
-        "addresses": addresses,
-        "totals": totals
+        "addresses": Address.objects.filter(
+            user=request.user
+        ),
+        "totals": totals,
+        "applied_coupon": coupon_data[
+            "applied_coupon"
+        ]
     }
 
-    return render(request, "users/checkout/checkout.html", context)
+    return render(
+        request,
+        "users/checkout/checkout.html",
+        context
+    )
 
 
 @login_required
+@transaction.atomic
 def place_order(request):
 
     if request.method != "POST":
-        return redirect("products:checkout")
 
-    cart = get_or_create_cart(request.user)
+        return redirect(
+            "products:checkout"
+        )
+
+    cart = get_or_create_cart(
+        request.user
+    )
+
     items = cart.items.select_related(
         "product",
         "variant"
     )
 
     if not items.exists():
-        return redirect("products:cart_view")
 
-    payment_method = request.POST.get(
-        "payment_method"
+        return redirect(
+            "products:cart_view"
+        )
+
+    subtotal = sum(
+        item.subtotal
+        for item in items
+    )
+
+    coupon_data = _handle_coupon(
+        request=request,
+        subtotal=subtotal
+    )
+
+    final_amount = (
+        subtotal -
+        coupon_data[
+            "discount_amount"
+        ]
     )
 
     address = Address.objects.get(
-        id=request.POST.get("address"),
+        id=request.POST.get(
+            "address"
+        ),
         user=request.user
     )
 
-    totals = calculate_cart_totals(items)
+    payment_method = (
+        request.POST.get(
+            "payment_method"
+        )
+    )
 
     order = Order.objects.create(
+
         user=request.user,
+
         address=address,
-        total_amount=totals["subtotal"],
-        tax=totals["tax"],
-        shipping=totals["shipping"],
-        discount=totals["discount"],
-        final_amount=totals["final"],
+
+        total_amount=subtotal,
+
+        discount=coupon_data[
+            "discount_amount"
+        ],
+
+        shipping=Decimal("0.00"),
+
+        tax=Decimal("0.00"),
+
+        final_amount=final_amount,
+
         payment_method=payment_method,
+
+        status="PENDING"
     )
 
     for item in items:
@@ -1479,18 +1727,33 @@ def place_order(request):
             price=item.price
         )
 
-        item.variant.stock -= item.quantity
-        item.variant.save()
 
-    items.delete()
-
+    # COD only
     if payment_method == "COD":
+
+        for item in items:
+
+            item.variant.stock -= (
+                item.quantity
+            )
+
+            item.variant.save()
+
+        items.delete()
+
+        order.status = (
+            "CONFIRMED"
+        )
+
+        order.save()
 
         return redirect(
             "products:order_success",
             order_id=order.id
         )
 
+
+    # Razorpay
     return redirect(
         "payments:checkout",
         order_id=order.id
@@ -1542,17 +1805,33 @@ def order_detail(request, order_id):
 
 @login_required
 def order_history(request):
+
     orders = (
         Order.objects
-        .filter(user=request.user)
-        .prefetch_related("items__product", "items__variant")
+        .filter(
+            user=request.user
+        )
+        .exclude(
+            status__in=[
+                "PENDING",
+                "FAILED"
+            ]
+        )
+        .prefetch_related(
+            "items__product",
+            "items__variant"
+        )
         .order_by("-created_at")
     )
 
-    statuses = Order.STATUS_CHOICES
+    statuses = (
+        Order.STATUS_CHOICES
+    )
 
     context = {
+
         "orders": orders,
+
         "statuses": statuses,
     }
 

@@ -1,0 +1,156 @@
+{% extends 'users/user_dashboard_base.html' %}
+{% load static %}
+
+{% block title %}Payment Successful — GameWear{% endblock %}
+
+{% block content %}
+
+<style>
+  @keyframes successScale { 0%{transform:scale(.6);opacity:0} 70%{transform:scale(1.1)} 100%{transform:scale(1);opacity:1} }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes ripple { 0%{transform:scale(1);opacity:.15} 100%{transform:scale(2.4);opacity:0} }
+
+  .success-icon-wrap {
+    position: relative;
+    width: 96px; height: 96px;
+    margin: 0 auto 32px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .success-icon-ring {
+    position: absolute; inset: 0;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 50%;
+    animation: ripple 1.8s ease-out .3s infinite;
+  }
+  .success-icon-ring-2 {
+    position: absolute; inset: -12px;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 50%;
+    animation: ripple 1.8s ease-out .6s infinite;
+  }
+  .success-icon-circle {
+    width: 96px; height: 96px;
+    background: #fff;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    animation: successScale .5s cubic-bezier(.34,1.56,.64,1) both;
+    position: relative; z-index: 1;
+  }
+  .success-content { animation: fadeUp .5s ease .35s both; }
+  .success-divider { width: 40px; height: 3px; background: #fff; margin: 16px auto 0; }
+
+  .success-stat {
+    background: #111;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
+    padding: 20px 24px;
+    text-align: center;
+  }
+  .success-btn-primary {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: #fff; color: #000;
+    font-size: 10px; font-weight: 900;
+    letter-spacing: .18em; text-transform: uppercase;
+    padding: 14px 32px; border-radius: 999px;
+    text-decoration: none;
+    transition: background .2s, transform .15s;
+    box-shadow: 0 0 24px rgba(255,255,255,0.12);
+  }
+  .success-btn-primary:hover { background: #e0e0e0; transform: translateY(-1px); color: #000; }
+  .success-btn-secondary {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: transparent; color: #fff;
+    border: 1px solid rgba(255,255,255,0.2);
+    font-size: 10px; font-weight: 900;
+    letter-spacing: .18em; text-transform: uppercase;
+    padding: 14px 32px; border-radius: 999px;
+    text-decoration: none;
+    transition: background .2s, color .2s;
+  }
+  .success-btn-secondary:hover { background: #fff; color: #000; }
+</style>
+
+<!-- Centered layout with vertical breathing room -->
+<div style="min-height: 72vh; display: flex; align-items: center; justify-content: center; padding: 40px 0 80px;">
+
+  <div style="width: 100%; max-width: 520px;">
+
+    <!-- Main card -->
+    <div class="rounded-3xl border border-neutral-800 bg-neutral-900 overflow-hidden">
+
+      <!-- Top accent line -->
+      <div style="height: 3px; background: #fff; width: 100%;"></div>
+
+      <div style="padding: 52px 40px 44px; text-align: center;">
+
+        <!-- Animated check icon -->
+        <div class="success-icon-wrap">
+          <div class="success-icon-ring"></div>
+          <div class="success-icon-ring-2"></div>
+          <div class="success-icon-circle">
+            <svg width="40" height="40" fill="none" stroke="#000" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Heading -->
+        <div class="success-content">
+          <span style="display:block; font-size:10px; font-weight:900; letter-spacing:.3em; text-transform:uppercase; color:#555; margin-bottom:10px;">
+            Transaction Complete
+          </span>
+          <h1 style="font-size: clamp(28px,5vw,42px); font-weight:900; font-style:italic; text-transform:uppercase; letter-spacing:-.03em; line-height:1; color:#fff;">
+            Payment Successful
+          </h1>
+          <div class="success-divider"></div>
+          <p style="font-size:13px; color:#666; margin-top:20px; line-height:1.7;">
+            Your wallet has been credited successfully.<br>You're all set to shop the collection.
+          </p>
+        </div>
+
+      </div>
+
+      <!-- Stats strip -->
+      <div class="success-content" style="padding: 0 32px 32px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+
+        <div class="success-stat">
+          <p style="font-size:9px; font-weight:900; letter-spacing:.2em; text-transform:uppercase; color:#555; margin-bottom:8px;">Status</p>
+          <p style="font-size:13px; font-weight:900; text-transform:uppercase; letter-spacing:.08em; color:#fff;">Credited</p>
+        </div>
+
+        <div class="success-stat">
+          <p style="font-size:9px; font-weight:900; letter-spacing:.2em; text-transform:uppercase; color:#555; margin-bottom:8px;">Powered By</p>
+          <p style="font-size:13px; font-weight:900; text-transform:uppercase; letter-spacing:.08em; color:#fff;">Razorpay</p>
+        </div>
+
+      </div>
+
+      <!-- CTAs -->
+      <div class="success-content" style="padding: 0 32px 44px; display: flex; flex-wrap: wrap; gap: 12px; justify-content: center;">
+        <a href="{% url 'wallet:dashboard' %}" class="success-btn-primary">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+              d="M21 12a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 013 9m18 0V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 013 6v3"/>
+          </svg>
+          Go to Wallet
+        </a>
+        <a href="{% url 'products:users_product_listing' %}" class="success-btn-secondary">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+          </svg>
+          Shop Jerseys
+        </a>
+      </div>
+
+    </div>
+
+    <!-- Bottom footnote -->
+    <p style="text-align:center; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.15em; color:#333; margin-top:24px;">
+      A confirmation has been sent to your registered email
+    </p>
+
+  </div>
+</div>
+
+{% endblock %}

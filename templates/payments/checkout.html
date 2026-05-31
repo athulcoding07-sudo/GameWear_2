@@ -132,7 +132,7 @@
     <hr class="divider">
 
     <p class="amount-label">Order total</p>
-    <p class="amount-value">₹ {{ payment.raw_response.amount | floatformat:"-2" }}</p>
+    <p class="amount-value">₹ {{ display_amount }}</p>
     <p class="order-ref">Order #{{ payment.razorpay_order_id }}</p>
 
     <button id="pay-btn">
@@ -154,40 +154,149 @@
 </div>
 
 <script>
-  const options = {
-    key: "{{ razorpay_key_id }}",
-    amount: "{{ payment.raw_response.amount }}",
-    currency: "INR",
-    name: "GameWear",
-    description: "Order Payment",
-    order_id: "{{ payment.razorpay_order_id }}",
-    handler: function (response) {
-      fetch("/payments/verify/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": "{{ csrf_token }}"
-        },
-        body: JSON.stringify({
-          razorpay_order_id: response.razorpay_order_id,
-          razorpay_payment_id: response.razorpay_payment_id,
-          razorpay_signature: response.razorpay_signature
-        })
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.message === "Payment Successful") {
-          window.location.href = `/products/success/${data.order_id}/`;
-        } else {
-          alert("Payment verification failed");
-        }
-      });
-    }
-  };
 
-  const rzp = new Razorpay(options);
-  document.getElementById("pay-btn").onclick = function (e) {
-    rzp.open();
-    e.preventDefault();
-  };
+document.addEventListener("DOMContentLoaded", function () {
+
+    const options = {
+
+        key: "{{ razorpay_key_id }}",
+
+        amount: {{ razorpay_amount }},
+
+        currency: "INR",
+
+        name: "GameWear",
+
+        description: "Order Payment",
+
+        order_id: "{{ payment.razorpay_order_id }}",
+
+        theme: {
+            color: "#2563EB"
+        },
+
+        config: {
+            display: {
+                blocks: {
+                    upi: {
+                        name: "UPI Payment",
+                        instruments: [
+                            {
+                                method: "upi"
+                            }
+                        ]
+                    }
+                },
+
+                sequence: [
+                    "block.upi"
+                ],
+
+                preferences: {
+                    show_default_blocks: true
+                }
+            }
+        },
+
+        handler: function(response) {
+
+            fetch("/payments/verify/", {
+
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token }}"
+                },
+
+                body: JSON.stringify({
+
+                    razorpay_order_id:
+                    response.razorpay_order_id,
+
+                    razorpay_payment_id:
+                    response.razorpay_payment_id,
+
+                    razorpay_signature:
+                    response.razorpay_signature
+
+                })
+
+            })
+
+            .then(response => response.json())
+
+            .then(data => {
+
+                console.log(data);
+
+                if (data.message === "Payment Successful") {
+
+                    window.location.href =
+                    `/products/success/${data.order_id}/`;
+
+                } else {
+
+                    alert("Payment verification failed");
+
+                }
+
+            })
+
+            .catch(error => {
+
+                console.error(
+                    "Verification Error:",
+                    error
+                );
+
+                alert(
+                    "Something went wrong during verification"
+                );
+
+            });
+
+        },
+
+        modal: {
+
+            ondismiss: function () {
+
+                console.log(
+                    "Checkout closed"
+                );
+
+            }
+
+        }
+
+    };
+
+    const rzp = new Razorpay(options);
+
+
+    rzp.on("payment.failed", function(response){
+
+        console.log(response.error);
+
+        alert(
+            "Payment Failed : "
+            + response.error.description
+        );
+
+    });
+
+
+    document
+    .getElementById("pay-btn")
+    .addEventListener("click", function(e){
+
+        e.preventDefault();
+
+        rzp.open();
+
+    });
+
+});
+
 </script>
