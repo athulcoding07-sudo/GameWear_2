@@ -1116,6 +1116,14 @@ def _handle_message(request, result):
 
 
 
+
+
+
+
+    
+
+
+
 # -------------------------
 # Cart Page
 # -------------------------
@@ -1210,7 +1218,7 @@ def cart_view(request):
         context
     )
 
-    
+
 
 
 def _handle_coupon(
