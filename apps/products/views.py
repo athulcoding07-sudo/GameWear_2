@@ -365,6 +365,28 @@ def product_add(request):
         if not valid_variant_indexes:
             messages.error(request, "At least one variant is required.")
             return redirect("products:product_add")
+        # -------------------------
+        # DUPLICATE VARIANT CHECK
+        # -------------------------
+        seen_variants = set()
+
+        for i in valid_variant_indexes:
+
+            size = sizes[i].strip().lower() if sizes[i] else ""
+            color = colors[i].strip().lower() if colors[i] else ""
+
+            variant_key = (size, color)
+
+            if variant_key in seen_variants:
+                messages.error(
+                    request,
+                    f"Duplicate variant found: Size '{sizes[i]}' and Color '{colors[i]}'."
+                )
+                return redirect("products:product_add")
+
+            seen_variants.add(variant_key)
+        
+        
 
         # each variant needs 3 images
         expected_images = len(valid_variant_indexes) * 3
