@@ -2204,7 +2204,7 @@ class InvoiceBuilder:
  
     def _address_section(self) -> list:
         """Render shipping address from the order.address FK."""
-        address = self.order.address
+        address = self.order.shipping_address
         if not address:
             return []
         # Build a readable single line from Address fields — adjust field
@@ -2351,6 +2351,8 @@ def download_invoice(request: HttpRequest, order_id: int) -> HttpResponse:
             order.order_id,
             request.user.id,
         )
+        
+        
         messages.error(
             request,
             "We could not generate your invoice right now. Please try again later.",
