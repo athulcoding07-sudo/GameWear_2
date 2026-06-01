@@ -50,6 +50,7 @@ from .models import (
     Review,
     ReviewImage,
     WishlistItem,
+    OrderAddress,
 )
 from .services import (
     add_to_cart,
@@ -1689,11 +1690,24 @@ def place_order(request):
         ]
     )
 
-    address = Address.objects.get(
+    selected_address = Address.objects.get(
         id=request.POST.get(
             "address"
         ),
         user=request.user
+    )
+
+    order_address = OrderAddress.objects.create(
+        full_name=selected_address.full_name,
+        phone=selected_address.phone,
+
+        address_line_1=selected_address.address_line_1,
+        address_line_2=selected_address.address_line_2,
+
+        city=selected_address.city,
+        state=selected_address.state,
+        postal_code=selected_address.postal_code,
+        country=selected_address.country,
     )
 
     payment_method = (
@@ -1706,7 +1720,7 @@ def place_order(request):
 
         user=request.user,
 
-        address=address,
+        shipping_address=order_address,
 
         total_amount=subtotal,
 

@@ -54,15 +54,18 @@ def add_to_cart(user, product, variant, quantity=1):
     cart = get_or_create_cart(user)
 
     # Lock row for safety (avoid race condition)
+    final_price = variant.final_price
     cart_item, created = CartItem.objects.select_for_update().get_or_create(
         cart=cart,
         product=product,
         variant=variant,
         defaults={
-            "price": variant.price,
+            "price": final_price,
             "quantity": 0,
         }
     )
+    # Always keep cart price in sync
+    cart_item.price = final_price
 
     new_quantity = cart_item.quantity + quantity
 

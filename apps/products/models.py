@@ -221,6 +221,11 @@ class ProductVariant(models.Model):
 
         super().save(*args, **kwargs)
 
+
+    @property
+    def final_price(self):
+        return self.discount_price or self.price
+
     def __str__(self):
         return f"{self.product.name} - {self.size} - {self.color}"
 
@@ -470,10 +475,12 @@ class Order(models.Model):
         on_delete=models.CASCADE
     )
 
-    address = models.ForeignKey(
-        Address,
-        on_delete=models.SET_NULL,
-        null=True
+    shipping_address = models.OneToOneField(
+        "OrderAddress",
+        on_delete=models.PROTECT,
+        related_name="order",
+        null=True,
+        blank=True,
     )
 
     total_amount = models.DecimalField(
@@ -610,3 +617,47 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f"{self.order.order_id} - {self.product.name}"
+    
+
+class OrderAddress(models.Model):
+
+    full_name = models.CharField(
+        max_length=255
+    )
+
+    phone = models.CharField(
+        max_length=20
+    )
+
+    address_line_1 = models.CharField(
+        max_length=255
+    )
+
+    address_line_2 = models.CharField(
+        max_length=255,
+        blank=True
+    )
+
+    city = models.CharField(
+        max_length=100
+    )
+
+    state = models.CharField(
+        max_length=100
+    )
+
+    postal_code = models.CharField(
+        max_length=20
+    )
+
+    country = models.CharField(
+        max_length=100,
+        default="India"
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    def __str__(self):
+        return f"{self.full_name} - {self.city}"
