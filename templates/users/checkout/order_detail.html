@@ -458,7 +458,7 @@
         {# ── Invoice Download Button ── #}
         {# Shown for all statuses EXCEPT pending (mirrors view-level guard) #}
         {% with s=order.status|lower %}
-        {% if s != "pending" %}
+        {% if s != "pending" and s != "cancelled" and s != "partial_cancelled" %}
         <a href="{% url 'products:download_invoice' order.id %}"
           class="group relative flex items-center justify-center gap-2.5 w-full overflow-hidden
                  bg-neutral-900 border border-neutral-700 hover:border-white
