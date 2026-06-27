@@ -487,6 +487,16 @@
                                 </span>
                                 {% endif %}
                             </div>
+                            {% if item.status == "RETURN_REQUESTED" or item.status == "RETURNED" %}
+                            <div class="mt-2 p-2 rounded-lg bg-amber-950 border border-amber-800">
+                                <p class="text-xs font-bold text-amber-400">
+                                    Return Reason
+                                </p>
+                                <p class="text-xs text-neutral-300 mt-1">
+                                    {{ item.return_reason }}
+                                </p>
+                            </div>
+                            {% endif %}
                         </div>
 
                         <div class="text-right shrink-0">
@@ -538,6 +548,7 @@
             </div>
 
         </div>
+        
 
        
         <div class="space-y-6">

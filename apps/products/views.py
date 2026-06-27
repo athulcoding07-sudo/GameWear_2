@@ -14,7 +14,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Avg, Count, Min, Prefetch, Q, Sum
+from django.db.models import Avg, Count, Min, Prefetch, Q, Sum,F
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
@@ -1799,7 +1799,7 @@ def place_order(request):
 
     # Razorpay
     return redirect(
-        "payments:checkout",
+        "payments:start_payment",
         order_id=order.id
     )
 
@@ -2449,10 +2449,14 @@ def admin_order_detail(request, order_id):
         "OUT_FOR_DELIVERY",
         "DELIVERED",
     ]
+    return_items = order.items.filter(
+        status="RETURN_REQUESTED"
+    )
 
     context = {
         "order": order,
-        "steps": steps
+        "steps": steps,
+        "return_items": return_items,
     }
 
     return render(
@@ -2481,19 +2485,54 @@ def admin_update_order_status(request, order_id):
 
     new_status = request.POST.get("status")
 
-    valid_statuses = dict(Order.STATUS_CHOICES)
+    ALLOWED_TRANSITIONS = {
+        "PENDING": ["CONFIRMED", "CANCELLED"],
+        "CONFIRMED": ["PACKED", "CANCELLED"],
+        "PACKED": ["SHIPPED", "CANCELLED"],
+        "SHIPPED": ["OUT_FOR_DELIVERY", "CANCELLED"],
+        "OUT_FOR_DELIVERY": ["DELIVERED"],
+        "DELIVERED": ["RETURN_REQUESTED"],
+        "RETURN_REQUESTED": ["RETURNED"],
+        "RETURNED": ["REFUNDED"],
+        "PARTIAL_RETURNED": ["REFUNDED"],
+        "CANCELLED": [],
+        "REFUNDED": [],
+    }
 
-    if new_status not in valid_statuses:
-        messages.error(request, "Invalid status.")
+    if new_status not in dict(Order.STATUS_CHOICES):
+        messages.error(
+            request,
+            "Invalid status."
+        )
         return redirect(
             "products:admin_order_detail",
             order_id=order.id
         )
 
-    if order.status == "CANCELLED":
+    current_status = order.status
+
+    if current_status in ["CANCELLED", "REFUNDED"]:
         messages.error(
             request,
-            "Cancelled orders cannot be modified."
+            f"{current_status} orders cannot be modified."
+        )
+        return redirect(
+            "products:admin_order_detail",
+            order_id=order.id
+        )
+
+    if (
+        new_status != current_status and
+        new_status not in ALLOWED_TRANSITIONS.get(
+            current_status,
+            []
+        )
+    ):
+        messages.error(
+            request,
+            f"Cannot change status from "
+            f"{current_status} to "
+            f"{new_status}."
         )
         return redirect(
             "products:admin_order_detail",
@@ -2502,24 +2541,40 @@ def admin_update_order_status(request, order_id):
 
     with transaction.atomic():
 
-        if (
-            new_status == "CANCELLED"
-            and order.status != "CANCELLED"
-        ):
+        # -------------------------
+        # CANCEL ORDER
+        # -------------------------
+        if new_status == "CANCELLED":
 
-            for item in order.items.all():
+            for item in order.items.exclude(
+                status="CANCELLED"
+            ):
 
                 if item.variant:
-                    item.variant.stock = F("stock") + item.quantity
-                    item.variant.save()
+                    item.variant.__class__.objects.filter(
+                        pk=item.variant.pk
+                    ).update(
+                        stock=F("stock") + item.quantity
+                    )
 
                 item.status = "CANCELLED"
                 item.save()
 
-        elif (
-            new_status == "RETURNED"
-            and order.status != "RETURNED"
-        ):
+        # -------------------------
+        # RETURN REQUEST
+        # -------------------------
+        elif new_status == "RETURN_REQUESTED":
+
+            order.items.filter(
+                status="DELIVERED"
+            ).update(
+                status="RETURN_REQUESTED"
+            )
+
+        # -------------------------
+        # RETURN APPROVED
+        # -------------------------
+        elif new_status == "RETURNED":
 
             return_items = order.items.filter(
                 status="RETURN_REQUESTED"
@@ -2528,16 +2583,66 @@ def admin_update_order_status(request, order_id):
             for item in return_items:
 
                 if item.variant:
-                    item.variant.stock = F("stock") + item.quantity
-                    item.variant.save()
+                    item.variant.__class__.objects.filter(
+                        pk=item.variant.pk
+                    ).update(
+                        stock=F("stock") + item.quantity
+                    )
 
                 item.status = "RETURNED"
                 item.save()
 
+        # -------------------------
+        # REFUND
+        # -------------------------
+        elif new_status == "REFUNDED":
+
+            refund_items = order.items.filter(
+                status="RETURNED"
+            )
+
+            if not refund_items.exists():
+                messages.error(
+                    request,
+                    "No returned items available for refund."
+                )
+                return redirect(
+                    "products:admin_order_detail",
+                    order_id=order.id
+                )
+
+            refund_amount = 0
+
+            for item in refund_items:
+
+                refund_amount += (
+                    item.price * item.quantity
+                )
+
+                item.status = "REFUNDED"
+                item.save()
+
+            wallet = order.user.wallet
+
+            wallet.balance += refund_amount
+            wallet.save()
+
+            messages.success(
+                request,
+                f"₹{refund_amount} refunded to wallet."
+            )
+
+        # -------------------------
+        # NORMAL FLOW
+        # -------------------------
         else:
 
             order.items.exclude(
-                status__in=["CANCELLED", "RETURNED"]
+                status__in=[
+                    "CANCELLED",
+                    "RETURNED",
+                    "REFUNDED"
+                ]
             ).update(
                 status=new_status
             )

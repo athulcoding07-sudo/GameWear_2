@@ -467,7 +467,7 @@ def add_address(request):
 
             # If user came from checkout, return there
             if next_page:
-                return redirect(next_page)
+                return redirect('products:checkout')
 
             # Otherwise go to address page
             return redirect("users:address_view")
