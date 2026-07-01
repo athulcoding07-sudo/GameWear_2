@@ -6,6 +6,7 @@ from django.conf import settings
 from django.db.models import Avg
 from django.core.exceptions import ValidationError
 from apps.users.models import User,Address
+from .utilitys import get_pricing
 
 # Create your models here.
 
@@ -163,71 +164,121 @@ class ProductVariant(models.Model):
         related_name="variants",
     )
 
-    size = models.CharField(max_length=20)
-    color = models.CharField(max_length=50)
+    size = models.CharField(
+        max_length=20
+    )
 
-    sku = models.CharField(max_length=100, unique=True, blank=True, db_index=True)
+    color = models.CharField(
+        max_length=50
+    )
 
-    # original price
-    price = models.DecimalField(max_digits=10, decimal_places=2)
+    sku = models.CharField(
+        max_length=100,
+        unique=True,
+        blank=True,
+        db_index=True,
+    )
 
-    # discount percentage
-    discount_percentage = models.PositiveIntegerField(default=0)
+    # Original price
+    price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+    )
 
-    # final price after discount
-    discount_price = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    stock = models.PositiveIntegerField(
+        default=0
+    )
 
-    stock = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(
+        default=True
+    )
 
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["product", "size", "color"],
+                fields=[
+                    "product",
+                    "size",
+                    "color",
+                ],
                 name="unique_variant_per_product",
             )
         ]
+
         indexes = [
-            models.Index(fields=["sku"]),
-            models.Index(fields=["product", "is_active"]),
+            models.Index(
+                fields=["sku"]
+            ),
+            models.Index(
+                fields=[
+                    "product",
+                    "is_active",
+                ]
+            ),
         ]
 
     def generate_sku(self):
-        product_part = (self.product.name[:3] if self.product else "PRD").upper()
-        size_part = (self.size or "NA").upper()
-        color_part = (self.color or "NA").upper()
-        return f"JER-{product_part}-{size_part}-{color_part}-{uuid.uuid4().hex[:4].upper()}"
+        product_part = (
+            self.product.name[:3]
+            if self.product
+            else "PRD"
+        ).upper()
+
+        size_part = (
+            self.size or "NA"
+        ).upper()
+
+        color_part = (
+            self.color or "NA"
+        ).upper()
+
+        return (
+            f"JER-"
+            f"{product_part}-"
+            f"{size_part}-"
+            f"{color_part}-"
+            f"{uuid.uuid4().hex[:4].upper()}"
+        )
 
     def clean(self):
-        if self.discount_percentage > 100:
-            raise ValidationError("Discount percentage cannot be more than 100")
+        if self.price <= 0:
+            raise ValidationError(
+                "Price must be greater than zero."
+            )
 
     def save(self, *args, **kwargs):
 
         if not self.sku:
             self.sku = self.generate_sku()
 
-        # calculate discount price
-        if self.discount_percentage > 0:
-            discount_amount = (self.price * self.discount_percentage) / 100
-            self.discount_price = self.price - discount_amount
-        else:
-            self.discount_price = self.price
-
-        # auto deactivate if stock is zero
-        self.is_active = self.stock > 0
+        self.is_active = (
+            self.stock > 0
+        )
 
         super().save(*args, **kwargs)
 
+    @property
+    def pricing(self):
+        return get_pricing(self)
+
 
     @property
-    def final_price(self):
-        return self.discount_price or self.price
+    def offer_price(self):
+        return self.pricing["offer_price"]
+
+
+
 
     def __str__(self):
-        return f"{self.product.name} - {self.size} - {self.color}"
+        return (
+            f"{self.product.name} - "
+            f"{self.size} - "
+            f"{self.color}"
+        )
 
 
 

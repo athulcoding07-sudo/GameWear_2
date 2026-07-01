@@ -227,29 +227,29 @@
             <span class="text-neutral-500 text-xs uppercase tracking-widest font-bold">
               Subtotal (<span id="cart-item-count">{{ cart_items|length }}</span> item{{ cart_items|length|pluralize }})
             </span>
-            <span id="cart-subtotal" class="text-white font-black italic">₹{{ subtotal }}</span>
+            <span id="cart-subtotal" class="text-white font-black italic">₹{{ totals.subtotal }}</span>
           </div>
 
           <div id="discount-row" class="flex justify-between items-center {% if not discount_amount %}hidden{% endif %}">
             <span class="text-green-400 text-xs uppercase tracking-widest font-bold">Discount</span>
-            <span id="cart-discount" class="text-green-400 font-black italic">−₹{{ discount_amount|default:"0.00" }}</span>
+            <span id="cart-discount" class="text-green-400 font-black italic">−₹{{ totals.discount_amount|default:"0.00" }}</span>
           </div>
 
           <div class="flex justify-between items-center">
             <span class="text-neutral-500 text-xs uppercase tracking-widest font-bold">Shipping</span>
-            {% if shipping_cost %}
-              <span class="text-white font-black italic">₹{{ shipping_cost }}</span>
+            {% if totals.shippg_cost %}
+              <span class="text-white font-black italic">₹{{ totals.shipping_cost }}</span>
             {% else %}
-              <span class="text-neutral-400 font-bold text-[10px] uppercase tracking-widest">Calculated at checkout</span>
+              <span class="text-neutral-400 font-bold text-[10px] uppercase tracking-widest">Included</span>
             {% endif %}
           </div>
 
           <div class="flex justify-between items-center">
             <span class="text-neutral-500 text-xs uppercase tracking-widest font-bold">Tax</span>
-            {% if tax_amount %}
-              <span class="text-white font-black italic">₹{{ tax_amount }}</span>
+            {% if totals.taxamount %}
+              <span class="text-white font-black italic">₹{{ totals.tax_amount }}</span>
             {% else %}
-              <span class="text-neutral-400 font-bold text-[10px] uppercase tracking-widest">Calculated at checkout</span>
+              <span class="text-neutral-400 font-bold text-[10px] uppercase tracking-widest">Included</span>
             {% endif %}
           </div>
         </div>
@@ -258,7 +258,7 @@
 
         <div class="px-8 py-6 flex justify-between items-center">
           <span class="text-white font-black uppercase tracking-widest text-sm">Total</span>
-          <span id="cart-grand-total" class="text-3xl font-black italic text-white">₹{{ grand_total }}</span>
+          <span id="cart-grand-total" class="text-3xl font-black italic text-white">₹{{ totals.grand_total }}</span>
         </div>
 
         <div class="px-8 pb-8 space-y-3">

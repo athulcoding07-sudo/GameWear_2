@@ -73,6 +73,13 @@
         <img src="{{ category.image.url }}" alt="{{ category.name }}"
           class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition duration-700 opacity-60 group-hover:opacity-80">
         {% endif %}
+
+        <!-- Offer Badge -->
+        {% if category.active_offers %}
+        <div class="absolute top-4 left-4 z-20 bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold uppercase shadow-lg">
+            {{ category.active_offers.0.discount_percentage }}% OFF
+        </div>
+        {% endif %}
   
         <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
   

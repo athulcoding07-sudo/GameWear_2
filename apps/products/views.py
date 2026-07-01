@@ -54,7 +54,7 @@ from .models import (
 )
 from .services import (
     add_to_cart,
-    calculate_cart_totals,
+    
     get_or_create_cart,
     move_to_cart,
     remove_cart_item,
@@ -62,7 +62,9 @@ from .services import (
     toggle_wishlist,
     update_cart_item,
 )
-from .utilitys import validate_cart
+from .utilitys import validate_cart,get_pricing,calculate_cart_totals
+from django.utils import timezone
+from apps.offers.models import ProductOffer
 
 if TYPE_CHECKING:
     pass
@@ -722,8 +724,18 @@ def user_product_list(request):
         .prefetch_related(
             Prefetch(
                 "variants",
-                queryset=ProductVariant.objects.prefetch_related("images")
-            )
+                queryset=ProductVariant.objects.prefetch_related("images"),
+            ),
+            Prefetch(
+            "offers",
+            queryset=ProductOffer.objects.filter(
+                is_active=True,
+                start_date__lte=timezone.now(),
+                end_date__gte=timezone.now(),
+            ),
+            to_attr="active_offers",
+        ),
+
         )
         .distinct()
     )
@@ -869,6 +881,7 @@ def user_product_detail(request, slug):
         .order_by("price")
         .first()
     )
+    pricing = get_pricing(default_variant)
 
     if not default_variant:
         default_variant = variants_qs.order_by("price").first()
@@ -933,6 +946,7 @@ def user_product_detail(request, slug):
         "avg_rating": avg_rating,
         "review_count": review_count,
         "reviews": reviews,
+        "pricing": pricing,
     }
 
     return render(
@@ -1153,18 +1167,18 @@ def _handle_message(request, result):
 @login_required
 def cart_view(request):
 
-    cart = get_or_create_cart(
-        request.user
-    )
+    cart = get_or_create_cart(request.user)
+
     invalid_items = validate_cart(cart)
 
     if invalid_items:
+
         for item in invalid_items:
-                item.delete()
+            item.delete()
 
         messages.warning(
-                request,
-                "Some unavailable items were removed from your cart."
+            request,
+            "Some unavailable items were removed from your cart."
         )
 
         return redirect("products:cart_view")
@@ -1174,10 +1188,10 @@ def cart_view(request):
         .select_related(
             "product",
             "product__category",
-            "variant"
+            "variant",
         )
         .prefetch_related(
-            "variant__images"
+            "variant__images",
         )
     )
 
@@ -1188,57 +1202,30 @@ def cart_view(request):
 
     coupon_data = _handle_coupon(
         request=request,
-        subtotal=subtotal
+        subtotal=subtotal,
     )
 
-    final_amount = (
-        subtotal -
-        coupon_data["discount_amount"]
+    totals = calculate_cart_totals(
+        cart_items=items,
+        discount_amount=coupon_data["discount_amount"],
     )
 
     context = {
-
         "cart_items": items,
 
-        "subtotal": subtotal,
+        "totals": totals,
 
-        "discount_amount":
-            coupon_data[
-                "discount_amount"
-            ],
+        "applied_coupon": coupon_data["applied_coupon"],
 
-        "grand_total":
-            final_amount,
+        "coupon_message": coupon_data["coupon_message"],
 
-        "final_amount":
-            final_amount,
-
-        "shipping_cost":
-            Decimal("0.00"),
-
-        "tax_amount":
-            Decimal("0.00"),
-
-        "applied_coupon":
-            coupon_data[
-                "applied_coupon"
-            ],
-
-        "coupon_message":
-            coupon_data[
-                "coupon_message"
-            ],
-
-        "coupon_valid":
-            coupon_data[
-                "coupon_valid"
-            ]
+        "coupon_valid": coupon_data["coupon_valid"],
     }
 
     return render(
         request,
         "users/cart_management/cart_view.html",
-        context
+        context,
     )
 
 
@@ -1432,61 +1419,122 @@ def add_to_cart_view(request, product_id):
 @login_required
 @require_POST
 def update_cart_view(request, item_id, action):
+
     cart_item = get_object_or_404(
         CartItem,
         id=item_id,
-        cart__user=request.user
+        cart__user=request.user,
     )
 
-    # Save cart reference BEFORE potential delete (decrease to 0 deletes the item)
+    # Save cart before item might be deleted
     cart = cart_item.cart
 
-    result = update_cart_item(cart_item, action)
+    result = update_cart_item(
+        cart_item,
+        action,
+    )
 
-    #  Fix #1: helper returns "status", not "success"
     if not result.get("status"):
-        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+
+        if request.headers.get(
+            "X-Requested-With"
+        ) == "XMLHttpRequest":
+
             return JsonResponse(
-                {"success": False, "error": result.get("message", "Update failed.")},
-                status=400
+                {
+                    "success": False,
+                    "error": result.get(
+                        "message",
+                        "Unable to update cart.",
+                    ),
+                },
+                status=400,
             )
-        return redirect("products:cart_view")
 
-    # AJAX path
-    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return redirect(
+            "products:cart_view"
+        )
 
-        #  Fix #2: item may have been deleted by decrease-to-zero
+    # AJAX response
+    if request.headers.get(
+        "X-Requested-With"
+    ) == "XMLHttpRequest":
+
         removed = False
-        new_quantity = 0
-        new_subtotal = "0.00"
+        quantity = 0
+        item_subtotal = "0.00"
 
         try:
+
             cart_item.refresh_from_db()
-            new_quantity = cart_item.quantity
-            #  Fix #3: compute subtotal manually — don't assume a model property
-            new_subtotal = "{:.2f}".format(cart_item.quantity * cart_item.price)
-            removed = False
+
+            quantity = cart_item.quantity
+
+            item_subtotal = "{:.2f}".format(
+                cart_item.subtotal
+            )
+
         except CartItem.DoesNotExist:
+
             removed = True
 
-        #  Fix #2: use the correct function name and key names
-        cart_items = cart.items.select_related("variant").all()
-        totals = calculate_cart_totals(cart_items)
+        # Get latest cart items
+        cart_items = (
+            cart.items
+            .select_related(
+                "product",
+                "variant",
+            )
+        )
 
-        return JsonResponse({
-            "success":         True,
-            "removed":         removed,
-            "item_id":         item_id,
-            "quantity":        new_quantity,
-            "subtotal":        new_subtotal,
-            #  map to what the JS expects
-            "cart_subtotal":   "{:.2f}".format(totals["subtotal"]),
-            "discount_amount": "{:.2f}".format(totals["discount"]),
-            "grand_total":     "{:.2f}".format(totals["final"]),
-            "item_count":      cart_items.count(),
-        })
+        # Cart totals
+        totals = calculate_cart_totals(
+            cart_items=cart_items,
+        )
 
-    return redirect("products:cart_view")
+        return JsonResponse(
+            {
+                "success": True,
+
+                "removed": removed,
+
+                "item_id": item_id,
+
+                "quantity": quantity,
+
+                "subtotal": item_subtotal,
+
+                "cart_subtotal": "{:.2f}".format(
+                    totals["subtotal"]
+                ),
+
+                "discount_amount": "{:.2f}".format(
+                    totals["discount_amount"]
+                ),
+
+                "shipping_cost": "{:.2f}".format(
+                    totals["shipping_cost"]
+                ),
+
+                "tax_amount": "{:.2f}".format(
+                    totals["tax_amount"]
+                ),
+
+                "grand_total": "{:.2f}".format(
+                    totals["grand_total"]
+                ),
+
+                "final_amount": "{:.2f}".format(
+                    totals["final_amount"]
+                ),
+
+                "item_count": cart_items.count(),
+            }
+        )
+
+    return redirect(
+        "products:cart_view"
+    )
 
 # -------------------------
 # Remove Item
@@ -1494,38 +1542,101 @@ def update_cart_view(request, item_id, action):
 @login_required
 @require_POST
 def remove_cart_view(request, item_id):
+
     cart_item = get_object_or_404(
         CartItem,
         id=item_id,
-        cart__user=request.user
+        cart__user=request.user,
     )
+
     cart = cart_item.cart
 
-    # Use the service — it also checks ownership
-    result = remove_cart_item(request.user, cart_item)
+    result = remove_cart_item(
+        request.user,
+        cart_item,
+    )
 
-    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+    if request.headers.get(
+        "X-Requested-With"
+    ) == "XMLHttpRequest":
+
         if not result.get("status"):
+
             return JsonResponse(
-                {"success": False, "error": result.get("message", "Remove failed.")},
-                status=400
+                {
+                    "success": False,
+                    "error": result.get(
+                        "message",
+                        "Remove failed.",
+                    ),
+                },
+                status=400,
             )
 
-        # Item is deleted — recount remaining items
-        cart_items = cart.items.select_related("variant").all()
-        totals = calculate_cart_totals(cart_items)
+        cart_items = (
+            cart.items
+            .select_related(
+                "product",
+                "variant",
+            )
+        )
 
-        return JsonResponse({
-            "success":         True,
-            "removed":         True,
-            "item_id":         item_id,
-            "cart_subtotal":   "{:.2f}".format(totals["subtotal"]),
-            "discount_amount": "{:.2f}".format(totals["discount"]),
-            "grand_total":     "{:.2f}".format(totals["final"]),
-            "item_count":      cart_items.count(),
-        })
+        subtotal = sum(
+            item.subtotal
+            for item in cart_items
+        )
 
-    return redirect("products:cart_view")
+        coupon_data = _handle_coupon(
+            request=request,
+            subtotal=subtotal,
+        )
+
+        totals = calculate_cart_totals(
+            cart_items=cart_items,
+            discount_amount=coupon_data[
+                "discount_amount"
+            ],
+        )
+
+        return JsonResponse(
+            {
+                "success": True,
+
+                "removed": True,
+
+                "item_id": item_id,
+
+                "cart_subtotal": "{:.2f}".format(
+                    totals["subtotal"]
+                ),
+
+                "discount_amount": "{:.2f}".format(
+                    totals["discount_amount"]
+                ),
+
+                "shipping_cost": "{:.2f}".format(
+                    totals["shipping_cost"]
+                ),
+
+                "tax_amount": "{:.2f}".format(
+                    totals["tax_amount"]
+                ),
+
+                "grand_total": "{:.2f}".format(
+                    totals["grand_total"]
+                ),
+
+                "final_amount": "{:.2f}".format(
+                    totals["final_amount"]
+                ),
+
+                "item_count": cart_items.count(),
+            }
+        )
+
+    return redirect(
+        "products:cart_view"
+    )
 
 # ====================================================
 # Whislist
@@ -1599,12 +1710,17 @@ def wishlist_view(request):
 @login_required
 def checkout_view(request):
 
-    cart = get_or_create_cart(request.user)
+    cart = get_or_create_cart(
+        request.user
+    )
 
-    items = cart.items.select_related(
-        "product",
-        "product__category",
-        "variant"
+    items = (
+        cart.items
+        .select_related(
+            "product",
+            "product__category",
+            "variant",
+        )
     )
 
     invalid_items = []
@@ -1612,10 +1728,10 @@ def checkout_view(request):
     for item in items:
 
         if (
-            not item.product.category.is_active or
-            not item.product.is_active or
-            not item.variant.is_active or
-            item.variant.stock <= 0
+            not item.product.category.is_active
+            or not item.product.is_active
+            or not item.variant.is_active
+            or item.variant.stock <= 0
         ):
             invalid_items.append(item)
 
@@ -1629,44 +1745,60 @@ def checkout_view(request):
             "Some unavailable items were removed from your cart."
         )
 
-        return redirect("products:cart_view")
+        return redirect(
+            "products:cart_view"
+        )
 
+    # Calculate subtotal
     subtotal = sum(
         item.subtotal
         for item in items
     )
 
+    # Validate coupon
     coupon_data = _handle_coupon(
         request=request,
-        subtotal=subtotal
+        subtotal=subtotal,
     )
 
-    totals = {
-        "subtotal": subtotal,
-        "discount": coupon_data["discount_amount"],
-        "shipping": Decimal("0.00"),
-        "tax": Decimal("0.00"),
-        "final_amount": (
-            subtotal -
-            coupon_data["discount_amount"]
-        )
-    }
+    # Calculate all totals
+    totals = calculate_cart_totals(
+        cart_items=items,
+        discount_amount=coupon_data[
+            "discount_amount"
+        ],
+    )
 
     context = {
+
         "items": items,
+
         "addresses": Address.objects.filter(
             user=request.user
         ),
+
         "totals": totals,
-        "applied_coupon": coupon_data[
-            "applied_coupon"
-        ]
+
+        "applied_coupon":
+            coupon_data[
+                "applied_coupon"
+            ],
+
+        "coupon_message":
+            coupon_data[
+                "coupon_message"
+            ],
+
+        "coupon_valid":
+            coupon_data[
+                "coupon_valid"
+            ],
     }
 
     return render(
         request,
         "users/checkout/checkout.html",
-        context
+        context,
     )
 
 
@@ -1675,26 +1807,26 @@ def checkout_view(request):
 def place_order(request):
 
     if request.method != "POST":
-
-        return redirect(
-            "products:checkout"
-        )
+        return redirect("products:checkout")
 
     cart = get_or_create_cart(
         request.user
     )
 
-    items = cart.items.select_related(
-        "product",
-        "variant"
+    items = (
+        cart.items
+        .select_related(
+            "product",
+            "variant",
+        )
     )
 
     if not items.exists():
-
         return redirect(
             "products:cart_view"
         )
 
+    # Validate subtotal for coupon
     subtotal = sum(
         item.subtotal
         for item in items
@@ -1702,21 +1834,20 @@ def place_order(request):
 
     coupon_data = _handle_coupon(
         request=request,
-        subtotal=subtotal
+        subtotal=subtotal,
     )
 
-    final_amount = (
-        subtotal -
-        coupon_data[
+    # Calculate final totals
+    totals = calculate_cart_totals(
+        cart_items=items,
+        discount_amount=coupon_data[
             "discount_amount"
-        ]
+        ],
     )
 
     selected_address = Address.objects.get(
-        id=request.POST.get(
-            "address"
-        ),
-        user=request.user
+        id=request.POST.get("address"),
+        user=request.user,
     )
 
     order_address = OrderAddress.objects.create(
@@ -1732,10 +1863,8 @@ def place_order(request):
         country=selected_address.country,
     )
 
-    payment_method = (
-        request.POST.get(
-            "payment_method"
-        )
+    payment_method = request.POST.get(
+        "payment_method"
     )
 
     order = Order.objects.create(
@@ -1744,35 +1873,53 @@ def place_order(request):
 
         shipping_address=order_address,
 
-        total_amount=subtotal,
+        total_amount=totals[
+            "subtotal"
+        ],
 
-        discount=coupon_data[
+        discount=totals[
             "discount_amount"
         ],
 
-        shipping=Decimal("0.00"),
+        shipping=totals[
+            "shipping_cost"
+        ],
 
-        tax=Decimal("0.00"),
+        tax=totals[
+            "tax_amount"
+        ],
 
-        final_amount=final_amount,
+        final_amount=totals[
+            "grand_total"
+        ],
 
         payment_method=payment_method,
 
-        status="PENDING"
+        status="PENDING",
     )
 
     for item in items:
 
         OrderItem.objects.create(
+
             order=order,
+
             product=item.product,
+
             variant=item.variant,
+
             quantity=item.quantity,
-            price=item.price
+
+            price=item.price,
         )
 
+    # Clear coupon after successful order
+    request.session.pop(
+        "coupon_id",
+        None,
+    )
 
-    # COD only
+    # Cash On Delivery
     if payment_method == "COD":
 
         for item in items:
@@ -1785,22 +1932,19 @@ def place_order(request):
 
         items.delete()
 
-        order.status = (
-            "CONFIRMED"
-        )
+        order.status = "CONFIRMED"
 
         order.save()
 
         return redirect(
             "products:order_success",
-            order_id=order.id
+            order_id=order.id,
         )
-
 
     # Razorpay
     return redirect(
         "payments:start_payment",
-        order_id=order.id
+        order_id=order.id,
     )
 
 
@@ -2290,41 +2434,89 @@ class InvoiceBuilder:
     # ---- Totals -----------------------------------------------------------
  
     def _totals_section(self) -> list:
+
         order = self.order
-        rows: list[list] = []
- 
-        # order.total_amount = subtotal before discount/tax/shipping
-        rows.append(["Subtotal", f"\u20b9{order.total_amount:,.2f}"])
- 
-        if order.discount:
-            rows.append(["Discount", f"- \u20b9{order.discount:,.2f}"])
- 
-        if order.tax:
-            rows.append(["Tax / GST", f"\u20b9{order.tax:,.2f}"])
- 
-        if order.shipping:
-            rows.append(["Shipping", f"\u20b9{order.shipping:,.2f}"])
- 
-        rows.append(["Total Payable", f"\u20b9{order.final_amount:,.2f}"])
- 
-        col_widths = [110 * mm, 70 * mm]
-        table = Table(rows, colWidths=col_widths)
+
+        subtotal_after_discount = (
+            order.total_amount - order.discount
+        )
+
+        rows = [
+
+            [
+                "Subtotal",
+                f"₹{order.total_amount:,.2f}"
+            ],
+
+            [
+                "Coupon Discount",
+                f"- ₹{order.discount:,.2f}"
+            ],
+
+            [
+                "Subtotal After Discount",
+                f"₹{subtotal_after_discount:,.2f}"
+            ],
+
+            [
+                "Shipping",
+                (
+                    "Free"
+                    if order.shipping == 0
+                    else f"₹{order.shipping:,.2f}"
+                )
+            ],
+
+            [
+                "GST (5%)",
+                f"₹{order.tax:,.2f}"
+            ],
+
+            [
+                "Grand Total",
+                f"₹{order.final_amount:,.2f}"
+            ],
+        ]
+
+        table = Table(
+            rows,
+            colWidths=[
+                110 * mm,
+                70 * mm,
+            ],
+        )
+
         table.setStyle(
             TableStyle(
                 [
-                    ("FONTSIZE", (0, 0), (-1, -1), 9),
-                    ("ALIGN", (1, 0), (1, -1), "RIGHT"),
-                    ("GRID", (0, 0), (-1, -1), 0.5, _BORDER),
-                    ("TOPPADDING", (0, 0), (-1, -1), 5),
-                    ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
-                    # Highlight total row
-                    ("BACKGROUND", (0, -1), (-1, -1), _BRAND_ACCENT),
-                    ("TEXTCOLOR", (0, -1), (-1, -1), colors.white),
-                    ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
+
+                    ("FONTSIZE",(0,0),(-1,-1),9),
+
+                    ("ALIGN",(1,0),(1,-1),"RIGHT"),
+
+                    ("GRID",(0,0),(-1,-1),0.5,_BORDER),
+
+                    ("TOPPADDING",(0,0),(-1,-1),5),
+
+                    ("BOTTOMPADDING",(0,0),(-1,-1),5),
+
+                    ("BACKGROUND",(0,-1),(-1,-1),_BRAND_ACCENT),
+
+                    ("TEXTCOLOR",(0,-1),(-1,-1),colors.white),
+
+                    ("FONTNAME",(0,-1),(-1,-1),"Helvetica-Bold"),
+
                 ]
             )
         )
-        return [table, Spacer(1, 8 * mm)]
+
+        return [
+            table,
+            Spacer(
+                1,
+                8 * mm,
+            ),
+        ]
  
     # ---- Footer -----------------------------------------------------------
  
@@ -2611,13 +2803,9 @@ def admin_update_order_status(request, order_id):
                     order_id=order.id
                 )
 
-            refund_amount = 0
+            refund_amount = order.final_amount
 
             for item in refund_items:
-
-                refund_amount += (
-                    item.price * item.quantity
-                )
 
                 item.status = "REFUNDED"
                 item.save()

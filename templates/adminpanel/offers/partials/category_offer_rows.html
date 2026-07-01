@@ -1,0 +1,81 @@
+{% for offer in offers %}
+<tr id="row-{{ offer.id }}" class="hover:bg-neutral-950/60 transition">
+    <td class="px-6 py-4 font-semibold text-white">{{ offer.name }}</td>
+    <td class="px-6 py-4 text-neutral-400">{{ offer.category.name }}</td>
+    <td class="px-6 py-4 text-emerald-400 font-bold">{{ offer.discount_percentage }}%</td>
+    <td class="px-6 py-4 text-neutral-400 text-xs">
+        {{ offer.start_date|date:"d M Y, H:i" }}
+        <span class="text-neutral-600">→</span>
+        {{ offer.end_date|date:"d M Y, H:i" }}
+    </td>
+    <td class="px-6 py-4">
+        <button type="button" onclick="toggleStatus({{ offer.id }}, this)"
+            class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition
+            {% if offer.is_active %}bg-emerald-500/10 text-emerald-400 border border-emerald-500/20{% else %}bg-neutral-800/50 text-neutral-500 border border-neutral-700{% endif %}">
+            <span class="w-1.5 h-1.5 rounded-full {% if offer.is_active %}bg-emerald-400{% else %}bg-neutral-500{% endif %}"></span>
+            {% if offer.is_active %}Active{% else %}Inactive{% endif %}
+        </button>
+    </td>
+    <td class="px-6 py-4 text-right">
+    <div class="flex justify-end gap-2">
+
+        <!-- Edit -->
+        <button type="button"
+            onclick="openModal({{ offer.id }})"
+            class="p-2 rounded-lg text-neutral-500 hover:text-white hover:bg-neutral-800 transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+            </svg>
+        </button>
+
+        <!-- Toggle -->
+<button
+    type="button"
+    onclick="toggleStatus({{ offer.id }}, this)"
+    class="p-2 rounded-lg transition
+    {% if offer.is_active %}
+        text-green-500 hover:bg-green-500/10
+    {% else %}
+        text-gray-500 hover:bg-gray-500/10
+    {% endif %}">
+
+    {% if offer.is_active %}
+    <!-- Eye Icon -->
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7S3.732 16.057 2.458 12z"/>
+    </svg>
+    {% else %}
+    <!-- Eye Off Icon -->
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M13.875 18.825A10.05 10.05 0 0112 19c-5 0-9.27-3.11-11-7 1.02-2.29 2.86-4.18 5.13-5.32M9.88 9.88A3 3 0 002.12-.88M6.1 6.1L3 3m18 18-3.1-3.1M9.88 9.88l4.24 4.24"/>
+    </svg>
+    {% endif %}
+
+</button>
+
+        <!-- Delete -->
+        <button type="button"
+            onclick="confirmDelete({{ offer.id }}, '{{ offer.name|escapejs }}')"
+            class="p-2 rounded-lg text-neutral-500 hover:text-rose-400 hover:bg-rose-500/10 transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+            </svg>
+        </button>
+
+    </div>
+</td>
+</tr>
+{% empty %}
+<tr>
+    <td colspan="6" class="px-6 py-16 text-center text-neutral-500">
+        <p class="text-sm font-semibold">No category offers found.</p>
+        <p class="text-xs mt-1">Click "Add Offer" to create your first one.</p>
+    </td>
+</tr>
+{% endfor %}

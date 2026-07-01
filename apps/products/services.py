@@ -3,6 +3,7 @@ from django.db import transaction
 from apps.users.models import Address
 from apps.products.models import Order,OrderItem
 from decimal import Decimal, ROUND_HALF_UP
+from .utilitys import get_pricing
 
 
 
@@ -54,7 +55,8 @@ def add_to_cart(user, product, variant, quantity=1):
     cart = get_or_create_cart(user)
 
     # Lock row for safety (avoid race condition)
-    final_price = variant.final_price
+    final_price = variant.offer_price
+    
     cart_item, created = CartItem.objects.select_for_update().get_or_create(
         cart=cart,
         product=product,
@@ -185,12 +187,32 @@ def move_to_cart(user, item, get_or_create_cart):
 
 def calculate_cart_totals(cart_items):
 
-    subtotal = sum(
-        (item.quantity * item.price for item in cart_items),
-        Decimal("0.00")
-    )
+    subtotal = Decimal("0.00")
+    total_discount = Decimal("0.00")
+
+    for item in cart_items:
+
+        pricing = get_pricing(item.variant)
+
+        original_total = (
+            pricing["original_price"] * item.quantity
+        )
+
+        offer_total = (
+            pricing["offer_price"] * item.quantity
+        )
+
+        subtotal += offer_total
+        total_discount += (
+            original_total - offer_total
+        )
 
     subtotal = subtotal.quantize(
+        Decimal("0.01"),
+        rounding=ROUND_HALF_UP
+    )
+
+    total_discount = total_discount.quantize(
         Decimal("0.01"),
         rounding=ROUND_HALF_UP
     )
@@ -208,10 +230,8 @@ def calculate_cart_totals(cart_items):
         else Decimal("0.00")
     )
 
-    discount = Decimal("0.00")
-
     final = (
-        subtotal + tax + shipping - discount
+        subtotal + tax + shipping
     ).quantize(
         Decimal("0.01"),
         rounding=ROUND_HALF_UP
@@ -221,9 +241,50 @@ def calculate_cart_totals(cart_items):
         "subtotal": subtotal,
         "tax": tax,
         "shipping": shipping,
-        "discount": discount,
-        "final": final
+        "discount": total_discount,
+        "final": final,
     }
 
+# def calculate_cart_totals(cart_items):
 
+#     subtotal = sum(
+#         (item.quantity * item.price for item in cart_items),
+#         Decimal("0.00")
+#     )
+
+#     subtotal = subtotal.quantize(
+#         Decimal("0.01"),
+#         rounding=ROUND_HALF_UP
+#     )
+
+#     tax = (
+#         subtotal * Decimal("0.05")
+#     ).quantize(
+#         Decimal("0.01"),
+#         rounding=ROUND_HALF_UP
+#     )
+
+#     shipping = (
+#         Decimal("50.00")
+#         if subtotal < Decimal("1000.00")
+#         else Decimal("0.00")
+#     )
+
+#     discount = Decimal("0.00")
+
+#     final = (
+#         subtotal + tax + shipping - discount
+#     ).quantize(
+#         Decimal("0.01"),
+#         rounding=ROUND_HALF_UP
+#     )
+
+#     return {
+#         "subtotal": subtotal,
+#         "tax": tax,
+#         "shipping": shipping,
+#         "discount": discount,
+#         "final": final
+#     }
+# now how i change this funtion
 

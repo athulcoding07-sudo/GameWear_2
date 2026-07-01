@@ -260,17 +260,17 @@
             <span class="text-white font-black italic">₹{{ totals.subtotal }}</span>
           </div>
 
-          {% if totals.discount %}
+          {% if totals.discount_amount %}
           <div class="flex justify-between items-center">
             <span class="text-green-400 text-xs uppercase tracking-widest font-bold">Discount</span>
-            <span class="text-green-400 font-black italic">−₹{{ totals.discount }}</span>
+            <span class="text-green-400 font-black italic">−₹{{ totals.discount_amount }}</span>
           </div>
           {% endif %}
 
           <div class="flex justify-between items-center">
             <span class="text-neutral-500 text-xs uppercase tracking-widest font-bold">Shipping</span>
-            {% if totals.shipping %}
-              <span class="text-white font-black italic">₹{{ totals.shipping }}</span>
+            {% if totals.shipping_cost %}
+              <span class="text-white font-black italic">₹{{ totals.shipping_cost }}</span>
             {% else %}
               <span class="text-green-400 font-bold text-[10px] uppercase tracking-widest">Free</span>
             {% endif %}
@@ -278,8 +278,8 @@
 
           <div class="flex justify-between items-center">
             <span class="text-neutral-500 text-xs uppercase tracking-widest font-bold">Tax</span>
-            {% if totals.tax %}
-              <span class="text-white font-black italic">₹{{ totals.tax }}</span>
+            {% if totals.tax_amount %}
+              <span class="text-white font-black italic">₹{{ totals.tax_amount }}</span>
             {% else %}
               <span class="text-neutral-400 font-bold text-[10px] uppercase tracking-widest">Included</span>
             {% endif %}

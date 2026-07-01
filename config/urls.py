@@ -30,6 +30,7 @@ urlpatterns = [
     path('coupons/', include('apps.coupons.urls')),
     path('wallet/', include('apps.wallet.urls')),
     path('payments/', include('apps.payments.urls')),
+    path("offers/", include("apps.offers.urls")),
 
 
 

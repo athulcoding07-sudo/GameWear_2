@@ -93,10 +93,10 @@
 
           {# Price #}
           <div class="flex items-center gap-6">
-            {% if default_variant.discount_percentage > 0 %}
-              <span class="text-4xl font-black italic">₹{{ default_variant.discount_price }}</span>
-              <span class="text-xl text-neutral-600 line-through font-bold">₹{{ default_variant.price }}</span>
-              <span class="text-green-400 text-sm font-bold">{{ default_variant.discount_percentage }}% OFF</span>
+            {% if pricing.discount_percentage > 0 %}
+              <span class="text-4xl font-black italic">₹{{ pricing.offer_price }}</span>
+              <span class="text-xl text-neutral-600 line-through font-bold">₹{{ pricing.original_price }}</span>
+              <span class="text-green-400 text-sm font-bold">{{ pricing.discount_percentage }}% OFF</span>
             {% else %}
               <span class="text-4xl font-black italic">₹{{ default_variant.price }}</span>
             {% endif %}
