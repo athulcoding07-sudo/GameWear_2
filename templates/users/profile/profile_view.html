@@ -37,7 +37,7 @@
       <p class="text-[10px] font-black uppercase text-neutral-500 tracking-widest mb-3">Your Referral Code</p>
 
       <div class="flex items-center gap-2 bg-black border border-neutral-800 rounded-xl p-1 pl-4">
-        <span class="font-mono font-bold text-white tracking-widest" id="referralCode">GAME-ALEX-2025</span>
+        <span class="font-mono font-bold text-white tracking-widest" id="referralCode">{{ request.user.referral_code }}</span>
 
         <button type="button" class="bg-neutral-800 hover:bg-neutral-700 text-white p-2.5 rounded-lg transition" onclick="copyReferral()">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -47,7 +47,25 @@
         </button>
       </div>
 
-      <p class="text-[9px] text-neutral-600 mt-3 font-medium uppercase tracking-tighter">Share to earn $10 credit</p>
+      <p class="text-[9px] text-neutral-600 mt-3 font-medium uppercase tracking-tighter">Share to earn ₹10 credit</p>
+
+      {% if not request.user.referred_by %}
+      <!-- Apply Referral Code -->
+      <form method="post" action="{% url 'users:apply_referral' %}" class="mt-4">
+        {% csrf_token %}
+        <div class="flex items-center gap-2">
+          <input type="text" name="referral_code" placeholder="Enter referral code"
+            class="flex-1 bg-black border border-neutral-800 rounded-lg px-3 py-2 text-sm text-white placeholder-neutral-600 focus:outline-none focus:border-white transition" />
+          <button type="submit"
+            class="bg-white text-black font-black text-[10px] uppercase tracking-widest px-4 py-2.5 rounded-lg hover:bg-neutral-200 transition">
+            Apply
+          </button>
+        </div>
+      </form>
+      <p class="text-[9px] text-neutral-600 mt-2 font-medium">Both you & your friend get ₹10 when your first order is delivered!</p>
+      {% else %}
+      <p class="text-[9px] text-emerald-500 mt-3 font-medium">✓ Referred by {{ request.user.referred_by.full_name }}</p>
+      {% endif %}
     </div>
   </div>
 

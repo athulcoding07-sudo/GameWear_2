@@ -23,9 +23,7 @@ from .views import (
     edit_address,
     delete_address,
     logout_view,
-    
-
-    
+    apply_referral,
 )
 #from .views import login_view,signup_view,user_dashboard,verify_signup_otp,resend_signup_otp,forgot_password_view,verify_reset_otp
 
@@ -53,15 +51,5 @@ urlpatterns = [
     path("edit-address/",edit_address,name = "edit_address"),
     path("delete-address/",delete_address,name = "delete_address"),
     path("logout/", logout_view, name="logout"),
-    
-
-
-    
-
-
-
-
-    
-
-
+    path("apply-referral/", apply_referral, name="apply_referral"),
 ]

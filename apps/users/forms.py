@@ -29,6 +29,10 @@ class UserSignupForm(forms.ModelForm):
         required=False,
         widget=forms.TextInput(attrs={"placeholder": "Referral Code"})
     )
+    phone_validator = RegexValidator(
+        regex=r"^[6-9]\d{9}$",
+        message="Enter a valid 10-digit Indian phone number starting with 6-9."
+    )
 
     class Meta:
         model = User

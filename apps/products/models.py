@@ -578,6 +578,9 @@ class Order(models.Model):
         auto_now_add=True
     )
 
+    referral_rewarded = models.BooleanField(default=False, editable=False)
+
+
     def save(self, *args, **kwargs):
         if not self.order_id:
             self.order_id = f"ORD-{uuid.uuid4().hex[:8].upper()}"

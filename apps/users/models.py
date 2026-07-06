@@ -17,6 +17,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     # authentication
     email = models.EmailField(unique=True)
 
+    referral_reward_granted = models.BooleanField(default=False)
+
     
 
 
@@ -53,6 +55,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         null=True,
         blank=True,
     )
+    
 
     dob = models.DateField(null=True, blank=True)
 
@@ -66,10 +69,12 @@ class User(AbstractBaseUser, PermissionsMixin):
         default="user",
     )
 
+    wallet_balance = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
     # referral system
     referral_code = models.CharField(
         max_length=20,
-        unique=True,
+        unique=False,
         null=True,
         blank=True,
     )
@@ -81,6 +86,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         on_delete=models.SET_NULL,
         related_name="referrals",
     )
+
 
     # permissions
     is_active = models.BooleanField(default=True)

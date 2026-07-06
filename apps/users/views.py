@@ -36,8 +36,13 @@ def signup_view(request):
     if request.method == "POST":
         form = UserSignupForm(request.POST)
 
+
+        
+        print('form validate')
         try:
+            print('form validated')
             if form.is_valid():
+                
                 # Create user but do NOT activate yet
                 user = form.save(commit=False)
                 user.is_active = False
@@ -50,12 +55,16 @@ def signup_view(request):
                 return redirect("users:verify_signup_otp")
             else:
                 messages.error(request, "Please correct the errors below.")
-        except IntegrityError:
+        except IntegrityError as e:
+            print("REAL ERROR:", e)
+            raise
             messages.error(
                 request,
                 "A user with this email or phone already exists."
             )
-        except Exception:
+        except Exception as e:
+            print("REAL ERROR:", e)
+            raise
             messages.error(
                 request,
                 "Something went wrong. Please try again later."
@@ -536,3 +545,38 @@ def delete_address(request, address_id=None):
     return redirect("users:address_view")
 
 
+@login_required
+@require_POST
+def apply_referral(request):
+    """
+    Apply a referral code from the profile page.
+    Links the current user to the referrer (the user who owns the code).
+    The actual ₹10 reward is credited later when the first order is delivered.
+    """
+    referral_code = request.POST.get("referral_code", "").strip()
+
+    if not referral_code:
+        messages.error(request, "Please enter a referral code.")
+        return redirect("users:user_profile")
+
+    if request.user.referred_by:
+        messages.info(request, "You have already applied a referral code.")
+        return redirect("users:user_profile")
+
+    if referral_code == request.user.referral_code:
+        messages.error(request, "You cannot use your own referral code.")
+        return redirect("users:user_profile")
+
+    try:
+        referrer = User.objects.get(referral_code=referral_code)
+    except User.DoesNotExist:
+        messages.error(request, "Invalid referral code.")
+        return redirect("users:user_profile")
+
+    request.user.referred_by = referrer
+    request.user.save(update_fields=["referred_by"])
+    messages.success(
+        request,
+        f"Referral code applied! Both you and {referrer.full_name} will get ₹10 when your first order is delivered."
+    )
+    return redirect("users:user_profile")
