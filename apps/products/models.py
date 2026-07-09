@@ -1,4 +1,5 @@
 import uuid
+from decimal import Decimal
 from django.db import models, transaction
 from django.utils.text import slugify
 from cloudinary.models import CloudinaryField
@@ -588,21 +589,25 @@ class Order(models.Model):
 
     def update_status(self):
         items = self.items.all()
+        if not items.exists():
+            return
 
-        if all(item.status == "CANCELLED" for item in items):
+        statuses = [item.status for item in items]
+
+        if all(s == "CANCELLED" for s in statuses):
             self.status = "CANCELLED"
-
-        elif any(item.status == "CANCELLED" for item in items):
-            self.status = "PARTIAL_CANCELLED"
-
-        elif all(item.status == "RETURNED" for item in items):
+        elif all(s == "REFUNDED" for s in statuses):
+            self.status = "REFUNDED"
+        elif all(s == "RETURNED" for s in statuses):
             self.status = "RETURNED"
-
-        elif any(item.status == "RETURNED" for item in items):
-            self.status = "PARTIAL_RETURNED"
-
-        elif all(item.status == "DELIVERED" for item in items):
+        elif any(s == "RETURN_REQUESTED" for s in statuses):
+            self.status = "RETURN_REQUESTED"
+        elif all(s == "DELIVERED" for s in statuses):
             self.status = "DELIVERED"
+        elif any(s in ["RETURNED", "REFUNDED"] for s in statuses):
+            self.status = "PARTIAL_RETURNED"
+        elif any(s == "CANCELLED" for s in statuses):
+            self.status = "PARTIAL_CANCELLED"
 
         self.save()
 
@@ -671,6 +676,20 @@ class OrderItem(models.Model):
     @property
     def total_price(self):
         return self.price * self.quantity
+
+    @property
+    def refund_amount(self):
+        order = self.order
+        item_subtotal = Decimal(self.price) * Decimal(self.quantity)
+        total_amount = Decimal(order.total_amount)
+        discount = Decimal(order.discount)
+        tax = Decimal(order.tax)
+
+        if total_amount > 0:
+            item_discount = (item_subtotal / total_amount) * discount
+            item_tax = (item_subtotal / total_amount) * tax
+            return (item_subtotal - item_discount + item_tax).quantize(Decimal("0.01"))
+        return Decimal("0.00")
 
     def __str__(self):
         return f"{self.order.order_id} - {self.product.name}"

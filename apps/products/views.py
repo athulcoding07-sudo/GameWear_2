@@ -881,10 +881,12 @@ def user_product_detail(request, slug):
         .order_by("price")
         .first()
     )
-    pricing = get_pricing(default_variant)
+    
 
     if not default_variant:
         default_variant = variants_qs.order_by("price").first()
+
+    pricing = get_pricing(default_variant) if default_variant else None
 
     # =====================================================
     #  REVIEWS SECTION
@@ -2159,6 +2161,64 @@ def return_order(request, order_id):
 
 
 @login_required
+@transaction.atomic
+def return_order_item(request, item_id):
+    item = get_object_or_404(
+        OrderItem,
+        id=item_id,
+        order__user=request.user
+    )
+
+    # Allow only POST
+    if request.method != "POST":
+        return redirect(
+            "products:order_detail",
+            order_id=item.order.id
+        )
+
+    # Return allowed only if item status is DELIVERED
+    if item.status != "DELIVERED":
+        messages.error(
+            request,
+            "This item cannot be returned."
+        )
+        return redirect(
+            "products:order_detail",
+            order_id=item.order.id
+        )
+
+    reason = request.POST.get("reason", "").strip()
+    if not reason:
+        messages.error(
+            request,
+            "Return reason is required."
+        )
+        return redirect(
+            "products:order_detail",
+            order_id=item.order.id
+        )
+
+    # Update item status
+    item.status = "RETURN_REQUESTED"
+    item.return_reason = reason
+    item.save()
+
+    # Update order status
+    item.order.update_status()
+
+    messages.success(
+        request,
+        f"Return request for {item.product.name} submitted successfully."
+    )
+
+    return redirect(
+        "products:order_detail",
+        order_id=item.order.id
+    )
+
+
+
+@login_required
 def search_orders(request):
     query = request.GET.get("q", "").strip()
 
@@ -2686,7 +2746,8 @@ def admin_update_order_status(request, order_id):
         "DELIVERED": ["RETURN_REQUESTED"],
         "RETURN_REQUESTED": ["RETURNED"],
         "RETURNED": ["REFUNDED"],
-        "PARTIAL_RETURNED": ["REFUNDED"],
+        "PARTIAL_RETURNED": ["REFUNDED", "RETURNED", "RETURN_REQUESTED"],
+        "PARTIAL_CANCELLED": ["CONFIRMED", "PACKED", "SHIPPED", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED"],
         "CANCELLED": [],
         "REFUNDED": [],
     }
@@ -2803,17 +2864,29 @@ def admin_update_order_status(request, order_id):
                     order_id=order.id
                 )
 
-            refund_amount = order.final_amount
+            from decimal import Decimal
+            from apps.wallet.models import Wallet
+            from apps.wallet.services.wallet_service import WalletService
+            import uuid
+
+            refund_amount = Decimal("0.00")
 
             for item in refund_items:
-
+                refund_amount += item.refund_amount
                 item.status = "REFUNDED"
                 item.save()
 
-            wallet = order.user.wallet
+            wallet, _ = Wallet.objects.get_or_create(user=order.user)
 
-            wallet.balance += refund_amount
-            wallet.save()
+            description = f"Refund for returned item(s) from order {order.order_id}"
+            reference_id = f"REF-{uuid.uuid4().hex[:8].upper()}"
+
+            WalletService.credit_wallet(
+                wallet=wallet,
+                amount=refund_amount,
+                description=description,
+                reference_id=reference_id
+            )
 
             messages.success(
                 request,
@@ -2835,8 +2908,11 @@ def admin_update_order_status(request, order_id):
                 status=new_status
             )
 
-        order.status = new_status
-        order.save()
+        if new_status in ["CANCELLED", "RETURN_REQUESTED", "RETURNED", "REFUNDED"]:
+            order.update_status()
+        else:
+            order.status = new_status
+            order.save()
 
     messages.success(
         request,

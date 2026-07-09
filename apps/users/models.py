@@ -10,9 +10,15 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from datetime import timedelta
 from django.conf import settings
+import uuid
 
 
 
+
+def generate_referral_code():
+    return uuid.uuid4().hex[:8].upper()
+
+    
 class User(AbstractBaseUser, PermissionsMixin):
     # authentication
     email = models.EmailField(unique=True)
@@ -69,7 +75,6 @@ class User(AbstractBaseUser, PermissionsMixin):
         default="user",
     )
 
-    wallet_balance = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     # referral system
     referral_code = models.CharField(
@@ -109,9 +114,16 @@ class User(AbstractBaseUser, PermissionsMixin):
     def get_full_name(self):
         return self.full_name
     def save(self, *args, **kwargs):
-         if self.email:
-             self.email = self.email.lower().strip()
-         super().save(*args, **kwargs)
+
+            # Normalize email
+            if self.email:
+                self.email = self.email.lower().strip()
+
+            # Generate referral code only once
+            if not self.referral_code:
+                self.referral_code = generate_referral_code()
+
+            super().save(*args, **kwargs)
 
     
     # users/models.py

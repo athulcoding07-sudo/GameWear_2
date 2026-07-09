@@ -72,6 +72,7 @@ urlpatterns = [
     path("orders/<int:order_id>/",views.order_detail,name="order_detail"),
     path("orders/history/",views.order_history,name="order_history"),
     path("order/cancel-item/<int:item_id>/", views.cancel_order_item, name="cancel_order_item"),
+    path("order/return-item/<int:item_id>/", views.return_order_item, name="return_order_item"),
     path("order/return/<int:order_id>/", views.return_order, name="return_order"),
     path("orders/search/", views.search_orders, name="search_orders"),
     path("order/invoice/<int:order_id>/", views.download_invoice, name="download_invoice"),

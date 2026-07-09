@@ -486,8 +486,18 @@
                                     {{ item.variant.size }}
                                 </span>
                                 {% endif %}
+                                <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md
+                                    {% if item.status == 'CANCELLED' %}bg-rose-950/50 text-rose-400 border border-rose-900/50
+                                    {% elif item.status == 'RETURN_REQUESTED' %}bg-amber-950/50 text-amber-400 border border-amber-900/50
+                                    {% elif item.status == 'RETURNED' %}bg-orange-950/50 text-orange-400 border border-orange-900/50
+                                    {% elif item.status == 'REFUNDED' %}bg-teal-950/50 text-teal-400 border border-teal-900/50
+                                    {% elif item.status == 'DELIVERED' %}bg-emerald-950/50 text-emerald-400 border border-emerald-900/50
+                                    {% else %}bg-neutral-900 text-neutral-500 border border-neutral-800{% endif %}
+                                ">
+                                    {{ item.status }}
+                                </span>
                             </div>
-                            {% if item.status == "RETURN_REQUESTED" or item.status == "RETURNED" %}
+                            {% if item.status == "RETURN_REQUESTED" or item.status == "RETURNED" or item.status == "REFUNDED" %}
                             <div class="mt-2 p-2 rounded-lg bg-amber-950 border border-amber-800">
                                 <p class="text-xs font-bold text-amber-400">
                                     Return Reason

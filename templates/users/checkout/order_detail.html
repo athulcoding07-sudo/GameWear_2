@@ -31,10 +31,13 @@
   .badge-delivered        { background: rgba(34,197,94,0.12);  border-color: rgba(34,197,94,0.4);  color: #4ade80; }
   .badge-cancelled        { background: rgba(239,68,68,0.12);  border-color: rgba(239,68,68,0.4);  color: #f87171; }
   .badge-partial_cancelled{ background: rgba(249,115,22,0.12); border-color: rgba(249,115,22,0.4); color: #fb923c; }
+  .badge-return_requested { background: rgba(245,158,11,0.12); border-color: rgba(245,158,11,0.4); color: #fbbf24; }
+  .badge-returned         { background: rgba(115,115,115,0.15); border-color: rgba(115,115,115,0.4); color: #a3a3a3; }
+  .badge-refunded         { background: rgba(20,184,166,0.12); border-color: rgba(20,184,166,0.4); color: #2dd4bf; }
 
-  /* Item-level cancelled stripe overlay */
-  .item-cancelled { position: relative; }
-  .item-cancelled::after {
+  /* Item-level cancelled/returned stripe overlay */
+  .item-muted { position: relative; }
+  .item-muted::after {
     content: '';
     position: absolute;
     inset: 0;
@@ -153,82 +156,7 @@
 </div>
 
 
-<!-- ── ORDER PROGRESS TRACKER ──────────────────────────────── -->
-{% with order_status=order.status|lower %}
 
-{% if order_status != "cancelled" %}
-<div class="a2 bg-neutral-900 border border-neutral-800 rounded-2xl px-6 md:px-10 py-7 mb-6">
-  <p class="text-[9px] font-black uppercase tracking-widest text-neutral-600 mb-7 text-center">Tracking Progress</p>
-
-  <div class="flex items-start">
-
-    <!-- Confirmed -->
-    <div class="track-step-{% if order_status == 'confirmed' or order_status == 'preparing' or order_status == 'shipped' or order_status == 'delivered' %}done{% else %}idle{% endif %} flex flex-col items-center gap-2 flex-1">
-      <div class="track-dot w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all">
-        <svg class="w-3.5 h-3.5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
-        </svg>
-      </div>
-      <p class="track-label text-[9px] font-black uppercase tracking-widest text-center">Confirmed</p>
-    </div>
-
-    <div class="track-line-{% if order_status == 'preparing' or order_status == 'shipped' or order_status == 'delivered' %}done{% else %}idle{% endif %} flex-1 h-px mt-4"></div>
-
-    <!-- Preparing -->
-    <div class="track-step-{% if order_status == 'preparing' %}active{% elif order_status == 'shipped' or order_status == 'delivered' %}done{% else %}idle{% endif %} flex flex-col items-center gap-2 flex-1">
-      <div class="track-dot w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-        </svg>
-      </div>
-      <p class="track-label text-[9px] font-black uppercase tracking-widest text-center">Preparing</p>
-    </div>
-
-    <div class="track-line-{% if order_status == 'shipped' or order_status == 'delivered' %}done{% else %}idle{% endif %} flex-1 h-px mt-4"></div>
-
-    <!-- Shipped -->
-    <div class="track-step-{% if order_status == 'shipped' %}active{% elif order_status == 'delivered' %}done{% else %}idle{% endif %} flex flex-col items-center gap-2 flex-1">
-      <div class="track-dot w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
-        </svg>
-      </div>
-      <p class="track-label text-[9px] font-black uppercase tracking-widest text-center">Shipped</p>
-    </div>
-
-    <div class="track-line-{% if order_status == 'delivered' %}done{% else %}idle{% endif %} flex-1 h-px mt-4"></div>
-
-    <!-- Delivered -->
-    <div class="track-step-{% if order_status == 'delivered' %}done{% else %}idle{% endif %} flex flex-col items-center gap-2 flex-1">
-      <div class="track-dot w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-        </svg>
-      </div>
-      <p class="track-label text-[9px] font-black uppercase tracking-widest text-center">Delivered</p>
-    </div>
-
-  </div>
-</div>
-
-{% else %}
-<!-- Fully cancelled banner -->
-<div class="a2 flex items-center gap-4 bg-red-500/10 border border-red-500/30 rounded-2xl px-7 py-5 mb-6">
-  <div class="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center shrink-0">
-    <svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-    </svg>
-  </div>
-  <div>
-    <p class="text-red-400 font-black text-sm uppercase tracking-widest">Order Cancelled</p>
-    <p class="text-red-400/60 text-[10px] font-bold uppercase tracking-widest mt-0.5">
-      This order has been cancelled. Contact support if you have questions.
-    </p>
-  </div>
-</div>
-{% endif %}
-
-{% endwith %}{# end order_status #}
 
 
 <!-- ── MAIN CONTENT ─────────────────────────────────────────── -->
@@ -256,13 +184,12 @@
       <div class="divide-y divide-neutral-800/60">
         {% for item in order.items.all %}
 
-        {# ── FIX: use item_status consistently for all checks ── #}
         {% with item_status=item.status|lower order_status=order.status|lower %}
 
         <!-- Item row -->
         <div class="relative grid grid-cols-12 gap-4 items-center px-7 py-5 transition-colors
-            {% if item_status == 'cancelled' %}
-                item-cancelled opacity-50
+            {% if item_status == 'cancelled' or item_status == 'returned' or item_status == 'refunded' %}
+                item-muted opacity-50
             {% else %}
                 hover:bg-neutral-800/30
             {% endif %}">
@@ -292,11 +219,26 @@
               <p class="text-neutral-700 text-[9px] uppercase tracking-widest font-bold mt-0.5">SKU: {{ item.variant.sku }}</p>
               {% endif %}
 
-              {# ── FIX: was checking undefined `item_cancelled`, now uses `item_status` ── #}
+              <!-- Item-level status badge -->
               {% if item_status == "cancelled" %}
-              <span class="inline-flex items-center gap-1 mt-2 bg-red-500/15 border border-red-500/40 text-red-400
+              <span class="badge-cancelled inline-flex items-center gap-1 mt-2 border
                            text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full">
                 ✕ Cancelled
+              </span>
+              {% elif item_status == "return_requested" %}
+              <span class="badge-return_requested inline-flex items-center gap-1 mt-2 border
+                           text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full">
+                ⟳ Return Requested
+              </span>
+              {% elif item_status == "returned" %}
+              <span class="badge-returned inline-flex items-center gap-1 mt-2 border
+                           text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full">
+                ✓ Returned
+              </span>
+              {% elif item_status == "refunded" %}
+              <span class="badge-refunded inline-flex items-center gap-1 mt-2 border
+                           text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full">
+                ✓ Refunded
               </span>
               {% endif %}
 
@@ -336,25 +278,144 @@
 
         </div><!-- /item row -->
 
-        {# ── Per-item cancel button ── #}
-        {# FIX: was `not item_cancelled` (always True, undefined var). Now correctly checks item_status. #}
-        {# Also only show when order is still in a cancellable state (not shipped/delivered/cancelled). #}
-        {% if item_status != "cancelled" and order_status != "shipped" and order_status != "delivered" and order_status != "cancelled" %}
-        <div class="px-7 pb-4 -mt-2">
-          <form method="POST" action="{% url 'products:cancel_order_item' item.id %}"
-                onsubmit="return confirmCancel(event, '{{ item.product.name|escapejs }}')">
-            {% csrf_token %}
-            <button type="submit"
-              class="inline-flex items-center gap-2 border border-red-900/50 text-red-500/70
-                     hover:border-red-400 hover:text-red-400 hover:bg-red-500/5
+        
+
+        {% if item_status != "cancelled" and item_status != "return_requested" and item_status != "returned" and item_status != "refunded" %}
+
+          {% if order_status == "pending" or order_status == "confirmed" or order_status == "preparing" %}
+          <!-- Cancel window: order hasn't shipped yet -->
+          <div class="px-7 pb-4 -mt-2">
+            <form method="POST" action="{% url 'products:cancel_order_item' item.id %}"
+                  onsubmit="return confirmCancel(event, '{{ item.product.name|escapejs }}')">
+              {% csrf_token %}
+              <button type="submit"
+                class="inline-flex items-center gap-2 border border-red-900/50 text-red-500/70
+                       hover:border-red-400 hover:text-red-400 hover:bg-red-500/5
+                       font-bold uppercase tracking-widest text-[9px] px-4 py-2 rounded-full transition-all">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+                Cancel This Item
+              </button>
+            </form>
+          </div>
+
+          {% elif item_status == "delivered" %}
+          <!-- Return window: order has been delivered -->
+          <div class="px-7 pb-4 -mt-2">
+            <button type="button" onclick="openReturnModal(this)" data-item-id="{{ item.id }}"
+              class="inline-flex items-center gap-2 border border-amber-900/50 text-amber-500/70
+                     hover:border-amber-400 hover:text-amber-400 hover:bg-amber-500/5
                      font-bold uppercase tracking-widest text-[9px] px-4 py-2 rounded-full transition-all">
               <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
               </svg>
-              Cancel This Item
+              Return This Item
             </button>
-          </form>
-        </div>
+          </div>
+
+          <!-- Per-item return modal — gets portaled to <body> on load (see script below)
+               so it always escapes any transformed ancestor's containing block.
+               Matched to its trigger button via data-item-id, not DOM position. -->
+          <div class="return-modal-backdrop hidden fixed inset-0 z-[998] flex items-center justify-center p-4"
+               data-item-id="{{ item.id }}"
+               style="background:rgba(0,0,0,0.80);backdrop-filter:blur(6px);"
+               onclick="handleBackdropClick(event)">
+            <div class="return-modal" style="
+                 background:#0f0f0f; border:1px solid #1f1f1f; border-radius:24px;
+                 padding:36px; max-width:440px; width:100%;
+                 animation:rise 0.35s cubic-bezier(0.34,1.56,0.64,1) both;">
+
+              <div style="width:48px;height:48px;border-radius:50%;
+                          background:rgba(245,158,11,0.10);border:1px solid rgba(245,158,11,0.30);
+                          display:flex;align-items:center;justify-content:center;margin-bottom:22px;">
+                <svg width="20" height="20" fill="none" stroke="#fbbf24" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
+                </svg>
+              </div>
+
+              <p style="font-size:10px;font-weight:900;letter-spacing:0.22em;text-transform:uppercase;
+                        color:#737373;margin-bottom:8px;">Return Request</p>
+              <p style="color:#fff;font-weight:800;font-size:16px;margin-bottom:6px;line-height:1.4;">
+                Why are you returning "{{ item.product.name }}"?
+              </p>
+              <p style="color:#4a4a4a;font-size:11px;line-height:1.65;margin-bottom:24px;">
+                Only this item will be marked as returned — the rest of your order is unaffected.
+              </p>
+
+              <div class="reason-chips" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;">
+                {% for reason_text in return_reasons %}
+                <button type="button"
+                  onclick="selectChip(this)"
+                  data-reason="{{ reason_text }}"
+                  style="
+                    padding:7px 14px;border-radius:100px;font-size:9px;font-weight:800;
+                    letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;
+                    border:1px solid #2a2a2a;background:transparent;color:#525252;
+                    transition:all 0.18s;"
+                  onmouseover="if(!this.classList.contains('chip-active')){this.style.borderColor='#404040';this.style.color='#aaa';}"
+                  onmouseout="if(!this.classList.contains('chip-active')){this.style.borderColor='#2a2a2a';this.style.color='#525252';}">
+                  {{ reason_text }}
+                </button>
+                {% endfor %}
+              </div>
+
+              <form method="POST" action="{% url 'products:return_order_item' item.id %}"
+                    onsubmit="return validateReturn(event, this)">
+                {% csrf_token %}
+
+                <textarea
+                  class="return-reason"
+                  name="reason"
+                  rows="3"
+                  placeholder="Describe your reason in detail…"
+                  oninput="syncTextarea(this)"
+                  style="
+                    width:100%;box-sizing:border-box;resize:none;
+                    background:#161616;border:1px solid #2a2a2a;border-radius:14px;
+                    color:#e5e5e5;font-size:12px;line-height:1.6;
+                    padding:14px 16px;outline:none;font-family:inherit;
+                    transition:border-color 0.2s;"
+                  onfocus="this.style.borderColor='#404040'"
+                  onblur="this.style.borderColor='#2a2a2a'"
+                ></textarea>
+
+                <p class="return-error"
+                   style="display:none;margin-top:8px;font-size:10px;font-weight:700;
+                          letter-spacing:0.1em;text-transform:uppercase;color:#f87171;">
+                  ⚠ Please enter a reason before submitting.
+                </p>
+
+                <div style="display:flex;gap:10px;margin-top:22px;">
+                  <button type="button" onclick="closeReturnModal(this)"
+                    style="
+                      flex:1;padding:13px;border:1px solid #262626;background:transparent;
+                      color:#737373;font-weight:700;font-size:10px;letter-spacing:0.15em;
+                      text-transform:uppercase;border-radius:100px;cursor:pointer;transition:all 0.2s;"
+                    onmouseover="this.style.borderColor='#404040';this.style.color='#fff'"
+                    onmouseout="this.style.borderColor='#262626';this.style.color='#737373'">
+                    Cancel
+                  </button>
+                  <button type="submit"
+                    style="
+                      flex:1;padding:13px;
+                      border:1px solid rgba(245,158,11,0.45);
+                      background:rgba(245,158,11,0.10);color:#fbbf24;font-weight:900;
+                      font-size:10px;letter-spacing:0.15em;text-transform:uppercase;
+                      border-radius:100px;cursor:pointer;transition:all 0.2s;"
+                    onmouseover="this.style.background='rgba(245,158,11,0.20)'"
+                    onmouseout="this.style.background='rgba(245,158,11,0.10)'">
+                    Submit Return
+                  </button>
+                </div>
+              </form>
+
+            </div>
+          </div>
+          {% endif %}
+
         {% endif %}
 
         {% endwith %}{# end item_status / order_status #}
@@ -364,25 +425,43 @@
 
     <!-- Delivery address -->
     <div class="a4 bg-neutral-900 border border-neutral-800 rounded-2xl p-7">
-      <div class="flex items-center gap-2 mb-5">
-        <div class="w-7 h-7 rounded-full bg-neutral-800 border border-neutral-700 flex items-center justify-center shrink-0">
-          <svg class="w-3.5 h-3.5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-          </svg>
+
+        <div class="flex items-center gap-2 mb-5">
+            <div class="w-7 h-7 rounded-full bg-neutral-800 border border-neutral-700 flex items-center justify-center shrink-0">
+                <svg class="w-3.5 h-3.5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+            </div>
+            <h2 class="text-[10px] font-black uppercase tracking-widest text-neutral-400">Delivery Address</h2>
         </div>
-        <h2 class="text-[10px] font-black uppercase tracking-widest text-neutral-400">Delivery Address</h2>
-      </div>
-      <p class="text-white font-black text-sm">{{ order.address.full_name }}</p>
-      <p class="text-neutral-400 text-[11px] leading-relaxed mt-1.5">
-        {{ order.address.address_line1 }}<br />
-        {% if order.address.address_line2 %}{{ order.address.address_line2 }}<br />{% endif %}
-        {{ order.address.city }}, {{ order.address.state }} — {{ order.address.pincode }}<br />
-        {{ order.address.country }}
-      </p>
-      {% if order.address.phone %}
-      <p class="text-neutral-600 text-[10px] uppercase tracking-widest font-bold mt-3">📞 {{ order.address.phone }}</p>
-      {% endif %}
+
+        {% if order.shipping_address %}
+            <p class="text-white font-black text-sm">{{ order.shipping_address.full_name }}</p>
+            <p class="text-neutral-400 text-[11px] leading-relaxed mt-1.5">
+                {{ order.shipping_address.address_line_1 }}
+                <br>
+                {% if order.shipping_address.address_line_2 %}
+                    {{ order.shipping_address.address_line_2 }}
+                    <br>
+                {% endif %}
+                {{ order.shipping_address.city }},
+                {{ order.shipping_address.state }}
+                —
+                {{ order.shipping_address.postal_code }}
+                <br>
+                {{ order.shipping_address.country }}
+            </p>
+            {% if order.shipping_address.phone %}
+                <p class="text-neutral-600 text-[10px] uppercase tracking-widest font-bold mt-3">
+                    📞 {{ order.shipping_address.phone }}
+                </p>
+            {% endif %}
+        {% else %}
+            <p class="text-red-400 text-xs">No delivery address found for this order.</p>
+        {% endif %}
     </div>
 
   </div><!-- /left -->
@@ -456,7 +535,6 @@
       <div class="a6 space-y-3">
 
         {# ── Invoice Download Button ── #}
-        {# Shown for all statuses EXCEPT pending (mirrors view-level guard) #}
         {% with s=order.status|lower %}
         {% if s != "pending" and s != "cancelled" and s != "partial_cancelled" %}
         <a href="{% url 'products:download_invoice' order.id %}"
@@ -466,11 +544,9 @@
                  font-black uppercase tracking-widest text-[10px] py-4 rounded-full
                  transition-all duration-300 hover:-translate-y-0.5
                  shadow-[0_0_0px_rgba(255,255,255,0)] hover:shadow-[0_0_20px_rgba(255,255,255,0.06)]">
-          {# Subtle shimmer sweep on hover #}
           <span class="pointer-events-none absolute inset-0 -translate-x-full group-hover:translate-x-full
                        bg-gradient-to-r from-transparent via-white/5 to-transparent
                        transition-transform duration-700 ease-in-out"></span>
-          {# PDF icon #}
           <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h4a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
@@ -478,7 +554,6 @@
           Download Invoice
         </a>
         {% else %}
-        {# Pending state — disabled-style pill with tooltip hint #}
         <div class="relative group flex items-center justify-center gap-2.5 w-full
                     bg-neutral-900/50 border border-neutral-800 border-dashed
                     text-neutral-700 font-black uppercase tracking-widest text-[10px]
@@ -488,7 +563,6 @@
               d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
           </svg>
           Invoice Pending
-          {# Tooltip #}
           <span class="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2
                        bg-neutral-800 border border-neutral-700 text-neutral-400
                        text-[9px] font-bold px-3 py-1.5 rounded-lg whitespace-nowrap
@@ -499,27 +573,7 @@
         {% endif %}
         {% endwith %}
 
-        {# ── Return Order Button — only when DELIVERED ── #}
-        {# View guard: order.status == "DELIVERED" + POST + reason required #}
-        {% with s=order.status|lower %}
-        {% if s == "delivered" %}
-        <button type="button" onclick="openReturnModal()"
-          class="group relative flex items-center justify-center gap-2.5 w-full overflow-hidden
-                 bg-amber-500/10 border border-amber-500/40 hover:border-amber-400
-                 text-amber-400 hover:text-amber-300
-                 font-black uppercase tracking-widest text-[10px] py-4 rounded-full
-                 transition-all duration-300 hover:-translate-y-0.5">
-          <span class="pointer-events-none absolute inset-0 -translate-x-full group-hover:translate-x-full
-                       bg-gradient-to-r from-transparent via-amber-400/5 to-transparent
-                       transition-transform duration-700 ease-in-out"></span>
-          <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
-          </svg>
-          Return Order
-        </button>
-        {% endif %}
-        {% endwith %}
+        
 
         <a href="{% url 'products:users_product_listing' %}"
           class="block w-full bg-white text-black text-center font-black uppercase tracking-widest text-[10px] py-4 rounded-full hover:bg-neutral-200 transition-all transform hover:-translate-y-0.5 shadow-[0_0_20px_rgba(255,255,255,0.1)]">
@@ -559,7 +613,7 @@
 </div><!-- /main content -->
 
 
-<!-- ── CONFIRM DIALOG ───────────────────────────────────────── -->
+<!-- ── CANCEL CONFIRM DIALOG (per-item, pre-shipping) ───────── -->
 <script>
   function confirmCancel(event, itemName) {
     event.preventDefault();
@@ -583,7 +637,7 @@
           </svg>
         </div>
         <p style="font-size:10px;font-weight:900;letter-spacing:0.2em;text-transform:uppercase;color:#737373;margin-bottom:8px;">Confirm Cancellation</p>
-        <p style="color:#fff;font-weight:700;font-size:14px;margin-bottom:6px;">Cancel <em>₹{itemName}</em>?</p>
+        <p style="color:#fff;font-weight:700;font-size:14px;margin-bottom:6px;">Cancel <em>${itemName}</em>?</p>
         <p style="color:#525252;font-size:11px;line-height:1.6;margin-bottom:28px;">
           This action cannot be undone. The item will be removed from your order and stock will be restored.
         </p>
@@ -623,7 +677,6 @@
       form.submit();
     });
 
-    // Click outside to close
     backdrop.addEventListener('click', (e) => {
       if (e.target === backdrop) {
         document.body.removeChild(backdrop);
@@ -636,122 +689,7 @@
 </script>
 
 
-<!-- ── RETURN ORDER MODAL ────────────────────────────────────── -->
-{# Only rendered in DOM when order is DELIVERED — no wasted markup otherwise #}
-{% if order.status|lower == "delivered" %}
-<div id="return-backdrop"
-     class="hidden fixed inset-0 z-[998] flex items-center justify-center p-4"
-     style="background:rgba(0,0,0,0.80);backdrop-filter:blur(6px);"
-     onclick="handleBackdropClick(event)">
-
-  <div id="return-modal"
-       style="
-         background:#0f0f0f;
-         border:1px solid #1f1f1f;
-         border-radius:24px;
-         padding:36px;
-         max-width:440px;
-         width:100%;
-         animation:rise 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
-       ">
-
-    <!-- Icon -->
-    <div style="width:48px;height:48px;border-radius:50%;
-                background:rgba(245,158,11,0.10);border:1px solid rgba(245,158,11,0.30);
-                display:flex;align-items:center;justify-content:center;margin-bottom:22px;">
-      <svg width="20" height="20" fill="none" stroke="#fbbf24" stroke-width="2" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round"
-          d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
-      </svg>
-    </div>
-
-    <!-- Heading -->
-    <p style="font-size:10px;font-weight:900;letter-spacing:0.22em;text-transform:uppercase;
-              color:#737373;margin-bottom:8px;">Return Request</p>
-    <p style="color:#fff;font-weight:800;font-size:16px;margin-bottom:6px;line-height:1.4;">
-      Why are you returning this order?
-    </p>
-    <p style="color:#4a4a4a;font-size:11px;line-height:1.65;margin-bottom:24px;">
-      All items in this order will be marked as returned. Please give us a clear reason so we can process it quickly.
-    </p>
-
-    <!-- Quick-pick reason chips -->
-    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;" id="reason-chips">
-      {% for reason_text in return_reasons %}
-      <button type="button"
-        onclick="selectChip(this)"
-        data-reason="{{ reason_text }}"
-        style="
-          padding:7px 14px;border-radius:100px;font-size:9px;font-weight:800;
-          letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;
-          border:1px solid #2a2a2a;background:transparent;color:#525252;
-          transition:all 0.18s;
-        "
-        onmouseover="if(!this.classList.contains('chip-active')){this.style.borderColor='#404040';this.style.color='#aaa';}"
-        onmouseout="if(!this.classList.contains('chip-active')){this.style.borderColor='#2a2a2a';this.style.color='#525252';}">
-        {{ reason_text }}
-      </button>
-      {% endfor %}
-    </div>
-
-    <!-- Return reason form — POST to return_order view -->
-    <form method="POST" action="{% url 'products:return_order' order.id %}"
-          onsubmit="return validateReturn(event)">
-      {% csrf_token %}
-
-      <textarea
-        id="return-reason"
-        name="reason"
-        rows="3"
-        placeholder="Describe your reason in detail…"
-        oninput="syncTextarea(this)"
-        style="
-          width:100%;box-sizing:border-box;resize:none;
-          background:#161616;border:1px solid #2a2a2a;border-radius:14px;
-          color:#e5e5e5;font-size:12px;line-height:1.6;
-          padding:14px 16px;outline:none;font-family:inherit;
-          transition:border-color 0.2s;
-        "
-        onfocus="this.style.borderColor='#404040'"
-        onblur="this.style.borderColor='#2a2a2a'"
-      ></textarea>
-
-      <!-- Validation hint — hidden by default -->
-      <p id="return-error"
-         style="display:none;margin-top:8px;font-size:10px;font-weight:700;
-                letter-spacing:0.1em;text-transform:uppercase;color:#f87171;">
-        ⚠ Please enter a reason before submitting.
-      </p>
-
-      <div style="display:flex;gap:10px;margin-top:22px;">
-        <button type="button" onclick="closeReturnModal()"
-          style="
-            flex:1;padding:13px;border:1px solid #262626;background:transparent;
-            color:#737373;font-weight:700;font-size:10px;letter-spacing:0.15em;
-            text-transform:uppercase;border-radius:100px;cursor:pointer;transition:all 0.2s;
-          "
-          onmouseover="this.style.borderColor='#404040';this.style.color='#fff'"
-          onmouseout="this.style.borderColor='#262626';this.style.color='#737373'">
-          Cancel
-        </button>
-        <button type="submit"
-          style="
-            flex:1;padding:13px;
-            border:1px solid rgba(245,158,11,0.45);
-            background:rgba(245,158,11,0.10);color:#fbbf24;font-weight:900;
-            font-size:10px;letter-spacing:0.15em;text-transform:uppercase;
-            border-radius:100px;cursor:pointer;transition:all 0.2s;
-          "
-          onmouseover="this.style.background='rgba(245,158,11,0.20)'"
-          onmouseout="this.style.background='rgba(245,158,11,0.10)'">
-          Submit Return
-        </button>
-      </div>
-    </form>
-
-  </div>
-</div>
-
+<!-- ── RETURN MODAL LOGIC (per-item, post-delivery) ─────────── -->
 <style>
   .chip-active {
     border-color: rgba(245,158,11,0.55) !important;
@@ -761,85 +699,113 @@
 </style>
 
 <script>
-  /* ── Open / close ─────────────────────────────── */
-  function openReturnModal() {
-    const bd = document.getElementById('return-backdrop');
-    bd.classList.remove('hidden');
+  /* WHY THIS EXISTS:
+     .a1–.a6 sections use `animation: rise ... both`. The "both" fill-mode
+     keeps the final keyframe's `transform: translateY(0)` applied forever
+     after the animation finishes. Any non-none transform on an ancestor —
+     even a resting translateY(0) — creates a CSS containing block for
+     `position: fixed` descendants. That silently turns "fixed" into
+     "absolute, scoped to that card" for anything nested inside it, which
+     is why the return modal was rendering *inside* the item card instead
+     of centered over the whole viewport.
+
+     Fix: on load, physically move every .return-modal-backdrop to be a
+     direct child of <body> — a portal, the same technique React Portals /
+     Vue Teleport use. Once it's not nested under any transformed
+     ancestor, `position: fixed` works exactly as expected regardless of
+     what animations exist elsewhere on the page (now or added later).
+
+     Because the node moves, we can no longer pair button → modal by DOM
+     position. We match by data-item-id instead, which is stable no
+     matter where the node physically lives. */
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.return-modal-backdrop').forEach(backdrop => {
+      document.body.appendChild(backdrop);
+    });
+  });
+
+  function openReturnModal(btn) {
+    const itemId = btn.dataset.itemId;
+    const backdrop = document.querySelector(
+      `.return-modal-backdrop[data-item-id="${itemId}"]`
+    );
+    if (!backdrop) return;
+    backdrop.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
-    // Re-trigger animation each open
-    const modal = document.getElementById('return-modal');
+    const modal = backdrop.querySelector('.return-modal');
     modal.style.animation = 'none';
-    modal.offsetHeight; // reflow
+    modal.offsetHeight; // reflow to restart animation
     modal.style.animation = '';
   }
 
-  function closeReturnModal() {
-    document.getElementById('return-backdrop').classList.add('hidden');
+  function closeReturnModal(el) {
+    const backdrop = el.closest('.return-modal-backdrop');
+    backdrop.classList.add('hidden');
     document.body.style.overflow = '';
   }
 
-  function handleBackdropClick(e) {
-    if (e.target === document.getElementById('return-backdrop')) {
-      closeReturnModal();
+  function handleBackdropClick(event) {
+    if (event.target.classList.contains('return-modal-backdrop')) {
+      event.target.classList.add('hidden');
+      document.body.style.overflow = '';
     }
   }
 
-  /* ── Quick-pick chips ────────────────────────── */
   function selectChip(btn) {
-    // Deactivate all chips
-    document.querySelectorAll('#reason-chips button').forEach(b => {
-        b.classList.remove('chip-active');
-        b.style.borderColor = '#2a2a2a';
-        b.style.background = 'transparent';
-        b.style.color = '#525252';
+    const container = btn.closest('.reason-chips');
+    container.querySelectorAll('button').forEach(b => {
+      b.classList.remove('chip-active');
+      b.style.borderColor = '#2a2a2a';
+      b.style.background = 'transparent';
+      b.style.color = '#525252';
     });
 
-    // Activate clicked chip
     btn.classList.add('chip-active');
     btn.style.borderColor = '#fff';
     btn.style.background = '#fff';
     btn.style.color = '#000';
 
-    // Fill textarea
-    const ta = document.getElementById('return_reason');
-    ta.value = btn.dataset.reason;
+    const modal = btn.closest('.return-modal');
+    const textarea = modal.querySelector('.return-reason');
+    textarea.value = btn.dataset.reason;
 
-    // Hide error if exists
-    const errorBox = document.getElementById('return-error');
-    if (errorBox) {
-        errorBox.style.display = 'none';
-    }
-}
+    const errorBox = modal.querySelector('.return-error');
+    if (errorBox) errorBox.style.display = 'none';
+  }
 
-  /* ── If user types freely, deselect chips ────── */
-  function syncTextarea(ta) {
-    if (!ta.value.trim()) {
-      document.querySelectorAll('#reason-chips button').forEach(b => {
+  function syncTextarea(textarea) {
+    const modal = textarea.closest('.return-modal');
+    if (!textarea.value.trim()) {
+      modal.querySelectorAll('.reason-chips button').forEach(b => {
         b.classList.remove('chip-active');
         b.style.borderColor = '#2a2a2a';
         b.style.background  = 'transparent';
         b.style.color       = '#525252';
       });
     }
-    document.getElementById('return-error').style.display = 'none';
+    modal.querySelector('.return-error').style.display = 'none';
   }
 
-  /* ── Client-side guard (view also guards server-side) ── */
-  function validateReturn(event) {
-    const reason = document.getElementById('return-reason').value.trim();
+  function validateReturn(event, form) {
+    const modal = form.closest('.return-modal');
+    const reason = modal.querySelector('.return-reason').value.trim();
     if (!reason) {
       event.preventDefault();
-      document.getElementById('return-error').style.display = 'block';
+      modal.querySelector('.return-error').style.display = 'block';
       return false;
     }
     return true;
   }
 
-  /* ── ESC to close ────────────────────────────── */
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeReturnModal();
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.return-modal-backdrop:not(.hidden)').forEach(bd => {
+        bd.classList.add('hidden');
+        document.body.style.overflow = '';
+      });
+    }
   });
 </script>
-{% endif %}
 
 {% endblock %}
