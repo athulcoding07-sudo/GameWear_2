@@ -1,13 +1,15 @@
 from django.db import models
 
 from django.utils import timezone
+from apps.core.validators import validate_name
+
 
 # Create your models here.
 
 
 class BaseOffer(models.Model):
 
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100,validators=[validate_name])
 
     discount_percentage = models.DecimalField(
         max_digits=5,

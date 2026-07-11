@@ -60,9 +60,6 @@
         </form>
     </div>
 
-    <!-- Stats Row -->
-    
-
     <!-- Table -->
     <div class="bg-black border border-neutral-900 rounded-2xl overflow-hidden mb-6">
         <div class="overflow-x-auto">
@@ -73,7 +70,6 @@
                         <th class="px-6 py-4 font-medium">Discount</th>
                         <th class="px-6 py-4 font-medium">Min / Max</th>
                         <th class="px-6 py-4 font-medium">Validity</th>
-                        <th class="px-6 py-4 font-medium">Usage</th>
                         <th class="px-6 py-4 font-medium">Status</th>
                         <th class="px-6 py-4 font-medium text-right">Actions</th>
                     </tr>
@@ -149,14 +145,6 @@
                         </div>
                     </div>
 
-                    <!-- Usage Limit -->
-                    <div class="space-y-2">
-                        <label class="text-xs font-semibold text-neutral-500 uppercase tracking-widest">Usage Limit
-                            <span class="text-rose-500">*</span></label>
-                        <input type="number" id="f-usage-limit" name="usage_limit" required min="1" placeholder="100"
-                            class="w-full bg-black border border-neutral-800 rounded-xl p-3 focus:border-white outline-none transition text-white placeholder-neutral-700">
-                    </div>
-
                     <!-- Minimum Amount -->
                     <div class="space-y-2">
                         <label class="text-xs font-semibold text-neutral-500 uppercase tracking-widest">Minimum Order
@@ -165,18 +153,6 @@
                             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 font-bold">₹</span>
                             <input type="number" id="f-min-amount" name="minimum_amount" required min="0" step="0.01"
                                 placeholder="499.00"
-                                class="w-full bg-black border border-neutral-800 rounded-xl p-3 pl-7 focus:border-white outline-none transition text-white placeholder-neutral-700">
-                        </div>
-                    </div>
-
-                    <!-- Maximum Discount -->
-                    <div class="space-y-2">
-                        <label class="text-xs font-semibold text-neutral-500 uppercase tracking-widest">Maximum Discount
-                            (₹) <span class="text-neutral-700">(Optional)</span></label>
-                        <div class="relative">
-                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 font-bold">₹</span>
-                            <input type="number" id="f-max-discount" name="maximum_discount" min="0" step="0.01"
-                                placeholder="200.00"
                                 class="w-full bg-black border border-neutral-800 rounded-xl p-3 pl-7 focus:border-white outline-none transition text-white placeholder-neutral-700">
                         </div>
                     </div>
@@ -331,17 +307,27 @@
             }, 3500);
         }
 
+        /* ─── HELPERS ───────────────────────────────────────────────────────────── */
+        // Converts any ISO-like datetime string ("2026-07-11T10:30:00" or
+        // "2026-07-11 10:30:00") into the exact format datetime-local inputs
+        // require: "YYYY-MM-DDTHH:MM"
+        function toDatetimeLocalValue(value) {
+            if (!value) return '';
+            const normalized = value.replace(' ', 'T');
+            return normalized.slice(0, 16);
+        }
+
         /* ─── MODAL ─────────────────────────────────────────────────────────────── */
         function clearForm() {
             document.getElementById('coupon-id').value = '';
             document.getElementById('f-code').value = '';
             document.getElementById('f-discount').value = '';
-            document.getElementById('f-usage-limit').value = '';
             document.getElementById('f-min-amount').value = '';
-            document.getElementById('f-max-discount').value = '';
             document.getElementById('f-valid-from').value = '';
             document.getElementById('f-valid-to').value = '';
+            // Default every new coupon to Active
             document.getElementById('f-is-active').checked = true;
+
             clearErrors();
         }
 
@@ -385,14 +371,17 @@
 
                     if (data.coupon) {
                         const c = data.coupon;
+                        
+                        console.log("Valid From:", c.valid_from);
+                        console.log("Valid To:", c.valid_to);
                         document.getElementById('f-code').value = c.code || '';
                         document.getElementById('f-discount').value = c.discount_percentage || '';
-                        document.getElementById('f-usage-limit').value = c.usage_limit || '';
                         document.getElementById('f-min-amount').value = c.minimum_amount || '';
-                        document.getElementById('f-max-discount').value = c.maximum_discount || '';
-                        document.getElementById('f-valid-from').value = c.valid_from || '';
-                        document.getElementById('f-valid-to').value = c.valid_to || '';
-                        document.getElementById('f-is-active').checked = c.is_active;
+                        document.getElementById('f-valid-from').value = toDatetimeLocalValue(c.valid_from);
+                        document.getElementById('f-valid-to').value = toDatetimeLocalValue(c.valid_to);
+                        // Preserve the coupon's actual current status instead of
+                        // forcing it back to active on every edit
+                        document.getElementById('f-is-active').checked = !!c.is_active;
                     }
                 } catch (err) {
                     showToast('Failed to load coupon data.', 'error');
@@ -402,12 +391,16 @@
                 title.textContent = 'Add New Coupon';
                 subtitle.textContent = 'Fill in the details to create a coupon.';
                 label.textContent = 'Create Coupon';
+                // Explicit default for a brand new coupon
+                document.getElementById('f-is-active').checked = true;
             }
 
             modal.classList.remove('hidden');
             modal.classList.add('flex');
             setTimeout(() => document.getElementById('f-code').focus(), 100);
+        
         };
+        
 
         window.closeModal = function () {
             const modal = document.getElementById('coupon-modal');
@@ -432,9 +425,7 @@
             const payload = {
                 code: document.getElementById('f-code').value.trim().toUpperCase(),
                 discount_percentage: document.getElementById('f-discount').value,
-                usage_limit: document.getElementById('f-usage-limit').value,
                 minimum_amount: document.getElementById('f-min-amount').value,
-                maximum_discount: document.getElementById('f-max-discount').value || null,
                 valid_from: document.getElementById('f-valid-from').value,
                 valid_to: document.getElementById('f-valid-to').value,
                 is_active: document.getElementById('f-is-active').checked,
@@ -542,14 +533,10 @@
                     showToast(data.message || 'Coupon deleted.', 'success');
                     closeDeleteModal();
 
-                    // Remove row from DOM instantly
-                    const row = document.getElementById(`row-${pendingDeleteId}`);
-                    if (row) {
-                        row.style.transition = 'opacity 0.3s, transform 0.3s';
-                        row.style.opacity = '0';
-                        row.style.transform = 'translateX(20px)';
-                        setTimeout(() => row.remove(), 300);
-                    }
+                    // Refresh the table via AJAX instead of manually plucking
+                    // the row out — this keeps row count, empty-state messaging,
+                    // and any stats in sync without a full page reload.
+                    await refreshTable();
                 } else {
                     showToast(data.message || 'Delete failed.', 'error');
                 }
@@ -564,25 +551,17 @@
 
         /* ─── REFRESH TABLE ─────────────────────────────────────────────────────── 
            Fetches the updated table body HTML from the server via a partial-render
-           approach. Your view should detect `?ajax=1` and return just the <tbody>
-           rows. If you prefer, you can also do a full page reload:
-             window.location.reload();
-           Or reconstruct the row from the response JSON — adjust to your backend.
+           approach. The view detects `?ajax=1` and returns just the rendered rows
+           as { html: "<tr>...</tr>" } so we can swap them in without reloading
+           the page.
         ─────────────────────────────────────────────────────────────────────────── */
         async function refreshTable() {
             try {
                 const res = await fetch(`${URL_LIST}?ajax=1`, {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 });
-
-                // If your backend returns JSON list, rebuild rows from JSON.
-                // If it returns HTML partial, do: tbody.innerHTML = await res.text();
-                // For now we do a graceful full reload as a safe default:
                 const data = await res.json();
-                document.getElementById(
-                    "coupon-table-body"
-                ).innerHTML = data.html;
-
+                document.getElementById('coupon-table-body').innerHTML = data.html;
             } catch (err) {
                 // Silent fail — table will be stale but toast already shown
                 console.warn('Table refresh failed, reload manually.');

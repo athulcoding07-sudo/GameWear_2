@@ -65,6 +65,9 @@ def coupon_create_view(request):
             },
             status=400,
         )
+    coupon = form.save(commit=False)
+    coupon.is_active = True
+    coupon.save()
 
     CouponDashboardService.create_coupon(
         form.cleaned_data,
@@ -103,10 +106,10 @@ def coupon_update_view(request, coupon_id):
                 "maximum_discount": str(
                     coupon.maximum_discount
                 ),
-                "usage_limit": coupon.usage_limit,
                 "valid_from": coupon.valid_from.strftime(
                     "%Y-%m-%dT%H:%M"
                 ),
+                        
                 "valid_to": coupon.valid_to.strftime(
                     "%Y-%m-%dT%H:%M"
                 ),
@@ -130,6 +133,9 @@ def coupon_update_view(request, coupon_id):
             },
             status=400,
         )
+    coupon = form.save(commit=False)
+    coupon.is_active = True
+    coupon.save()
 
     CouponDashboardService.update_coupon(
         coupon,

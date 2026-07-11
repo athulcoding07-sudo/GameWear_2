@@ -13,10 +13,10 @@ class CouponForm(forms.ModelForm):
             "code",
             "discount_percentage",
             "minimum_amount",
-            "maximum_discount",
+            # "maximum_discount",
             "valid_from",
             "valid_to",
-            "usage_limit",
+            
             "is_active",
         ]
 
@@ -82,29 +82,19 @@ class CouponForm(forms.ModelForm):
 
         return minimum_amount
 
-    def clean_maximum_discount(self):
-        maximum_discount = self.cleaned_data.get(
-            "maximum_discount"
-        )
+    # def clean_maximum_discount(self):
+    #     maximum_discount = self.cleaned_data.get(
+    #         "maximum_discount"
+    #     )
 
-        if maximum_discount <= 0:
-            raise forms.ValidationError(
-                "Maximum discount must be greater than zero.",
-            )
+    #     if maximum_discount <= 0:
+    #         raise forms.ValidationError(
+    #             "Maximum discount must be greater than zero.",
+    #         )
 
-        return maximum_discount
+    #     return maximum_discount
 
-    def clean_usage_limit(self):
-        usage_limit = self.cleaned_data.get(
-            "usage_limit"
-        )
-
-        if usage_limit <= 0:
-            raise forms.ValidationError(
-                "Usage limit must be greater than zero.",
-            )
-
-        return usage_limit
+    
 
     def clean(self):
         cleaned_data = super().clean()

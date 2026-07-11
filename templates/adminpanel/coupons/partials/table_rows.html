@@ -14,21 +14,22 @@
     </td>
     <td class="px-6 py-4 text-neutral-400 text-xs">
         <div>Min: <span class="text-white font-medium">₹{{ coupon.minimum_amount }}</span></div>
-        <div>Max: <span class="text-white font-medium">{% if coupon.maximum_discount %}₹{{ coupon.maximum_discount }}{%else %}<span class="text-neutral-600">—</span>{% endif %}</span></div>
     </td>
     <td class="px-6 py-4 text-xs text-neutral-400">
-        <div>From: <span class="text-neutral-300">{{ coupon.valid_from|date:"d M Y" }}</span></div>
-        <div>To: <span class="text-neutral-300">{{ coupon.valid_to|date:"d M Y" }}</span></div>
-    </td>
-    <td class="px-6 py-4">
-        <div class="flex items-center gap-2">
-            <div class="flex-1 bg-neutral-900 rounded-full h-1.5 w-20">
-                <div class="bg-white rounded-full h-1.5 transition-all"
-                    style="width: {% widthratio coupon.used_count coupon.usage_limit 100 %}%"></div>
-            </div>
-            <span class="text-xs text-neutral-500 font-mono">{{ coupon.used_count }}/{{ coupon.usage_limit }}</span>
+        <div>
+            From:
+            <span class="text-neutral-300">
+                {{ coupon.valid_from|date:"d M Y, h:i A" }}
+            </span>
+        </div>
+        <div>
+            To:
+            <span class="text-neutral-300">
+                {{ coupon.valid_to|date:"d M Y, h:i A" }}
+            </span>
         </div>
     </td>
+    
     <td class="px-6 py-4">
         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider
                                 {% if coupon.is_active %}bg-emerald-500/10 text-emerald-500 border border-emerald-500/20

@@ -35,13 +35,18 @@ class CategoryOfferService:
             end
     )
 
-        return CategoryOffer.objects.create(
+        offer = CategoryOffer(
             category=category,
             name=data.get("name"),
             discount_percentage=data.get("discount_percentage"),
             start_date=data.get("start_date"),
             end_date=data.get("end_date"),
         )
+
+        offer.full_clean()   # Runs validate_name() and other model validations
+        offer.save()
+
+        return offer
 
     @staticmethod
     def update(offer, data):
@@ -65,6 +70,8 @@ class CategoryOfferService:
         offer.start_date = data.get("start_date")
         offer.end_date = data.get("end_date")
 
+
+        offer.full_clean() 
         offer.save()
 
         return offer
