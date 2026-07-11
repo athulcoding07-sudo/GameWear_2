@@ -15,6 +15,8 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
 from apps.products.models import Category
 from apps.otp.models import OTP
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 
 
 
@@ -36,11 +38,8 @@ def signup_view(request):
     if request.method == "POST":
         form = UserSignupForm(request.POST)
 
-
-        
-        print('form validate')
         try:
-            print('form validated')
+            
             if form.is_valid():
                 
                 # Create user but do NOT activate yet
@@ -331,13 +330,6 @@ def user_profile_edit_view(request):
 
 @login_required
 def user_update_password_view(request):
-    """
-    Allow logged-in user to update their password.
-    - Verifies old password
-    - Confirms new password match
-    - Keeps user logged in after change
-    """
-
     if request.method == "POST":
         old_password = request.POST.get("old_password")
         new_password1 = request.POST.get("new_password1")
@@ -346,12 +338,23 @@ def user_update_password_view(request):
         if not old_password or not new_password1 or not new_password2:
             messages.error(request, "All fields are required.")
             return redirect("users:user_profile_edit")
+
         if not request.user.check_password(old_password):
             messages.error(request, "Current password is incorrect.")
             return redirect("users:user_profile_edit")
+
         if new_password1 != new_password2:
             messages.error(request, "New passwords do not match.")
             return redirect("users:user_profile_edit")
+
+        try:
+            validate_password(new_password1, user=request.user)
+        except ValidationError as error:
+            for message in error.messages:
+                messages.error(request, message)
+
+            return redirect("users:user_profile_edit")
+
         request.user.set_password(new_password1)
         request.user.save()
 

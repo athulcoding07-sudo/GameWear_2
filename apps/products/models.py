@@ -8,6 +8,8 @@ from django.db.models import Avg
 from django.core.exceptions import ValidationError
 from apps.users.models import User,Address
 from .utilitys import get_pricing
+from apps.core.validators import validate_name, validate_description
+
 
 # Create your models here.
 
@@ -20,9 +22,9 @@ User = settings.AUTH_USER_MODEL
 # =========================
 
 class Category(models.Model):
-    name = models.CharField(max_length=150, unique=True)
+    name = models.CharField(max_length=150, unique=True, validators=[validate_name])
     slug = models.SlugField(unique=True, blank=True, db_index=True)
-    description = models.TextField(blank=True)
+    description = models.TextField(max_length=500,validators=[validate_description])
 
     #  Make image optional (VERY IMPORTANT)
     image = CloudinaryField(
@@ -57,9 +59,17 @@ class Category(models.Model):
 
 
 class Brand(models.Model):
-    name = models.CharField(max_length=150, unique=True)
+    name = models.CharField(
+        max_length=150,
+        unique=True,
+        validators=[validate_name]
+    )
     slug = models.SlugField(unique=True, blank=True)
-    description = models.TextField(blank=True)
+    description = models.TextField(
+        max_length=500,
+        blank=True,
+        validators=[validate_description]
+    )
 
     is_active = models.BooleanField(default=True)
 
@@ -101,10 +111,10 @@ class Product(models.Model):
         related_name='products'
     )
 
-    name = models.CharField(max_length=200)
+    name = models.CharField(max_length=200,validators=[validate_name])
     slug = models.SlugField(max_length=220, unique=True, blank=True, db_index=True)
-    description = models.TextField(blank=True)
-    highlights = models.TextField(blank=True, null=True)
+    description = models.TextField(validators=[validate_description])
+    # highlights = models.TextField(blank=True, null=True)
     
 
     is_active = models.BooleanField(default=True)

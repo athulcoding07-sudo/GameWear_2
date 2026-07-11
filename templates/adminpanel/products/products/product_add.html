@@ -23,101 +23,81 @@
                         Manage your jersey inventory, variants, and high-resolution media.
                     </p>
                 </div>
-                <div class="flex flex-col gap-1 ml-4 border-l border-neutral-800 pl-4">
-                    <label class="text-[10px] uppercase font-bold text-neutral-500">Global Status</label>
-                    <select name="product_status" class="bg-neutral-900 border border-neutral-800 text-xs rounded-lg px-2 py-1 text-white focus:ring-1 focus:ring-white outline-none">
-                        <option value="active" {% if product.is_active != False %}selected{% endif %}>Active</option>
-                        <option value="archived" {% if product.is_active == False %}selected{% endif %}>Archived</option>
-                    </select>
-                </div>
-            </div>
-            <div class="flex gap-3">
-                <a href="{% url 'products:product_list' %}"
-                   class="px-5 py-2.5 rounded-lg border border-neutral-800 text-neutral-400 hover:text-white transition text-sm font-bold">
-                    Cancel
-                </a>
-                <button type="submit" id="mainSubmitBtn"
-                        class="px-8 py-2.5 bg-white text-black rounded-lg font-bold hover:bg-neutral-200 transition text-sm flex items-center gap-2">
-                    Save Product
-                </button>
+                
             </div>
         </div>
 
         <!-- General Information -->
-<div class="bg-black border border-neutral-900 rounded-2xl p-6 space-y-6">
-    <h2 class="text-lg font-bold text-white">General Information</h2>
+        <div class="bg-black border border-neutral-900 rounded-2xl p-6 space-y-6">
+            <h2 class="text-lg font-bold text-white">General Information</h2>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-        <!-- Product Name -->
-        <div class="space-y-2">
-            <label class="text-sm font-medium text-neutral-400">Product Name</label>
-            <input type="text" name="name" value="{{ product.name|default:'' }}" required
-                class="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white focus:border-white outline-none transition">
+                <!-- Product Name -->
+                <div class="space-y-2">
+                    <label class="text-sm font-medium text-neutral-400">Product Name</label>
+                    <input type="text" name="name" value="{{ product.name|default:'' }}" required minlength="3" maxlength="100" autocomplete="off"
+                        class="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white focus:border-white outline-none transition">
+                </div>
+
+                <!-- Category -->
+                <div class="space-y-2">
+                    <label class="text-sm font-medium text-neutral-400">Category</label>
+                    <select name="category" required
+                        class="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white focus:border-white outline-none transition cursor-pointer">
+                        
+                        <option value="">Select Category</option>
+                        
+                        {% for cat in categories %}
+                        <option value="{{ cat.id }}"
+                            {% if product and product.category and product.category.id == cat.id %}selected{% endif %}>
+                            {{ cat.name }}
+                        </option>
+                        {% endfor %}
+
+                    </select>
+                </div>
+
+                <!-- Brand -->
+                <div class="space-y-2">
+                    <label class="text-sm font-medium text-neutral-400">Brand</label>
+                    <select name="brand"
+                        class="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white focus:border-white outline-none transition cursor-pointer">
+                        
+                        <option value="">Select Brand</option>
+                        
+                        {% for brand in brands %}
+                        <option value="{{ brand.id }}"
+                            {% if product and product.brand and product.brand.id == brand.id %}selected{% endif %}>
+                            {{ brand.name }}
+                        </option>
+                        {% endfor %}
+
+                    </select>
+                </div>
+
+            </div>
+
+            <!-- Description -->
+            <div class="space-y-2">
+                <label class="text-sm font-medium text-neutral-400">Description</label>
+                <textarea name="description" rows="3" required minlength="10" maxlength="500"
+                    class="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white focus:border-white outline-none transition">{{ product.description|default:'' }}</textarea>
+            </div>
+
+            <!-- Highlights -->
+            <!-- <div class="space-y-2">
+                <label class="text-sm font-medium text-neutral-400">Highlights</label>
+                <textarea name="highlights" rows="3" required
+                    class="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white focus:border-white outline-none transition">{{ product.highlights|default:'' }}</textarea>
+            </div> -->
+
         </div>
-
-        <!-- Category -->
-        <div class="space-y-2">
-            <label class="text-sm font-medium text-neutral-400">Category</label>
-            <select name="category" required
-                class="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white focus:border-white outline-none transition cursor-pointer">
-                
-                <option value="">Select Category</option>
-                
-                {% for cat in categories %}
-                <option value="{{ cat.id }}"
-                    {% if product and product.category and product.category.id == cat.id %}selected{% endif %}>
-                    {{ cat.name }}
-                </option>
-                {% endfor %}
-
-            </select>
-        </div>
-
-        <!-- Brand -->
-        <div class="space-y-2">
-            <label class="text-sm font-medium text-neutral-400">Brand</label>
-            <select name="brand"
-                class="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white focus:border-white outline-none transition cursor-pointer">
-                
-                <option value="">Select Brand</option>
-                
-                {% for brand in brands %}
-                <option value="{{ brand.id }}"
-                    {% if product and product.brand and product.brand.id == brand.id %}selected{% endif %}>
-                    {{ brand.name }}
-                </option>
-                {% endfor %}
-
-            </select>
-        </div>
-
-    </div>
-
-    <!-- Description -->
-    <div class="space-y-2">
-        <label class="text-sm font-medium text-neutral-400">Description</label>
-        <textarea name="description" rows="3" required
-            class="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white focus:border-white outline-none transition">{{ product.description|default:'' }}</textarea>
-    </div>
-
-    <!-- Highlights -->
-    <div class="space-y-2">
-        <label class="text-sm font-medium text-neutral-400">Highlights</label>
-        <textarea name="highlights" rows="3" required
-            class="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white focus:border-white outline-none transition">{{ product.highlights|default:'' }}</textarea>
-    </div>
-
-</div>
 
         <!-- Variants & Media -->
         <div class="bg-black border border-neutral-900 rounded-2xl p-6">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-lg font-bold text-white">Product Variants & Media</h2>
-                <button type="button" id="addVariantBtn"
-                        class="text-sm font-bold text-white bg-neutral-900 px-4 py-2 rounded-lg border border-neutral-800 hover:bg-neutral-800 transition">
-                    + Add Variant
-                </button>
             </div>
 
             <div id="variantContainer" class="space-y-6">
@@ -149,17 +129,11 @@
                                         <option value="Navy" {% if v.color == "Navy" %}selected{% endif %}>Navy</option>
                                     </select>
                                 </div>
-                                <div class="space-y-1"><label class="text-[10px] uppercase font-bold text-neutral-500">SKU</label><input type="text" name="skus" value="{{ v.sku }}" required class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white"></div>
-                                <div class="space-y-1"><label class="text-[10px] uppercase font-bold text-neutral-500">Price</label><input type="number" step="0.01" name="prices" value="{{ v.price }}" required class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white"></div>
+                                <div class="space-y-1"><label class="text-[10px] uppercase font-bold text-neutral-500">SKU</label><input type="text" name="skus" value="{{ v.sku }}" required maxlength="100" autocomplete="off" class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white"></div>
+                                <div class="space-y-1"><label class="text-[10px] uppercase font-bold text-neutral-500">Price</label><input type="number" step="0.01" name="prices" value="{{ v.price }}" required min="0.01" max="99999999.99" class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white"></div>
                                 <!-- <div class="space-y-1"><label class="text-[10px] uppercase font-bold text-neutral-500">Disc %</label><input type="number" name="discount_percentages" value="{{ v.discount_percentage|default:0 }}" min="0" max="100" class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white"></div> -->
-                                <div class="space-y-1"><label class="text-[10px] uppercase font-bold text-neutral-500">Stock</label><input type="number" name="stocks" value="{{ v.stock }}" required class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white"></div>
-                                <div class="space-y-1">
-                                    <label class="text-[10px] uppercase font-bold text-neutral-500">Status</label>
-                                    <select name="variant_status" class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-[10px] text-white font-bold">
-                                        <option value="true" {% if v.is_active != False %}selected{% endif %}>Active</option>
-                                        <option value="false" {% if v.is_active == False %}selected{% endif %}>Archive</option>
-                                    </select>
-                                </div>
+                                <div class="space-y-1"><label class="text-[10px] uppercase font-bold text-neutral-500">Stock</label><input type="number" name="stocks" value="{{ v.stock }}" required min="0" step="1" max="999999" class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white"></div>
+                                <input type="hidden" name="variant_status" value="true">
                             </div>
                             <div class="lg:col-span-4">
                                 <label class="text-[10px] uppercase font-bold text-neutral-500 block mb-2">Variant Images (3 Required)</label>
@@ -215,17 +189,11 @@
                                         <option value="Black">Black</option><option value="White">White</option><option value="Red">Red</option><option value="Blue">Blue</option><option value="Green">Green</option><option value="Yellow">Yellow</option><option value="Navy">Navy</option>
                                     </select>
                                 </div>
-                                <div class="space-y-1"><label class="text-[10px] uppercase font-bold text-neutral-500">SKU</label><input type="text" name="skus" required class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white"></div>
-                                <div class="space-y-1"><label class="text-[10px] uppercase font-bold text-neutral-500">Price</label><input type="number" step="0.01" name="prices" required class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white"></div>
+                                <div class="space-y-1"><label class="text-[10px] uppercase font-bold text-neutral-500">SKU</label><input type="text" name="skus" required maxlength="100" autocomplete="off" class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white"></div>
+                                <div class="space-y-1"><label class="text-[10px] uppercase font-bold text-neutral-500">Price</label><input type="number" step="0.01" name="prices" required min="0.01" max="99999999.99" class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white"></div>
                                 <!-- <div class="space-y-1"><label class="text-[10px] uppercase font-bold text-neutral-500">Disc %</label><input type="number" name="discount_percentage" value="0" min="0" max="100" class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white"></div> -->
-                                <div class="space-y-1"><label class="text-[10px] uppercase font-bold text-neutral-500">Stock</label><input type="number" name="stocks" required class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white"></div>
-                                <div class="space-y-1">
-                                    <label class="text-[10px] uppercase font-bold text-neutral-500">Status</label>
-                                    <select name="variant_status" class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-[10px] text-white font-bold">
-                                        <option value="true" selected>Active</option>
-                                        <option value="false">Archive</option>
-                                    </select>
-                                </div>
+                                <div class="space-y-1"><label class="text-[10px] uppercase font-bold text-neutral-500">Stock</label><input type="number" name="stocks" required min="0" step="1" max="999999" class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white"></div>
+                                <input type="hidden" name="variant_status" value="true">
                             </div>
                             <div class="lg:col-span-4">
                                 <label class="text-[10px] uppercase font-bold text-neutral-500 block mb-2">Variant Images (3 Required)</label>
@@ -252,6 +220,24 @@
 
             <div id="imageErrorMessage" class="mt-6 text-rose-500 text-xs font-bold hidden text-center">
                 ⚠️ Each variant must have all 3 image slots filled.
+            </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+            <button type="button" id="addVariantBtn"
+                    class="w-full sm:w-auto text-sm font-bold text-white bg-neutral-900 px-5 py-2.5 rounded-lg border border-neutral-800 hover:bg-neutral-800 transition">
+                + Add Variant
+            </button>
+
+            <div class="w-full sm:w-auto flex gap-3">
+                <a href="{% url 'products:product_list' %}"
+                   class="flex-1 sm:flex-none text-center px-5 py-2.5 rounded-lg border border-neutral-800 text-neutral-400 hover:text-white transition text-sm font-bold">
+                    Cancel
+                </a>
+                <button type="submit" id="mainSubmitBtn"
+                        class="flex-1 sm:flex-none px-8 py-2.5 bg-white text-black rounded-lg font-bold hover:bg-neutral-200 transition text-sm flex items-center justify-center gap-2">
+                    Save Product
+                </button>
             </div>
         </div>
     </form>
@@ -302,6 +288,111 @@
     let activeOverlay = null;
     let activePlaceholder = null;
     let activeLabel = null;
+
+    // --- Frontend Validation ---
+    const nameInput = productForm.querySelector('input[name="name"]');
+    const descriptionInput = productForm.querySelector('textarea[name="description"]');
+
+    const showError = (field, message) => {
+        field.setCustomValidity(message);
+        field.classList.remove('border-neutral-800');
+        field.classList.add('border-rose-500');
+    };
+
+    const clearError = (field) => {
+        field.setCustomValidity('');
+        field.classList.remove('border-rose-500');
+        field.classList.add('border-neutral-800');
+    };
+
+    const validateName = () => {
+        const value = nameInput.value.trim();
+
+        if (!value) {
+            showError(nameInput, 'Name is required.');
+            return false;
+        }
+        if (value.length < 3) {
+            showError(nameInput, 'Name must be at least 3 characters long.');
+            return false;
+        }
+        if (value.length > 100) {
+            showError(nameInput, 'Name cannot exceed 100 characters.');
+            return false;
+        }
+        if (/^\d+$/.test(value)) {
+            showError(nameInput, 'Name cannot contain only numbers.');
+            return false;
+        }
+        if (!/^[A-Za-z0-9][A-Za-z0-9 &'()\-]*$/.test(value)) {
+            showError(nameInput, "Name can only contain letters, numbers, spaces, &, apostrophes, hyphens, and parentheses.");
+            return false;
+        }
+
+        clearError(nameInput);
+        return true;
+    };
+
+    const validateDescription = () => {
+        const value = descriptionInput.value.trim();
+
+        if (!value) {
+            showError(descriptionInput, 'Description is required.');
+            return false;
+        }
+        if (value.length < 10) {
+            showError(descriptionInput, 'Description must be at least 10 characters long.');
+            return false;
+        }
+        if (value.length > 500) {
+            showError(descriptionInput, 'Description cannot exceed 500 characters.');
+            return false;
+        }
+        if (/^\d+$/.test(value)) {
+            showError(descriptionInput, 'Description cannot contain only numbers.');
+            return false;
+        }
+
+        clearError(descriptionInput);
+        return true;
+    };
+
+    const validateVariants = () => {
+        let valid = true;
+
+        document.querySelectorAll('.variant-row').forEach(row => {
+            const sku = row.querySelector('input[name="skus"]');
+            const price = row.querySelector('input[name="prices"]');
+            const stock = row.querySelector('input[name="stocks"]');
+
+            [sku, price, stock].forEach(field => field && clearError(field));
+
+            if (!sku || !sku.value.trim()) {
+                if (sku) showError(sku, 'SKU is required.');
+                valid = false;
+            } else if (sku.value.trim().length > 100) {
+                showError(sku, 'SKU cannot exceed 100 characters.');
+                valid = false;
+            }
+
+            if (!price || price.value === '' || Number(price.value) <= 0) {
+                if (price) showError(price, 'Price must be greater than 0.');
+                valid = false;
+            }
+
+            if (!stock || stock.value === '' || !Number.isInteger(Number(stock.value)) || Number(stock.value) < 0) {
+                if (stock) showError(stock, 'Stock must be a whole number of 0 or more.');
+                valid = false;
+            }
+        });
+
+        return valid;
+    };
+
+    nameInput.addEventListener('input', validateName);
+    nameInput.addEventListener('blur', validateName);
+    descriptionInput.addEventListener('input', validateDescription);
+    descriptionInput.addEventListener('blur', validateDescription);
 
     // --- 3. Cropper Logic ---
     const openCropper = (src, input, preview, overlay, placeholder, label) => {
@@ -388,14 +479,6 @@
 
     // --- 4. Row Initialization ---
     const setupVariantRow = (row) => {
-        const statusSelect = row.querySelector('select[name="variant_status"]');
-        if (statusSelect) {
-            statusSelect.addEventListener('change', () => {
-                row.classList.toggle('opacity-60', statusSelect.value === 'false');
-                row.classList.toggle('grayscale-[0.5]', statusSelect.value === 'false');
-            });
-        }
-
         const inputs = row.querySelectorAll('.variant-image-input');
         inputs.forEach(input => {
             input.addEventListener('change', function (e) {
@@ -478,17 +561,10 @@
                                 <option value="Black">Black</option><option value="White">White</option><option value="Red">Red</option><option value="Blue">Blue</option><option value="Green">Green</option><option value="Yellow">Yellow</option><option value="Navy">Navy</option>
                             </select>
                         </div>
-                        <div class="space-y-1"><label class="text-[10px] uppercase font-bold text-neutral-500">SKU</label><input type="text" name="skus" required class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white"></div>
-                        <div class="space-y-1"><label class="text-[10px] uppercase font-bold text-neutral-500">Price</label><input type="number" step="0.01" name="prices" required class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white"></div>
-                        <div class="space-y-1"><label class="text-[10px] uppercase font-bold text-neutral-500">Disc %</label><input type="number" name="discount_percentage" value="0" min="0" max="100" class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white"></div>
-                        <div class="space-y-1"><label class="text-[10px] uppercase font-bold text-neutral-500">Stock</label><input type="number" name="stocks" required class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white"></div>
-                        <div class="space-y-1">
-                            <label class="text-[10px] uppercase font-bold text-neutral-500">Status</label>
-                            <select name="variant_status" class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-[10px] text-white font-bold">
-                                <option value="true" selected>Active</option>
-                                <option value="false">Archive</option>
-                            </select>
-                        </div>
+                        <div class="space-y-1"><label class="text-[10px] uppercase font-bold text-neutral-500">SKU</label><input type="text" name="skus" required maxlength="100" autocomplete="off" class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white"></div>
+                        <div class="space-y-1"><label class="text-[10px] uppercase font-bold text-neutral-500">Price</label><input type="number" step="0.01" name="prices" required min="0.01" max="99999999.99" class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white"></div>
+                        <div class="space-y-1"><label class="text-[10px] uppercase font-bold text-neutral-500">Stock</label><input type="number" name="stocks" required min="0" step="1" max="999999" class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white"></div>
+                        <input type="hidden" name="variant_status" value="true">
                     </div>
                     <div class="lg:col-span-4">
                         <label class="text-[10px] uppercase font-bold text-neutral-500 block mb-2">Variant Images (3 Required)</label>
@@ -528,6 +604,13 @@
     if (productForm) {
         productForm.addEventListener('submit', (e) => {
             let isValid = true;
+
+            const generalFieldsValid = validateName() && validateDescription();
+            const variantsValid = validateVariants();
+
+            if (!generalFieldsValid || !variantsValid) {
+                isValid = false;
+            }
             const rows = document.querySelectorAll('.variant-row');
 
             rows.forEach(row => {

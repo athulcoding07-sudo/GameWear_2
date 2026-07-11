@@ -4,6 +4,12 @@
 
 {% block content %}
 
+<style>
+    input[type="date"]::-webkit-calendar-picker-indicator {
+        filter: invert(1);
+        cursor: pointer;
+    }
+</style>
 <!-- Back Button -->
 <div class="mb-8">
     <a href="{% url 'users:user_profile' %}"

@@ -14,7 +14,6 @@
         method="POST"
         enctype="multipart/form-data"
         class="space-y-8"
-        novalidate
     >
         {% csrf_token %}
         <div id="deletedVariantsContainer"></div>
@@ -26,17 +25,7 @@
                     <h1 class="text-2xl font-bold text-white">Edit Product</h1>
                     <p class="text-neutral-500 text-sm">Manage your jersey inventory, variants, and high-resolution media.</p>
                 </div>
-                <div class="flex flex-col gap-1 ml-4 border-l border-neutral-800 pl-4">
-                    <label class="text-[10px] uppercase font-bold text-neutral-500">Global Status</label>
-                    <select name="product_status" class="bg-neutral-900 border border-neutral-800 text-xs rounded-lg px-2 py-1 text-white focus:ring-1 focus:ring-white outline-none">
-                        <option value="active"   {% if product.is_active != False %}selected{% endif %}>Active</option>
-                        <option value="archived" {% if product.is_active == False  %}selected{% endif %}>Archived</option>
-                    </select>
-                </div>
-            </div>
-            <div class="flex gap-3">
-                <a href="{% url 'products:product_list' %}" class="px-5 py-2.5 rounded-lg border border-neutral-800 text-neutral-400 hover:text-white transition text-sm font-bold">Cancel</a>
-                <button type="submit" id="mainSubmitBtn" class="px-8 py-2.5 bg-white text-black rounded-lg font-bold hover:bg-neutral-200 transition text-sm flex items-center gap-2">Save Product</button>
+                <input type="hidden" name="product_status" value="active">
             </div>
         </div>
 
@@ -46,7 +35,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="space-y-2">
                     <label class="text-sm font-medium text-neutral-400">Product Name</label>
-                    <input type="text" name="name" value="{{ product.name|default:'' }}" required class="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white focus:border-white outline-none transition">
+                    <input type="text" name="name" value="{{ product.name|default:'' }}" required minlength="3" maxlength="100" autocomplete="off" class="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white focus:border-white outline-none transition">
                 </div>
                 <div class="space-y-2">
                     <label class="text-sm font-medium text-neutral-400">Category</label>
@@ -76,11 +65,7 @@
             </div>
             <div class="space-y-2">
                 <label class="text-sm font-medium text-neutral-400">Description</label>
-                <textarea name="description" rows="3" required class="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white focus:border-white outline-none transition">{{ product.description|default:'' }}</textarea>
-            </div>
-            <div class="space-y-2">
-                <label class="text-sm font-medium text-neutral-400">Highlights</label>
-                <textarea name="highlights" rows="3" required class="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white focus:border-white outline-none transition">{{ product.highlights|default:'' }}</textarea>
+                <textarea name="description" rows="3" required minlength="10" maxlength="500" class="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-white focus:border-white outline-none transition">{{ product.description|default:'' }}</textarea>
             </div>
         </div>
 
@@ -88,7 +73,6 @@
         <div class="bg-black border border-neutral-900 rounded-2xl p-6">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-lg font-bold text-white">Product Variants &amp; Media</h2>
-                <button type="button" id="addVariantBtn" class="text-sm font-bold text-white bg-neutral-900 px-4 py-2 rounded-lg border border-neutral-800 hover:bg-neutral-800 transition">+ Add Variant</button>
             </div>
 
             <div id="variantContainer" class="space-y-6">
@@ -124,13 +108,7 @@
                             <div class="space-y-1"><label class="text-[10px] uppercase font-bold text-neutral-500">Price</label><input type="number" step="0.01" name="prices" value="{{ v.price }}" required class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white"></div>
                             <!-- <div class="space-y-1"><label class="text-[10px] uppercase font-bold text-neutral-500">Disc %</label><input type="number" name="discount_percentage" value="{{ v.discount_percentage|default:0 }}" min="0" max="100" class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white"></div> -->
                             <div class="space-y-1"><label class="text-[10px] uppercase font-bold text-neutral-500">Stock</label><input type="number" name="stocks" value="{{ v.stock }}" required class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white"></div>
-                            <div class="space-y-1">
-                                <label class="text-[10px] uppercase font-bold text-neutral-500">Status</label>
-                                <select name="variant_status" class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-[10px] text-white font-bold">
-                                    <option value="true" {% if v.is_active != False %}selected{% endif %}>Active</option>
-                                    <option value="false" {% if v.is_active == False %}selected{% endif %}>Archive</option>
-                                </select>
-                            </div>
+                            <input type="hidden" name="variant_status" value="true">
                         </div>
 
                         <div class="lg:col-span-4">
@@ -208,6 +186,24 @@
                 ⚠️ Each variant must have all 3 image slots filled.
             </div>
         </div>
+
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+            <button type="button" id="addVariantBtn"
+                    class="w-full sm:w-auto text-sm font-bold text-white bg-neutral-900 px-5 py-2.5 rounded-lg border border-neutral-800 hover:bg-neutral-800 transition">
+                + Add Variant
+            </button>
+
+            <div class="w-full sm:w-auto flex gap-3">
+                <a href="{% url 'products:product_list' %}"
+                   class="flex-1 sm:flex-none text-center px-5 py-2.5 rounded-lg border border-neutral-800 text-neutral-400 hover:text-white transition text-sm font-bold">
+                    Cancel
+                </a>
+                <button type="submit" id="mainSubmitBtn"
+                        class="flex-1 sm:flex-none px-8 py-2.5 bg-white text-black rounded-lg font-bold hover:bg-neutral-200 transition text-sm flex items-center justify-center gap-2">
+                    Save Product
+                </button>
+            </div>
+        </div>
     </form>
 </div>
 
@@ -264,6 +260,58 @@ document.addEventListener('DOMContentLoaded', () => {
     let activeCropper = null, activeInput = null, activePreview = null;
     let activeOverlay = null, activePlaceholder = null, activeSlot = null;
     let cropMode = 'new';
+
+    // Name and Description frontend validation
+    const nameInput = productForm.querySelector('input[name="name"]');
+    const descriptionInput = productForm.querySelector('textarea[name="description"]');
+
+    const validateName = () => {
+        const value = nameInput.value.trim();
+        let message = '';
+
+        if (!value) {
+            message = 'Name is required.';
+        } else if (value.length < 3) {
+            message = 'Name must be at least 3 characters long.';
+        } else if (value.length > 100) {
+            message = 'Name cannot exceed 100 characters.';
+        } else if (/^\d+$/.test(value)) {
+            message = 'Name cannot contain only numbers.';
+        } else if (!/^[A-Za-z0-9][A-Za-z0-9 &'()\-]*$/.test(value)) {
+            message = "Name can only contain letters, numbers, spaces, &, apostrophes, hyphens, and parentheses.";
+        }
+
+        nameInput.setCustomValidity(message);
+        nameInput.classList.toggle('border-rose-500', Boolean(message));
+        nameInput.classList.toggle('border-neutral-800', !message);
+        return !message;
+    };
+
+    const validateDescription = () => {
+        const value = descriptionInput.value.trim();
+        let message = '';
+
+        if (!value) {
+            message = 'Description is required.';
+        } else if (value.length < 10) {
+            message = 'Description must be at least 10 characters long.';
+        } else if (value.length > 500) {
+            message = 'Description cannot exceed 500 characters.';
+        } else if (/^\d+$/.test(value)) {
+            message = 'Description cannot contain only numbers.';
+        }
+
+        descriptionInput.setCustomValidity(message);
+        descriptionInput.classList.toggle('border-rose-500', Boolean(message));
+        descriptionInput.classList.toggle('border-neutral-800', !message);
+        return !message;
+    };
+
+    nameInput.addEventListener('input', validateName);
+    nameInput.addEventListener('blur', validateName);
+    descriptionInput.addEventListener('input', validateDescription);
+    descriptionInput.addEventListener('blur', validateDescription);
+
 
     // ─── Shared file validation ──────────────────────────────────────────────
     // Centralised so both upload paths (input change + detachedPicker) go
@@ -461,13 +509,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const setupVariantRow = (row) => {
         row.querySelectorAll('.slot-label').forEach(setupSlot);
 
-        const statusSel = row.querySelector('select[name="variant_status"]');
-        if (statusSel) {
-            statusSel.addEventListener('change', () =>
-                row.classList.toggle('opacity-60', statusSel.value === 'false')
-            );
-        }
-
         const removeBtn = row.querySelector('.remove-variant-btn');
         if (removeBtn) {
             removeBtn.addEventListener('click', () => {
@@ -507,9 +548,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="space-y-1"><label class="text-[10px] uppercase font-bold text-neutral-500">Color</label><select name="colors" required class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white"><option value="Black">Black</option><option value="White">White</option><option value="Red">Red</option><option value="Blue">Blue</option><option value="Green">Green</option><option value="Yellow">Yellow</option><option value="Navy">Navy</option></select></div>
                     <div class="space-y-1"><label class="text-[10px] uppercase font-bold text-neutral-500">SKU</label><input type="text" name="skus" required class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white"></div>
                     <div class="space-y-1"><label class="text-[10px] uppercase font-bold text-neutral-500">Price</label><input type="number" step="0.01" name="prices" required class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white"></div>
-                    <div class="space-y-1"><label class="text-[10px] uppercase font-bold text-neutral-500">Disc %</label><input type="number" name="discount_percentages" value="0" min="0" max="100" class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white"></div>
                     <div class="space-y-1"><label class="text-[10px] uppercase font-bold text-neutral-500">Stock</label><input type="number" name="stocks" required class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-xs text-white"></div>
-                    <div class="space-y-1"><label class="text-[10px] uppercase font-bold text-neutral-500">Status</label><select name="variant_status" class="w-full bg-black border border-neutral-800 rounded-lg p-2 text-[10px] text-white font-bold"><option value="true" selected>Active</option><option value="false">Archive</option></select></div>
+                    <input type="hidden" name="variant_status" value="true">
                 </div>
                 <div class="lg:col-span-4">
                     <label class="text-[10px] uppercase font-bold text-neutral-500 block mb-2">Variant Images (3 Required)</label>
@@ -528,6 +568,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Form submit
     productForm.addEventListener('submit', (e) => {
+
+        const nameValid = validateName();
+        const descriptionValid = validateDescription();
+
+        if (!nameValid || !descriptionValid) {
+            e.preventDefault();
+            const firstInvalid = !nameValid ? nameInput : descriptionInput;
+            firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            firstInvalid.focus();
+            firstInvalid.reportValidity();
+            return;
+        }
 
         // Inject delete IDs
         deletedVariantsContainer.innerHTML = '';

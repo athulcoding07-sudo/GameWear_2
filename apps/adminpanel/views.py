@@ -10,6 +10,16 @@ from django.http import JsonResponse
 from .forms import UserForm
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
+from datetime import datetime, timedelta
+import calendar
+
+from django.db.models import Sum
+from django.shortcuts import render
+from django.utils import timezone
+
+
+from apps.products.models import Product, Category,Order, OrderItem
+from apps.users.models import User
 
 #from apps.products.forms import CategoryForm
 
@@ -19,13 +29,216 @@ User = get_user_model()
 
 # Create your views here.
 @staff_member_required
-def admin_dashboard(request):   
-    """
-    -show the admin dashboard
-    
-    """
-                                                              # admin_dashboard
-    return render(request, "adminpanel/dashboard.html")
+def admin_dashboard(request):
+    filter_type = request.GET.get("filter", "monthly")
+
+    today = timezone.now()
+
+    # Only completed orders are considered sales
+    orders = Order.objects.filter(status="DELIVERED")
+
+    # -----------------------
+    # FILTERS
+    # -----------------------
+
+    if filter_type == "daily":
+        orders = orders.filter(created_at__date=today.date())
+
+    elif filter_type == "weekly":
+        start_date = today - timedelta(days=6)
+        orders = orders.filter(created_at__date__gte=start_date.date())
+
+    elif filter_type == "monthly":
+        orders = orders.filter(created_at__year=today.year)
+
+    elif filter_type == "yearly":
+        pass
+
+    # -----------------------
+    # VALID ORDER ITEMS
+    # -----------------------
+
+    order_items = OrderItem.objects.filter(
+        order__in=orders
+    ).exclude(
+        status__in=[
+            "CANCELLED",
+            "RETURNED",
+            "PARTIAL_CANCELLED",
+            "PARTIAL_RETURNED",
+        ]
+    )
+
+    # -----------------------
+    # SUMMARY
+    # -----------------------
+
+    total_sales = (
+        orders.aggregate(total=Sum("final_amount"))["total"] or 0
+    )
+
+    total_orders = orders.count()
+
+    total_users = User.objects.count()
+
+    delivered_orders = Order.objects.filter(
+        status="DELIVERED"
+    ).count()
+
+    total_products = Product.objects.count()
+
+    total_categories = Category.objects.count()
+
+    # -----------------------
+    # TOP PRODUCTS
+    # -----------------------
+
+    top_products = (
+        order_items.values(
+            "product__name"
+        )
+        .annotate(
+            total_sold=Sum("quantity")
+        )
+        .order_by("-total_sold")[:10]
+    )
+
+    # -----------------------
+    # TOP CATEGORIES
+    # -----------------------
+
+    top_categories = (
+        order_items.values(
+            "product__category__name"
+        )
+        .annotate(
+            total_sold=Sum("quantity")
+        )
+        .order_by("-total_sold")[:10]
+    )
+
+    # -----------------------
+    # SALES CHART
+    # -----------------------
+
+    sales_data = []
+
+    if filter_type == "daily":
+
+        for i in range(6, -1, -1):
+
+            day = today - timedelta(days=i)
+
+            revenue = (
+                Order.objects.filter(
+                    status="DELIVERED",
+                    created_at__date=day.date(),
+                ).aggregate(
+                    total=Sum("final_amount")
+                )["total"]
+                or 0
+            )
+
+            sales_data.append(
+                {
+                    "label": day.strftime("%d %b"),
+                    "total": float(revenue),
+                }
+            )
+
+    elif filter_type == "weekly":
+
+        for i in range(3, -1, -1):
+
+            end = today - timedelta(days=i * 7)
+            start = end - timedelta(days=6)
+
+            revenue = (
+                Order.objects.filter(
+                    status="DELIVERED",
+                    created_at__date__range=[
+                        start.date(),
+                        end.date(),
+                    ],
+                ).aggregate(
+                    total=Sum("final_amount")
+                )["total"]
+                or 0
+            )
+
+            sales_data.append(
+                {
+                    "label": f"Week {4-i}",
+                    "total": float(revenue),
+                }
+            )
+
+    elif filter_type == "monthly":
+
+        for month in range(1, 13):
+
+            revenue = (
+                Order.objects.filter(
+                    status="DELIVERED",
+                    created_at__year=today.year,
+                    created_at__month=month,
+                ).aggregate(
+                    total=Sum("final_amount")
+                )["total"]
+                or 0
+            )
+
+            sales_data.append(
+                {
+                    "label": calendar.month_abbr[month],
+                    "total": float(revenue),
+                }
+            )
+
+    elif filter_type == "yearly":
+
+        current_year = today.year
+
+        for year in range(current_year - 4, current_year + 1):
+
+            revenue = (
+                Order.objects.filter(
+                    status="DELIVERED",
+                    created_at__year=year,
+                ).aggregate(
+                    total=Sum("final_amount")
+                )["total"]
+                or 0
+            )
+
+            sales_data.append(
+                {
+                    "label": str(year),
+                    "total": float(revenue),
+                }
+            )
+
+    context = {
+        "filter_type": filter_type,
+
+        "total_sales": total_sales,
+        "total_orders": total_orders,
+        "total_users": total_users,
+        "delivered_orders": delivered_orders,
+        "total_products": total_products,
+        "total_categories": total_categories,
+
+        "top_products": top_products,
+        "top_categories": top_categories,
+
+        "sales_data": sales_data,
+    }
+
+    return render(
+        request,
+        "adminpanel/dashboard.html",
+        context,
+    )
 
 @staff_member_required
 def customers_view(request, customer_id):

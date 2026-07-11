@@ -1,0 +1,354 @@
+{% extends "adminpanel/dashboard.html" %}
+
+{% block content %}
+
+<div class="min-h-screen bg-black text-white p-6">
+
+    <!-- Header -->
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
+
+        <div>
+            <p class="text-xs font-bold text-neutral-500 uppercase tracking-[0.2em]">
+                Analytics
+            </p>
+
+            <h1 class="text-3xl font-black mt-2">
+                Sales Report
+            </h1>
+
+            <p class="text-sm text-neutral-500 mt-2">
+                {{ start_date }} to {{ end_date }}
+            </p>
+        </div>
+
+        <!-- Downloads -->
+        <div class="flex gap-3">
+
+            <a
+                href="{% url 'sales_report:export_pdf' %}?{{ request.GET.urlencode }}"
+                class="px-5 py-3 bg-neutral-900 border border-neutral-800 rounded-xl text-sm font-bold hover:border-white transition"
+            >
+                Download PDF
+            </a>
+
+            <a
+                href="{% url 'sales_report:export_excel' %}?{{ request.GET.urlencode }}"
+                class="px-5 py-3 bg-white text-black rounded-xl text-sm font-bold hover:bg-neutral-200 transition"
+            >
+                Download Excel
+            </a>
+
+        </div>
+    </div>
+
+
+    <!-- Filters -->
+    <form
+        method="GET"
+        class="bg-neutral-950 border border-neutral-800 rounded-2xl p-5 mb-8"
+    >
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+
+            <div>
+                <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest mb-2">
+                    Report Type
+                </label>
+
+                <select
+                    name="report_type"
+                    id="reportType"
+                    class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-white"
+                >
+                    <option value="daily" {% if report_type == "daily" %}selected{% endif %}>
+                        Daily
+                    </option>
+
+                    <option value="weekly" {% if report_type == "weekly" %}selected{% endif %}>
+                        Weekly
+                    </option>
+
+                    <option value="yearly" {% if report_type == "yearly" %}selected{% endif %}>
+                        Yearly
+                    </option>
+
+                    <option value="custom" {% if report_type == "custom" %}selected{% endif %}>
+                        Custom
+                    </option>
+                </select>
+            </div>
+
+
+            <div>
+                <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest mb-2">
+                    Start Date
+                </label>
+
+                <input
+                    type="date"
+                    name="start_date"
+                    value="{{ selected_start_date }}"
+                    class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-white"
+                >
+            </div>
+
+
+            <div>
+                <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest mb-2">
+                    End Date
+                </label>
+
+                <input
+                    type="date"
+                    name="end_date"
+                    value="{{ selected_end_date }}"
+                    class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-white"
+                >
+            </div>
+
+
+            <div class="flex items-end">
+                <button
+                    type="submit"
+                    class="w-full bg-white text-black rounded-xl px-5 py-3 text-sm font-black hover:bg-neutral-200 transition"
+                >
+                    Apply Filter
+                </button>
+            </div>
+
+        </div>
+    </form>
+
+
+    <!-- Summary -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
+
+        <div class="bg-neutral-950 border border-neutral-800 rounded-2xl p-6">
+            <p class="text-[10px] font-black text-neutral-500 uppercase tracking-widest">
+                Sales Count
+            </p>
+
+            <p class="text-3xl font-black mt-3">
+                {{ summary.sales_count }}
+            </p>
+        </div>
+
+
+        <div class="bg-neutral-950 border border-neutral-800 rounded-2xl p-6">
+            <p class="text-[10px] font-black text-neutral-500 uppercase tracking-widest">
+                Order Amount
+            </p>
+
+            <p class="text-3xl font-black mt-3">
+                ₹{{ summary.order_amount|floatformat:2 }}
+            </p>
+        </div>
+
+
+        <div class="bg-neutral-950 border border-neutral-800 rounded-2xl p-6">
+            <p class="text-[10px] font-black text-neutral-500 uppercase tracking-widest">
+                Total Discount
+            </p>
+
+            <p class="text-3xl font-black mt-3">
+                ₹{{ summary.total_discount|floatformat:2 }}
+            </p>
+        </div>
+
+
+        <div class="bg-neutral-950 border border-neutral-800 rounded-2xl p-6">
+            <p class="text-[10px] font-black text-neutral-500 uppercase tracking-widest">
+                Final Sales
+            </p>
+
+            <p class="text-3xl font-black mt-3">
+                ₹{{ summary.final_sales|floatformat:2 }}
+            </p>
+        </div>
+
+    </div>
+
+
+    <!-- Orders Table -->
+    <div class="bg-neutral-950 border border-neutral-800 rounded-2xl overflow-hidden">
+
+        <div class="p-5 border-b border-neutral-800">
+            <h2 class="font-black">
+                Sales Details
+            </h2>
+        </div>
+
+        <div class="overflow-x-auto">
+
+            <table class="w-full text-left">
+
+                <thead class="bg-neutral-900">
+
+                    <tr class="text-[10px] text-neutral-500 uppercase tracking-widest">
+
+                        <th class="px-6 py-4">
+                            Order ID
+                        </th>
+
+                        <th class="px-6 py-4">
+                            Date
+                        </th>
+
+                        <th class="px-6 py-4">
+                            Customer
+                        </th>
+
+                        <th class="px-6 py-4">
+                            Order Amount
+                        </th>
+
+                        <th class="px-6 py-4">
+                            Discount
+                        </th>
+
+                        <th class="px-6 py-4">
+                            Final Amount
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody class="divide-y divide-neutral-800">
+
+                    {% for order in orders %}
+
+                    <tr class="hover:bg-neutral-900/50 transition">
+
+                        <td class="px-6 py-4 text-sm font-bold">
+                            {{ order.order_id }}
+                        </td>
+
+                        <td class="px-6 py-4 text-sm text-neutral-400">
+                            {{ order.created_at|date:"d M Y" }}
+                        </td>
+
+                        <td class="px-6 py-4 text-sm text-neutral-400">
+                            {{ order.user.email }}
+                        </td>
+
+                        <td class="px-6 py-4 text-sm">
+                            ₹{{ order.total_amount|floatformat:2 }}
+                        </td>
+
+                        <td class="px-6 py-4 text-sm">
+                            ₹{{ order.discount|floatformat:2 }}
+                        </td>
+
+                        <td class="px-6 py-4 text-sm font-bold">
+                            ₹{{ order.final_amount|floatformat:2 }}
+                        </td>
+
+                    </tr>
+
+                    {% empty %}
+
+                    <tr>
+                        <td
+                            colspan="6"
+                            class="px-6 py-16 text-center text-neutral-500"
+                        >
+                            No sales found for this period.
+                        </td>
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+    <!-- Pagination -->
+    {% if orders.paginator.num_pages > 1 %}
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
+
+        <!-- Result Information -->
+        <p class="text-sm text-neutral-500">
+            Showing
+
+            <span class="text-white font-bold">
+                {{ orders.start_index }}
+            </span>
+
+            -
+
+            <span class="text-white font-bold">
+                {{ orders.end_index }}
+            </span>
+
+            of
+
+            <span class="text-white font-bold">
+                {{ orders.paginator.count }}
+            </span>
+
+            sales
+        </p>
+
+
+        <!-- Pagination Buttons -->
+        <div class="flex items-center gap-2">
+
+            <!-- Previous -->
+            {% if orders.has_previous %}
+            <a
+                href="?page={{ orders.previous_page_number }}&report_type={{ report_type|urlencode }}&start_date={{ selected_start_date|urlencode }}&end_date={{ selected_end_date|urlencode }}"
+                class="px-4 py-2 text-sm font-bold rounded-xl border border-neutral-800 text-neutral-400 hover:text-white hover:border-white transition"
+            >
+                Previous
+            </a>
+            {% endif %}
+
+
+            <!-- Page Numbers -->
+            {% for page_num in orders.paginator.page_range %}
+
+                {% if page_num == orders.number %}
+
+                <span
+                    class="w-10 h-10 flex items-center justify-center rounded-xl bg-white text-black text-sm font-black"
+                >
+                    {{ page_num }}
+                </span>
+
+                {% elif page_num >= orders.number|add:'-2' and page_num <= orders.number|add:'2' %}
+
+                <a
+                    href="?page={{ page_num }}&report_type={{ report_type|urlencode }}&start_date={{ selected_start_date|urlencode }}&end_date={{ selected_end_date|urlencode }}"
+                    class="w-10 h-10 flex items-center justify-center rounded-xl border border-neutral-800 text-neutral-400 hover:text-white hover:border-white transition text-sm font-bold"
+                >
+                    {{ page_num }}
+                </a>
+
+                {% endif %}
+
+            {% endfor %}
+
+
+            <!-- Next -->
+            {% if orders.has_next %}
+            <a
+                href="?page={{ orders.next_page_number }}&report_type={{ report_type|urlencode }}&start_date={{ selected_start_date|urlencode }}&end_date={{ selected_end_date|urlencode }}"
+                class="px-4 py-2 text-sm font-bold rounded-xl border border-neutral-800 text-neutral-400 hover:text-white hover:border-white transition"
+            >
+                Next
+            </a>
+            {% endif %}
+
+        </div>
+
+    </div>
+    {% endif %}
+
+</div>
+
+{% endblock %}

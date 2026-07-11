@@ -152,7 +152,7 @@ class UserEditProfileForm(forms.ModelForm):
             "dob": forms.DateInput(
                 attrs={
                     "type": "date",
-                    "class": "w-full bg-black border border-neutral-800 rounded-xl px-4 py-4 text-sm text-white focus:border-white focus:outline-none transition",
+                    "class": "w-full bg-black border border-neutral-800 rounded-xl px-4 py-4 text-sm text-white scheme-light focus:border-white focus:outline-none transition",
                 }
             )
         }

@@ -65,6 +65,11 @@ from .services import (
 from .utilitys import validate_cart,get_pricing,calculate_cart_totals
 from django.utils import timezone
 from apps.offers.models import ProductOffer
+from apps.core.validators import validate_name
+from django.core.exceptions import ValidationError
+from django.template.loader import render_to_string
+
+from weasyprint import HTML
 
 if TYPE_CHECKING:
     pass
@@ -96,7 +101,7 @@ def category_list(request):
 
     categories = categories.order_by('-id')
 
-    paginator = Paginator(categories, 5)
+    paginator = Paginator(categories, 3)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
@@ -136,57 +141,71 @@ def category_save(request):
     description = request.POST.get('description', '').strip()
     image = request.FILES.get('category_image')
 
-    if not name:
-        messages.error(request, "Category name is required")
+    # =========================
+    # CHECK IMAGE TYPE
+    # =========================
+    if image and not image.content_type.startswith('image/'):
+        messages.error(
+            request,
+            "Please upload a valid image file (jpg, png, jpeg, webp)."
+        )
         return redirect('products:category_list')
 
     # =========================
-    # CHECK IMAGE TYPE 
+    # CHECK DUPLICATE NAME
     # =========================
-    if image:
-        if not image.content_type.startswith('image/'):
-            messages.error(request, "Please upload a valid image file (jpg, png, jpeg, webp)")
-            return redirect('products:category_list')
-
     qs = Category.objects.filter(name__iexact=name)
 
     if cat_id:
         qs = qs.exclude(id=cat_id)
 
     if qs.exists():
-        messages.error(request, "Category name already exists")
+        messages.error(request, "Category name already exists.")
         return redirect('products:category_list')
 
     # =========================
-    # RESIZE IF IMAGE EXISTS
+    # RESIZE IMAGE
     # =========================
     resized_image = resize_image(image) if image else None
 
-    # =========================
-    # UPDATE
-    # =========================
-    if cat_id:
-        category = get_object_or_404(Category, id=cat_id)
-        category.name = name
-        category.description = description
+    try:
+        # =========================
+        # UPDATE
+        # =========================
+        if cat_id:
+            category = get_object_or_404(Category, id=cat_id)
 
-        if resized_image:
-            category.image = resized_image
+            category.name = name
+            category.description = description
 
+            if resized_image:
+                category.image = resized_image
+
+            success_message = "Category updated successfully."
+
+        # =========================
+        # CREATE
+        # =========================
+        else:
+            category = Category(
+                name=name,
+                description=description,
+                image=resized_image,
+                is_active=True
+            )
+
+            success_message = "Category added successfully."
+
+        # =========================
+        # MODEL VALIDATION + SAVE
+        # =========================
+        category.full_clean()
         category.save()
-        messages.success(request, "Category updated successfully")
 
-    # =========================
-    # CREATE
-    # =========================
-    else:
-        Category.objects.create(
-            name=name,
-            description=description,
-            image=resized_image,
-            is_active=True
-        )
-        messages.success(request, "Category added successfully")
+        messages.success(request, success_message)
+
+    except ValidationError as error:
+        messages.error(request, error.messages[0])
 
     return redirect('products:category_list')
 
@@ -318,7 +337,7 @@ def product_add(request):
         category_id = request.POST.get("category")
         brand_id = request.POST.get("brand")
         description = request.POST.get("description")
-        highlights = request.POST.get("highlights")
+        # highlights = request.POST.get("highlights")
 
 
         p_status = request.POST.get("product_status", "active")
@@ -328,7 +347,6 @@ def product_add(request):
         colors = request.POST.getlist("colors")
         skus = request.POST.getlist("skus")
         prices = request.POST.getlist("prices")
-        discount_percentage =request.POST.getlist("discount_percentage")
         stocks = request.POST.getlist("stocks")
         images = request.FILES.getlist("images")
 
@@ -399,14 +417,25 @@ def product_add(request):
         # =========================
         # CREATE PRODUCT
         # =========================
-        product = Product.objects.create(
-            name=name,
-            category_id=category_id,
-            brand_id=brand_id if brand_id else None,
-            description=description,
-            highlights=highlights,
-            is_active=p_is_active,
-        )
+        try:
+            product = Product(
+                name=name,
+                category_id=category_id,
+                brand_id=brand_id if brand_id else None,
+                description=description,
+                # highlights=highlights,
+                is_active=p_is_active,
+            )
+
+            # Runs name and description validators
+            product.full_clean()
+
+            # Save only after validation passes
+            product.save()
+
+        except ValidationError as error:
+            messages.error(request, error.messages[0])
+            return redirect("products:product_add")
 
         # =========================
         # CREATE VARIANTS + IMAGES
@@ -415,12 +444,8 @@ def product_add(request):
 
         for i in valid_variant_indexes:
 
-            discount = 0
-            if i < len(discount_percentage):
-                discount = int(discount_percentage[i]) if discount_percentage[i] else 0
-
             
-
+    
 
             variant = ProductVariant.objects.create(
                 product=product,
@@ -428,7 +453,7 @@ def product_add(request):
                 color=colors[i],
                 sku=skus[i],
                 price=float(prices[i]) if prices[i] else 0,
-                discount_percentage=discount,
+                
                 stock=int(stocks[i]) if stocks[i] else 0,
                 is_active=v_is_active,
             )
@@ -496,7 +521,7 @@ def product_edit(request, product_id=None):
         colors = request.POST.getlist("colors")
         skus = request.POST.getlist("skus")
         prices = request.POST.getlist("prices")
-        discount_percentage = request.POST.getlist("discount_percentage")
+        # discount_percentage = request.POST.getlist("discount_percentage")
         stocks = request.POST.getlist("stocks")
         variant_statuses = request.POST.getlist("variant_status")
         delete_ids = request.POST.getlist("delete_variant_ids")
@@ -506,22 +531,48 @@ def product_edit(request, product_id=None):
         # =========================
         # SAVE / UPDATE PRODUCT FIRST
         # =========================
-        if product:
-            product.name = name
-            product.description = description
-            product.highlights = highlights
-            product.category = category
-            product.brand_id = brand_id if brand_id else None
-            product.save()
-        else:
-            product = Product.objects.create(
-                name=name,
-                description=description,
-                highlights=highlights,
-                category=category,
-                is_active=True,  # temporary
-            )
+        try:
+            # =========================
+            # PREPARE PRODUCT
+            # =========================
+            if product:
+                # UPDATE EXISTING PRODUCT
+                product.name = name
+                product.description = description
+                product.highlights = highlights
+                product.category = category
+                product.brand_id = brand_id if brand_id else None
+                product.is_active = True
 
+                success_message = "Product updated successfully."
+
+            else:
+                # CREATE NEW PRODUCT
+                product = Product(
+                    name=name,
+                    description=description,
+                    highlights=highlights,
+                    category=category,
+                    brand_id=brand_id if brand_id else None,
+                    is_active=True,
+                )
+
+                success_message = "Product added successfully."
+
+            # =========================
+            # MODEL VALIDATION
+            # =========================
+            product.full_clean()
+
+            # =========================
+            # SAVE ONLY IF VALID
+            # =========================
+            product.save()
+
+            messages.success(request, success_message)
+
+        except ValidationError as error:
+            messages.error(request, error.messages[0])
         # =========================
         # DELETE VARIANTS
         # =========================
@@ -575,11 +626,11 @@ def product_edit(request, product_id=None):
                 variant.color = colors[i]
                 variant.sku = sku
                 variant.price = float(prices[i]) if prices[i] else 0
-                variant.discount_percentage = (
-                    int(discount_percentage[i])
-                    if i < len(discount_percentage) and discount_percentage[i]
-                    else 0
-                )
+                # variant.discount_percentage = (
+                #     int(discount_percentage[i])
+                #     if i < len(discount_percentage) and discount_percentage[i]
+                #     else 0
+                # )
                 variant.stock = int(stocks[i]) if stocks[i] else 0
                 variant.is_active = is_active_flag
                 variant.save()
@@ -591,11 +642,11 @@ def product_edit(request, product_id=None):
                     color=colors[i],
                     sku=sku,
                     price=float(prices[i]) if prices[i] else 0,
-                    discount_percentage=(
-                        int(discount_percentage[i])
-                        if i < len(discount_percentage) and discount_percentage[i]
-                        else 0
-                    ),
+                    # discount_percentage=(
+                    #     int(discount_percentage[i])
+                    #     if i < len(discount_percentage) and discount_percentage[i]
+                    #     else 0
+                    # ),
                     stock=int(stocks[i]) if stocks[i] else 0,
                     is_active=is_active_flag,
                 )
@@ -1041,77 +1092,76 @@ def add_or_edit_review(request, slug):
 
 
 
-
 @admin_required
 def brand_list(request):
     search_query = request.GET.get('search', '').strip()
     status_filter = request.GET.get('status', 'all')
-
     brands = Brand.objects.annotate(
         product_count=Count('products')
     ).order_by('-id')
-
-    #  Search
+    # Search
     if search_query:
         brands = brands.filter(
             Q(name__icontains=search_query) |
             Q(description__icontains=search_query)
         )
-
     # Filter
     if status_filter == 'active':
         brands = brands.filter(is_active=True)
     elif status_filter == 'archived':
         brands = brands.filter(is_active=False)
-
+    # Paination - 10 brands per page
+    paginator = Paginator(brands, 3)
+    page_number = request.GET.get('page')
+    brands = paginator.get_page(page_number)
     context = {
         'brands': brands,
         'search_query': search_query,
-        'status_filter': status_filter
+        'status_filter': status_filter,
     }
+    return render(
+        request,
+        'adminpanel/products/brand/brand_list.html',
+        context
+    )
 
-    return render(request, 'adminpanel/products/brand/brand_list.html', context)
 
 @admin_required
 def brand_save(request):
-    if request.method != 'POST':
-        return redirect('products:brand_list')
+    if request.method != "POST":
+        return redirect("products:brand_list")
 
-    brand_id = request.POST.get('brand_id')
-    name = request.POST.get('name', '').strip()
-    description = request.POST.get('description', '').strip()
+    brand_id = request.POST.get("brand_id")
+    name = request.POST.get("name", "").strip()
+    description = request.POST.get("description", "").strip()
 
-    # Validation
-    if not name:
-        messages.error(request, "Brand name is required")
-        return redirect('products:brand_list')
+    try:
+        if brand_id:
+            brand = get_object_or_404(Brand, id=brand_id)
 
-    if not re.match(r'^[A-Za-z\s]+$', name):
-        messages.error(request, "Brand name must contain only letters and spaces")
-        return redirect('products:brand_list')
+            brand.name = name
+            brand.description = description
 
-    #  Update
-    if brand_id:
-        brand = get_object_or_404(Brand, id=brand_id)
-        brand.name = name
-        brand.description = description
+            success_message = "Brand updated successfully."
+
+        else:
+            brand = Brand(
+                name=name,
+                description=description,
+                is_active=True,
+            )
+
+            success_message = "Brand added successfully."
+
+        brand.full_clean()
         brand.save()
-        messages.success(request, "Brand updated successfully")
 
-    #  Create
-    else:
-        if Brand.objects.filter(name__iexact=name).exists():
-            messages.error(request, "Brand already exists")
-            return redirect('products:brand_list')
+        messages.success(request, success_message)
 
-        Brand.objects.create(
-            name=name,
-            description=description
-        )
-        messages.success(request, "Brand added successfully")
+    except ValidationError as error:
+        messages.error(request, error.messages[0])
 
-    return redirect('products:brand_list')
-
+    return redirect("products:brand_list")
 
 @admin_required
 def brand_toggle(request, id):
@@ -2251,6 +2301,394 @@ def search_orders(request):
 # Constants
 # ---------------------------------------------------------------------------
  
+# INVOICE_BLOCKED_STATUSES: frozenset[str] = frozenset(
+#     {
+#         "PENDING",
+#         "CANCELLED",
+#         "RETURN_REQUESTED",
+#         "RETURNED",
+#         "REFUNDED",
+#     }
+# )
+ 
+# # Brand palette
+# _BRAND_BLACK = colors.HexColor("#111111")
+# _BRAND_ACCENT = colors.HexColor("#1a1a2e")
+# _HEADER_BG = colors.HexColor("#f5f5f5")
+# _BORDER = colors.HexColor("#cccccc")
+ 
+# # ---------------------------------------------------------------------------
+# # Invoice builder
+# # ---------------------------------------------------------------------------
+ 
+ 
+# @dataclass
+# class InvoiceBuilder:
+#     """
+#     Builds a ReportLab PDF invoice for a given Order.
+ 
+#     Keeps all PDF-generation logic isolated from the view layer so it can
+#     be reused in management commands, async tasks, or tests without an
+#     HTTP request in scope.
+ 
+#     Usage::
+ 
+#         builder = InvoiceBuilder(order)
+#         builder.build(response)   # writes PDF bytes into *response*
+#     """
+ 
+#     order: "Order"
+#     _styles: dict = field(default_factory=dict, init=False, repr=False)
+ 
+#     # ------------------------------------------------------------------
+#     # Public API
+#     # ------------------------------------------------------------------
+ 
+#     def build(self, buffer) -> None:
+#         """Render the full invoice PDF into *buffer*."""
+#         doc = SimpleDocTemplate(
+#             buffer,
+#             pagesize=A4,
+#             rightMargin=15 * mm,
+#             leftMargin=15 * mm,
+#             topMargin=15 * mm,
+#             bottomMargin=12 * mm,
+#         )
+#         self._styles = self._build_styles()
+#         doc.build(self._collect_elements())
+ 
+#     # ------------------------------------------------------------------
+#     # Private helpers
+#     # ------------------------------------------------------------------
+ 
+#     def _build_styles(self) -> dict:
+#         base = getSampleStyleSheet()
+#         extra = {
+#             "brand_title": ParagraphStyle(
+#                 "brand_title",
+#                 parent=base["Title"],
+#                 fontSize=26,
+#                 textColor=_BRAND_BLACK,
+#                 spaceAfter=2,
+#                 fontName="Helvetica-Bold",
+#             ),
+#             "brand_subtitle": ParagraphStyle(
+#                 "brand_subtitle",
+#                 parent=base["Normal"],
+#                 fontSize=10,
+#                 textColor=colors.HexColor("#666666"),
+#                 spaceAfter=0,
+#             ),
+#             "section_heading": ParagraphStyle(
+#                 "section_heading",
+#                 parent=base["Heading2"],
+#                 fontSize=11,
+#                 textColor=_BRAND_BLACK,
+#                 spaceBefore=10,
+#                 spaceAfter=4,
+#                 fontName="Helvetica-Bold",
+#             ),
+#             "body": ParagraphStyle(
+#                 "body",
+#                 parent=base["Normal"],
+#                 fontSize=9,
+#                 leading=14,
+#             ),
+#             "footer": ParagraphStyle(
+#                 "footer",
+#                 parent=base["Normal"],
+#                 fontSize=8,
+#                 textColor=colors.HexColor("#888888"),
+#                 alignment=1,  # centre
+#             ),
+#         }
+#         base.add(extra["brand_title"])
+#         base.add(extra["brand_subtitle"])
+#         base.add(extra["section_heading"])
+#         base.add(extra["body"])
+#         base.add(extra["footer"])
+#         return base
+ 
+#     def _collect_elements(self) -> list:
+#         elements: list = []
+#         elements += self._header_section()
+#         elements += self._invoice_meta_section()
+#         elements += self._customer_section()
+#         elements += self._address_section()
+#         elements += self._line_items_section()
+#         elements += self._totals_section()
+#         elements += self._footer_section()
+#         return elements
+ 
+#     # ---- Header -----------------------------------------------------------
+ 
+#     def _header_section(self) -> list:
+#         return [
+#             Paragraph("GAMEWEAR", self._styles["brand_title"]),
+#             Paragraph("Premium Fashion Store", self._styles["brand_subtitle"]),
+#             Spacer(1, 4 * mm),
+#             HRFlowable(
+#                 width="100%",
+#                 thickness=1.5,
+#                 color=_BRAND_BLACK,
+#                 spaceAfter=4 * mm,
+#             ),
+#         ]
+ 
+#     # ---- Invoice meta -----------------------------------------------------
+ 
+#     def _invoice_meta_section(self) -> list:
+#         order = self.order
+#         data = [
+#             ["Invoice Number", str(order.order_id)],
+#             ["Order Date", order.created_at.strftime("%d %B %Y")],
+#             ["Order Status", order.get_status_display()],
+#             ["Payment Method", order.payment_method],
+#         ]
+#         table = Table(data, colWidths=[60 * mm, 110 * mm])
+#         table.setStyle(
+#             TableStyle(
+#                 [
+#                     ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+#                     ("FONTSIZE", (0, 0), (-1, -1), 9),
+#                     ("BACKGROUND", (0, 0), (0, -1), _HEADER_BG),
+#                     ("GRID", (0, 0), (-1, -1), 0.5, _BORDER),
+#                     ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+#                     ("ROWBACKGROUNDS", (1, 0), (1, -1), [colors.white, colors.white]),
+#                     ("TOPPADDING", (0, 0), (-1, -1), 5),
+#                     ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+#                 ]
+#             )
+#         )
+#         return [table, Spacer(1, 6 * mm)]
+ 
+#     # ---- Customer ---------------------------------------------------------
+ 
+#     def _customer_section(self) -> list:
+#         user = self.order.user
+#         return [
+#             Paragraph("Bill To", self._styles["section_heading"]),
+#             Paragraph(
+#                 f"<b>{getattr(user, 'full_name', str(user))}</b>",
+#                 self._styles["body"],
+#             ),
+#             Paragraph(user.email, self._styles["body"]),
+#             Spacer(1, 4 * mm),
+#         ]
+ 
+#     # ---- Shipping address -------------------------------------------------
+ 
+#     def _address_section(self) -> list:
+#         """Render shipping address from the order.address FK."""
+#         address = self.order.shipping_address
+#         if not address:
+#             return []
+#         # Build a readable single line from Address fields — adjust field
+#         # names below if your Address model uses different attribute names.
+#         parts = [
+#             getattr(address, "full_name", ""),
+#             getattr(address, "address_line1", "") or getattr(address, "street", ""),
+#             getattr(address, "address_line2", "") or "",
+#             getattr(address, "city", ""),
+#             getattr(address, "state", ""),
+#             getattr(address, "pincode", "") or getattr(address, "postal_code", ""),
+#         ]
+#         address_str = ", ".join(p for p in parts if p)
+#         return [
+#             Paragraph("Ship To", self._styles["section_heading"]),
+#             Paragraph(address_str or str(address), self._styles["body"]),
+#             Spacer(1, 4 * mm),
+#         ]
+ 
+#     # ---- Line items -------------------------------------------------------
+ 
+#     def _line_items_section(self) -> list:
+#         header = [["#", "Product", "Qty", "Unit Price", "Total"]]
+#         rows = [
+#             [
+#                 str(idx),
+#                 item.product.name,
+#                 str(item.quantity),
+#                 f"\u20b9{item.price:,.2f}",
+#                 f"\u20b9{item.price * item.quantity:,.2f}",
+#             ]
+#             for idx, item in enumerate(self.order.items.select_related("product"), 1)
+#         ]
+#         col_widths = [10 * mm, 80 * mm, 20 * mm, 35 * mm, 35 * mm]
+#         table = Table(header + rows, colWidths=col_widths, repeatRows=1)
+#         table.setStyle(
+#             TableStyle(
+#                 [
+#                     # Header row
+#                     ("BACKGROUND", (0, 0), (-1, 0), _BRAND_ACCENT),
+#                     ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+#                     ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+#                     ("FONTSIZE", (0, 0), (-1, -1), 9),
+#                     ("ALIGN", (0, 0), (-1, 0), "CENTER"),
+#                     # Data rows
+#                     ("ALIGN", (2, 1), (-1, -1), "RIGHT"),
+#                     ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, _HEADER_BG]),
+#                     ("GRID", (0, 0), (-1, -1), 0.5, _BORDER),
+#                     ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+#                     ("TOPPADDING", (0, 0), (-1, -1), 5),
+#                     ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+#                 ]
+#             )
+#         )
+#         return [
+#             Paragraph("Order Items", self._styles["section_heading"]),
+#             table,
+#             Spacer(1, 4 * mm),
+#         ]
+ 
+#     # ---- Totals -----------------------------------------------------------
+ 
+#     def _totals_section(self) -> list:
+
+#         order = self.order
+
+#         subtotal_after_discount = (
+#             order.total_amount - order.discount
+#         )
+
+#         rows = [
+
+#             [
+#                 "Subtotal",
+#                 f"₹{order.total_amount:,.2f}"
+#             ],
+
+#             [
+#                 "Coupon Discount",
+#                 f"- ₹{order.discount:,.2f}"
+#             ],
+
+#             [
+#                 "Subtotal After Discount",
+#                 f"₹{subtotal_after_discount:,.2f}"
+#             ],
+
+#             [
+#                 "Shipping",
+#                 (
+#                     "Free"
+#                     if order.shipping == 0
+#                     else f"₹{order.shipping:,.2f}"
+#                 )
+#             ],
+
+#             [
+#                 "GST (5%)",
+#                 f"₹{order.tax:,.2f}"
+#             ],
+
+#             [
+#                 "Grand Total",
+#                 f"₹{order.final_amount:,.2f}"
+#             ],
+#         ]
+
+#         table = Table(
+#             rows,
+#             colWidths=[
+#                 110 * mm,
+#                 70 * mm,
+#             ],
+#         )
+
+#         table.setStyle(
+#             TableStyle(
+#                 [
+
+#                     ("FONTSIZE",(0,0),(-1,-1),9),
+
+#                     ("ALIGN",(1,0),(1,-1),"RIGHT"),
+
+#                     ("GRID",(0,0),(-1,-1),0.5,_BORDER),
+
+#                     ("TOPPADDING",(0,0),(-1,-1),5),
+
+#                     ("BOTTOMPADDING",(0,0),(-1,-1),5),
+
+#                     ("BACKGROUND",(0,-1),(-1,-1),_BRAND_ACCENT),
+
+#                     ("TEXTCOLOR",(0,-1),(-1,-1),colors.white),
+
+#                     ("FONTNAME",(0,-1),(-1,-1),"Helvetica-Bold"),
+
+#                 ]
+#             )
+#         )
+
+#         return [
+#             table,
+#             Spacer(
+#                 1,
+#                 8 * mm,
+#             ),
+#         ]
+ 
+#     # ---- Footer -----------------------------------------------------------
+ 
+#     def _footer_section(self) -> list:
+#         return [
+#             HRFlowable(width="100%", thickness=0.5, color=_BORDER, spaceAfter=3 * mm),
+#             Paragraph(
+#                 "Thank you for shopping with GAMEWEAR.",
+#                 self._styles["footer"],
+#             ),
+#             Paragraph(
+#                 "This is a computer-generated invoice and does not require a signature.",
+#                 self._styles["footer"],
+#             ),
+#         ]
+ 
+ 
+# # ---------------------------------------------------------------------------
+# # View
+# # ---------------------------------------------------------------------------
+ 
+ 
+# @login_required
+# def download_invoice(request: HttpRequest, order_id: int) -> HttpResponse:
+#     """
+#     Stream a PDF invoice for *order_id* to the authenticated user.
+ 
+#     Returns a 302 redirect with an error message when the order
+#     is not in a billable state.
+#     """
+#     order: Order = get_object_or_404(Order, id=order_id, user=request.user)
+ 
+#     if order.status in INVOICE_BLOCKED_STATUSES:
+#         messages.error(request, "Invoice is not available for this order.")
+#         return redirect("products:order_detail", order_id=order.id)  # adjust kwarg to match your order_detail URL
+ 
+#     try:
+#         response = HttpResponse(content_type="application/pdf")
+#         response["Content-Disposition"] = (
+#             f'attachment; filename="Invoice-{order.order_id}.pdf"'
+#         )
+#         InvoiceBuilder(order).build(response)
+#     except Exception:
+#         logger.exception(
+#             "Failed to generate invoice for order %s (user=%s)",
+#             order.order_id,
+#             request.user.id,
+#         )
+        
+        
+#         messages.error(
+#             request,
+#             "We could not generate your invoice right now. Please try again later.",
+#         )
+#         return redirect("products:order_detail", order_id=order.id)
+ 
+#     return response
+
+
+
+
+
 INVOICE_BLOCKED_STATUSES: frozenset[str] = frozenset(
     {
         "PENDING",
@@ -2260,382 +2698,81 @@ INVOICE_BLOCKED_STATUSES: frozenset[str] = frozenset(
         "REFUNDED",
     }
 )
- 
-# Brand palette
-_BRAND_BLACK = colors.HexColor("#111111")
-_BRAND_ACCENT = colors.HexColor("#1a1a2e")
-_HEADER_BG = colors.HexColor("#f5f5f5")
-_BORDER = colors.HexColor("#cccccc")
- 
-# ---------------------------------------------------------------------------
-# Invoice builder
-# ---------------------------------------------------------------------------
- 
- 
-@dataclass
-class InvoiceBuilder:
-    """
-    Builds a ReportLab PDF invoice for a given Order.
- 
-    Keeps all PDF-generation logic isolated from the view layer so it can
-    be reused in management commands, async tasks, or tests without an
-    HTTP request in scope.
- 
-    Usage::
- 
-        builder = InvoiceBuilder(order)
-        builder.build(response)   # writes PDF bytes into *response*
-    """
- 
-    order: "Order"
-    _styles: dict = field(default_factory=dict, init=False, repr=False)
- 
-    # ------------------------------------------------------------------
-    # Public API
-    # ------------------------------------------------------------------
- 
-    def build(self, buffer) -> None:
-        """Render the full invoice PDF into *buffer*."""
-        doc = SimpleDocTemplate(
-            buffer,
-            pagesize=A4,
-            rightMargin=15 * mm,
-            leftMargin=15 * mm,
-            topMargin=15 * mm,
-            bottomMargin=12 * mm,
-        )
-        self._styles = self._build_styles()
-        doc.build(self._collect_elements())
- 
-    # ------------------------------------------------------------------
-    # Private helpers
-    # ------------------------------------------------------------------
- 
-    def _build_styles(self) -> dict:
-        base = getSampleStyleSheet()
-        extra = {
-            "brand_title": ParagraphStyle(
-                "brand_title",
-                parent=base["Title"],
-                fontSize=26,
-                textColor=_BRAND_BLACK,
-                spaceAfter=2,
-                fontName="Helvetica-Bold",
-            ),
-            "brand_subtitle": ParagraphStyle(
-                "brand_subtitle",
-                parent=base["Normal"],
-                fontSize=10,
-                textColor=colors.HexColor("#666666"),
-                spaceAfter=0,
-            ),
-            "section_heading": ParagraphStyle(
-                "section_heading",
-                parent=base["Heading2"],
-                fontSize=11,
-                textColor=_BRAND_BLACK,
-                spaceBefore=10,
-                spaceAfter=4,
-                fontName="Helvetica-Bold",
-            ),
-            "body": ParagraphStyle(
-                "body",
-                parent=base["Normal"],
-                fontSize=9,
-                leading=14,
-            ),
-            "footer": ParagraphStyle(
-                "footer",
-                parent=base["Normal"],
-                fontSize=8,
-                textColor=colors.HexColor("#888888"),
-                alignment=1,  # centre
-            ),
-        }
-        base.add(extra["brand_title"])
-        base.add(extra["brand_subtitle"])
-        base.add(extra["section_heading"])
-        base.add(extra["body"])
-        base.add(extra["footer"])
-        return base
- 
-    def _collect_elements(self) -> list:
-        elements: list = []
-        elements += self._header_section()
-        elements += self._invoice_meta_section()
-        elements += self._customer_section()
-        elements += self._address_section()
-        elements += self._line_items_section()
-        elements += self._totals_section()
-        elements += self._footer_section()
-        return elements
- 
-    # ---- Header -----------------------------------------------------------
- 
-    def _header_section(self) -> list:
-        return [
-            Paragraph("GAMEWEAR", self._styles["brand_title"]),
-            Paragraph("Premium Fashion Store", self._styles["brand_subtitle"]),
-            Spacer(1, 4 * mm),
-            HRFlowable(
-                width="100%",
-                thickness=1.5,
-                color=_BRAND_BLACK,
-                spaceAfter=4 * mm,
-            ),
-        ]
- 
-    # ---- Invoice meta -----------------------------------------------------
- 
-    def _invoice_meta_section(self) -> list:
-        order = self.order
-        data = [
-            ["Invoice Number", str(order.order_id)],
-            ["Order Date", order.created_at.strftime("%d %B %Y")],
-            ["Order Status", order.get_status_display()],
-            ["Payment Method", order.payment_method],
-        ]
-        table = Table(data, colWidths=[60 * mm, 110 * mm])
-        table.setStyle(
-            TableStyle(
-                [
-                    ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
-                    ("FONTSIZE", (0, 0), (-1, -1), 9),
-                    ("BACKGROUND", (0, 0), (0, -1), _HEADER_BG),
-                    ("GRID", (0, 0), (-1, -1), 0.5, _BORDER),
-                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                    ("ROWBACKGROUNDS", (1, 0), (1, -1), [colors.white, colors.white]),
-                    ("TOPPADDING", (0, 0), (-1, -1), 5),
-                    ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
-                ]
-            )
-        )
-        return [table, Spacer(1, 6 * mm)]
- 
-    # ---- Customer ---------------------------------------------------------
- 
-    def _customer_section(self) -> list:
-        user = self.order.user
-        return [
-            Paragraph("Bill To", self._styles["section_heading"]),
-            Paragraph(
-                f"<b>{getattr(user, 'full_name', str(user))}</b>",
-                self._styles["body"],
-            ),
-            Paragraph(user.email, self._styles["body"]),
-            Spacer(1, 4 * mm),
-        ]
- 
-    # ---- Shipping address -------------------------------------------------
- 
-    def _address_section(self) -> list:
-        """Render shipping address from the order.address FK."""
-        address = self.order.shipping_address
-        if not address:
-            return []
-        # Build a readable single line from Address fields — adjust field
-        # names below if your Address model uses different attribute names.
-        parts = [
-            getattr(address, "full_name", ""),
-            getattr(address, "address_line1", "") or getattr(address, "street", ""),
-            getattr(address, "address_line2", "") or "",
-            getattr(address, "city", ""),
-            getattr(address, "state", ""),
-            getattr(address, "pincode", "") or getattr(address, "postal_code", ""),
-        ]
-        address_str = ", ".join(p for p in parts if p)
-        return [
-            Paragraph("Ship To", self._styles["section_heading"]),
-            Paragraph(address_str or str(address), self._styles["body"]),
-            Spacer(1, 4 * mm),
-        ]
- 
-    # ---- Line items -------------------------------------------------------
- 
-    def _line_items_section(self) -> list:
-        header = [["#", "Product", "Qty", "Unit Price", "Total"]]
-        rows = [
-            [
-                str(idx),
-                item.product.name,
-                str(item.quantity),
-                f"\u20b9{item.price:,.2f}",
-                f"\u20b9{item.price * item.quantity:,.2f}",
-            ]
-            for idx, item in enumerate(self.order.items.select_related("product"), 1)
-        ]
-        col_widths = [10 * mm, 80 * mm, 20 * mm, 35 * mm, 35 * mm]
-        table = Table(header + rows, colWidths=col_widths, repeatRows=1)
-        table.setStyle(
-            TableStyle(
-                [
-                    # Header row
-                    ("BACKGROUND", (0, 0), (-1, 0), _BRAND_ACCENT),
-                    ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-                    ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-                    ("FONTSIZE", (0, 0), (-1, -1), 9),
-                    ("ALIGN", (0, 0), (-1, 0), "CENTER"),
-                    # Data rows
-                    ("ALIGN", (2, 1), (-1, -1), "RIGHT"),
-                    ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, _HEADER_BG]),
-                    ("GRID", (0, 0), (-1, -1), 0.5, _BORDER),
-                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                    ("TOPPADDING", (0, 0), (-1, -1), 5),
-                    ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
-                ]
-            )
-        )
-        return [
-            Paragraph("Order Items", self._styles["section_heading"]),
-            table,
-            Spacer(1, 4 * mm),
-        ]
- 
-    # ---- Totals -----------------------------------------------------------
- 
-    def _totals_section(self) -> list:
 
-        order = self.order
 
-        subtotal_after_discount = (
-            order.total_amount - order.discount
-        )
-
-        rows = [
-
-            [
-                "Subtotal",
-                f"₹{order.total_amount:,.2f}"
-            ],
-
-            [
-                "Coupon Discount",
-                f"- ₹{order.discount:,.2f}"
-            ],
-
-            [
-                "Subtotal After Discount",
-                f"₹{subtotal_after_discount:,.2f}"
-            ],
-
-            [
-                "Shipping",
-                (
-                    "Free"
-                    if order.shipping == 0
-                    else f"₹{order.shipping:,.2f}"
-                )
-            ],
-
-            [
-                "GST (5%)",
-                f"₹{order.tax:,.2f}"
-            ],
-
-            [
-                "Grand Total",
-                f"₹{order.final_amount:,.2f}"
-            ],
-        ]
-
-        table = Table(
-            rows,
-            colWidths=[
-                110 * mm,
-                70 * mm,
-            ],
-        )
-
-        table.setStyle(
-            TableStyle(
-                [
-
-                    ("FONTSIZE",(0,0),(-1,-1),9),
-
-                    ("ALIGN",(1,0),(1,-1),"RIGHT"),
-
-                    ("GRID",(0,0),(-1,-1),0.5,_BORDER),
-
-                    ("TOPPADDING",(0,0),(-1,-1),5),
-
-                    ("BOTTOMPADDING",(0,0),(-1,-1),5),
-
-                    ("BACKGROUND",(0,-1),(-1,-1),_BRAND_ACCENT),
-
-                    ("TEXTCOLOR",(0,-1),(-1,-1),colors.white),
-
-                    ("FONTNAME",(0,-1),(-1,-1),"Helvetica-Bold"),
-
-                ]
-            )
-        )
-
-        return [
-            table,
-            Spacer(
-                1,
-                8 * mm,
-            ),
-        ]
- 
-    # ---- Footer -----------------------------------------------------------
- 
-    def _footer_section(self) -> list:
-        return [
-            HRFlowable(width="100%", thickness=0.5, color=_BORDER, spaceAfter=3 * mm),
-            Paragraph(
-                "Thank you for shopping with GAMEWEAR.",
-                self._styles["footer"],
-            ),
-            Paragraph(
-                "This is a computer-generated invoice and does not require a signature.",
-                self._styles["footer"],
-            ),
-        ]
- 
- 
-# ---------------------------------------------------------------------------
-# View
-# ---------------------------------------------------------------------------
- 
- 
 @login_required
-def download_invoice(request: HttpRequest, order_id: int) -> HttpResponse:
-    """
-    Stream a PDF invoice for *order_id* to the authenticated user.
- 
-    Returns a 302 redirect with an error message when the order
-    is not in a billable state.
-    """
-    order: Order = get_object_or_404(Order, id=order_id, user=request.user)
- 
+def download_invoice(request, order_id):
+
+    order = get_object_or_404(
+        Order.objects
+        .select_related(
+            "user",
+            "shipping_address",
+        )
+        .prefetch_related(
+            "items__product",
+            "items__variant",
+        ),
+        id=order_id,
+        user=request.user,
+    )
+
     if order.status in INVOICE_BLOCKED_STATUSES:
-        messages.error(request, "Invoice is not available for this order.")
-        return redirect("products:order_detail", order_id=order.id)  # adjust kwarg to match your order_detail URL
- 
+        messages.error(
+            request,
+            "Invoice is not available for this order."
+        )
+
+        return redirect(
+            "products:order_detail",
+            order_id=order.id,
+        )
+
     try:
-        response = HttpResponse(content_type="application/pdf")
+        context = {
+            "order": order,
+            "items": order.items.all(),
+        }
+
+        html_string = render_to_string(
+            "users/orders/order_invoice_pdf.html",
+            context,
+            request=request,
+        )
+
+        pdf = HTML(
+            string=html_string,
+            base_url=request.build_absolute_uri("/"),
+        ).write_pdf()
+
+        response = HttpResponse(
+            pdf,
+            content_type="application/pdf",
+        )
+
         response["Content-Disposition"] = (
             f'attachment; filename="Invoice-{order.order_id}.pdf"'
         )
-        InvoiceBuilder(order).build(response)
+
+        return response
+
     except Exception:
+
         logger.exception(
             "Failed to generate invoice for order %s (user=%s)",
             order.order_id,
             request.user.id,
         )
-        
-        
+
         messages.error(
             request,
             "We could not generate your invoice right now. Please try again later.",
         )
-        return redirect("products:order_detail", order_id=order.id)
- 
-    return response
 
-
+        return redirect(
+            "products:order_detail",
+            order_id=order.id,
+        )
 
 
 
@@ -2758,7 +2895,7 @@ def admin_update_order_status(request, order_id):
             "Invalid status."
         )
         return redirect(
-            "products:admin_order_detail",
+            "products:admin_update_order_status",
             order_id=order.id
         )
 
@@ -2770,7 +2907,7 @@ def admin_update_order_status(request, order_id):
             f"{current_status} orders cannot be modified."
         )
         return redirect(
-            "products:admin_order_detail",
+            "products:admin_update_order_status",
             order_id=order.id
         )
 
@@ -2788,7 +2925,7 @@ def admin_update_order_status(request, order_id):
             f"{new_status}."
         )
         return redirect(
-            "products:admin_order_detail",
+            "products:admin_update_order_status",
             order_id=order.id
         )
 
@@ -2860,7 +2997,7 @@ def admin_update_order_status(request, order_id):
                     "No returned items available for refund."
                 )
                 return redirect(
-                    "products:admin_order_detail",
+                    "products:admin_update_order_status",
                     order_id=order.id
                 )
 
@@ -2920,6 +3057,6 @@ def admin_update_order_status(request, order_id):
     )
 
     return redirect(
-        "products:admin_order_detail",
+        "products:admin_update_order_status",
         order_id=order.id
     )

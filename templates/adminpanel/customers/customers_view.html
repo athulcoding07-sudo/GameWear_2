@@ -36,9 +36,9 @@
         </div>
         
         <div class="flex gap-3">
-            <a href="{% url 'adminpanel:edit_user' customer.id %}" class="bg-neutral-900 text-white border border-neutral-800 px-5 py-2.5 rounded-lg text-sm font-bold hover:bg-neutral-800 transition">
+            <!-- <a href="{% url 'adminpanel:edit_user' customer.id %}" class="bg-neutral-900 text-white border border-neutral-800 px-5 py-2.5 rounded-lg text-sm font-bold hover:bg-neutral-800 transition">
                 Edit Profile
-            </a>
+            </a> -->
 
             <!-- BLOCK / UNBLOCK BUTTONS (Trigger Modal) -->
             {% if customer.is_active %}
@@ -68,7 +68,7 @@
                 <div class="relative z-10">
                     <p class="text-neutral-500 text-xs font-bold uppercase tracking-widest mb-1">Wallet Balance</p>
                     <h2 class="text-4xl font-black text-white">
-                        ${{ customer.wallet.balance|default:"0.00" }}
+                        ₹{{ customer.wallet.balance|default:"0.00" }}
                     </h2>
                     <div class="mt-4 flex gap-2">
                         <button class="bg-white/10 hover:bg-white/20 text-white text-[10px] font-bold py-1 px-3 rounded-full transition">Add Funds</button>
@@ -148,7 +148,7 @@
                                 <td class="px-6 py-4 font-mono text-xs text-white">#{{ order.id|stringformat:"04d" }}</td>
                                 <td class="px-6 py-4 text-neutral-400">{{ order.created_at|date:"M d, Y" }}</td>
                                 <td class="px-6 py-4 text-neutral-400">{{ order.items_summary|default:"Order Items" }}</td>
-                                <td class="px-6 py-4 font-bold text-white">${{ order.total_amount }}</td>
+                                <td class="px-6 py-4 font-bold text-white">₹{{ order.total_amount }}</td>
                                 <td class="px-6 py-4">
                                     <span class="text-[10px] font-bold px-2 py-0.5 rounded 
                                         {% if order.status == 'SHIPPED' %}text-blue-400 bg-blue-900/10
@@ -174,27 +174,7 @@
                 {% endif %}
             </div>
 
-            <!-- Quick Actions Section -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <button class="bg-black border border-neutral-900 p-4 rounded-xl flex items-center hover:bg-neutral-900 transition group text-left">
-                    <div class="w-10 h-10 rounded-lg bg-neutral-900 border border-neutral-800 flex items-center justify-center mr-3 group-hover:scale-110 transition">
-                        <svg class="w-5 h-5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
-                    </div>
-                    <div>
-                        <p class="text-sm font-bold">Send Message</p>
-                        <p class="text-[10px] text-neutral-500">DM to {{ customer.first_name|default:customer.full_name }}'s inbox</p>
-                    </div>
-                </button>
-                <button class="bg-black border border-neutral-900 p-4 rounded-xl flex items-center hover:bg-neutral-900 transition group text-left">
-                    <div class="w-10 h-10 rounded-lg bg-neutral-900 border border-neutral-800 flex items-center justify-center mr-3 group-hover:scale-110 transition">
-                        <svg class="w-5 h-5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-                    </div>
-                    <div>
-                        <p class="text-sm font-bold">Security Reset</p>
-                        <p class="text-[10px] text-neutral-500">Force password reset</p>
-                    </div>
-                </button>
-            </div>
+            
         </div>
     </div>
 </div>

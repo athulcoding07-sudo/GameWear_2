@@ -111,6 +111,78 @@
             </table>
         </div>
     </div>
+
+    <!-- Pagination -->
+    {% if brands.paginator.num_pages > 1 %}
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
+
+        <!-- Page Information -->
+        <p class="text-sm text-neutral-500">
+            Showing
+            <span class="text-white font-medium">
+                {{ brands.start_index }}
+            </span>
+            -
+            <span class="text-white font-medium">
+                {{ brands.end_index }}
+            </span>
+            of
+            <span class="text-white font-medium">
+                {{ brands.paginator.count }}
+            </span>
+            brands
+        </p>
+
+        <div class="flex items-center gap-2">
+
+            <!-- Previous Button -->
+            {% if brands.has_previous %}
+            <a
+                href="?page={{ brands.previous_page_number }}&search={{ search_query|urlencode }}&status={{ status_filter }}"
+                class="px-4 py-2 text-sm font-bold rounded-lg border border-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-900 transition"
+            >
+                Previous
+            </a>
+            {% endif %}
+
+            <!-- Page Numbers -->
+            {% for page_num in brands.paginator.page_range %}
+
+                {% if page_num == brands.number %}
+
+                    <span
+                        class="w-10 h-10 flex items-center justify-center rounded-lg bg-white text-black text-sm font-bold"
+                    >
+                        {{ page_num }}
+                    </span>
+
+                {% elif page_num >= brands.number|add:'-2' and page_num <= brands.number|add:'2' %}
+
+                    <a
+                        href="?page={{ page_num }}&search={{ search_query|urlencode }}&status={{ status_filter }}"
+                        class="w-10 h-10 flex items-center justify-center rounded-lg border border-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-900 transition text-sm font-bold"
+                    >
+                        {{ page_num }}
+                    </a>
+
+                {% endif %}
+
+            {% endfor %}
+
+            <!-- Next Button -->
+            {% if brands.has_next %}
+            <a
+                href="?page={{ brands.next_page_number }}&search={{ search_query|urlencode }}&status={{ status_filter }}"
+                class="px-4 py-2 text-sm font-bold rounded-lg border border-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-900 transition"
+            >
+                Next
+            </a>
+            {% endif %}
+
+        </div>
+    </div>
+    {% endif %}
+    
 </div>
 
 <!-- Modal -->
@@ -137,6 +209,8 @@
                         id="brand-name"
                         name="name"
                         required
+                        minlength="3"
+                        maxlength="100"
                         autocomplete="off"
                         placeholder="e.g. Nike"
                         class="w-full bg-black border border-neutral-800 rounded-xl p-3 focus:border-white outline-none transition text-white placeholder-neutral-700">
@@ -154,6 +228,9 @@
                         id="brand-desc"
                         name="description"
                         rows="4"
+                        required
+                        minlength="10"
+                        maxlength="500"
                         placeholder="Brief description of the brand..."
                         class="w-full bg-black border border-neutral-800 rounded-xl p-3 focus:border-white outline-none transition text-white placeholder-neutral-700 resize-none"></textarea>
                 </div>
@@ -167,6 +244,7 @@
             </form>
         </div>
     </div>
+    
 </div>
 
 <script>
@@ -179,58 +257,67 @@ document.addEventListener('DOMContentLoaded', () => {
     const nameError  = document.getElementById('name-error');
     const submitBtn  = document.getElementById('submit-btn');
 
-    // --- 2. Validation Rule: letters and spaces only ---
-    const LETTERS_ONLY = /^[A-Za-z\s]+$/;
+    // --- 2. Name and Description Validation ---
+    const descInput = document.getElementById('brand-desc');
 
-    function validateName(value) {
-        // Trim leading/trailing spaces before checking
-        return LETTERS_ONLY.test(value.trim()) && value.trim().length > 0;
-    }
+    function validateName() {
+        const value = nameInput.value.trim();
+        let message = '';
 
-    function setNameError(show) {
-        if (show) {
+        if (!value) {
+            message = 'Name is required.';
+        } else if (value.length < 3) {
+            message = 'Name must be at least 3 characters long.';
+        } else if (value.length > 100) {
+            message = 'Name cannot exceed 100 characters.';
+        } else if (/^\d+$/.test(value)) {
+            message = 'Name cannot contain only numbers.';
+        } else if (!/^[A-Za-z0-9][A-Za-z0-9 &'()\-]*$/.test(value)) {
+            message = "Name can only contain letters, numbers, spaces, &, apostrophes, hyphens, and parentheses.";
+        }
+
+        nameInput.setCustomValidity(message);
+
+        if (message) {
             nameInput.classList.add('border-rose-500');
             nameInput.classList.remove('border-neutral-800');
+            nameError.innerHTML = message;
             nameError.classList.remove('hidden');
         } else {
             nameInput.classList.remove('border-rose-500');
             nameInput.classList.add('border-neutral-800');
+            nameError.innerHTML = '';
             nameError.classList.add('hidden');
         }
+
+        return !message;
     }
 
-    // Real-time feedback as user types
-    nameInput.addEventListener('input', function () {
-        if (this.value.length === 0) {
-            // Don't show error on empty — let browser handle required
-            setNameError(false);
-            return;
-        }
-        setNameError(!validateName(this.value));
-    });
+    function validateDescription() {
+        const value = descInput.value.trim();
+        let message = '';
 
-    // Also block numeric/special key input at keystroke level for immediate UX
-    nameInput.addEventListener('keypress', function (e) {
-        // Allow: letters (a-z, A-Z), space, and control keys
-        const char = String.fromCharCode(e.which);
-        if (!/[A-Za-z\s]/.test(char)) {
-            e.preventDefault();
+        if (!value) {
+            message = 'Description is required.';
+        } else if (value.length < 10) {
+            message = 'Description must be at least 10 characters long.';
+        } else if (value.length > 500) {
+            message = 'Description cannot exceed 500 characters.';
+        } else if (/^\d+$/.test(value)) {
+            message = 'Description cannot contain only numbers.';
         }
-    });
 
-    // Handle paste — strip non-letter characters silently
-    nameInput.addEventListener('paste', function (e) {
-        e.preventDefault();
-        const pasted = (e.clipboardData || window.clipboardData).getData('text');
-        const cleaned = pasted.replace(/[^A-Za-z\s]/g, '');
-        // Insert at cursor position
-        const start = this.selectionStart;
-        const end   = this.selectionEnd;
-        const current = this.value;
-        this.value = current.slice(0, start) + cleaned + current.slice(end);
-        // Trigger input event for validation re-check
-        this.dispatchEvent(new Event('input'));
-    });
+        descInput.setCustomValidity(message);
+        descInput.classList.toggle('border-rose-500', Boolean(message));
+        descInput.classList.toggle('border-neutral-800', !message);
+
+        return !message;
+    }
+
+    nameInput.addEventListener('input', validateName);
+    nameInput.addEventListener('blur', validateName);
+    descInput.addEventListener('input', validateDescription);
+    descInput.addEventListener('blur', validateDescription);
 
     // --- 3. Modal Controls ---
     window.toggleModal = function (id = '', name = '', desc = '') {
@@ -244,7 +331,12 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('modal-title').innerText = id ? 'Edit Brand' : 'Add New Brand';
 
             // Reset any leftover validation state
-            setNameError(false);
+            nameInput.setCustomValidity('');
+            descInput.setCustomValidity('');
+            nameInput.classList.remove('border-rose-500');
+            descInput.classList.remove('border-rose-500');
+            nameError.innerHTML = '';
+            nameError.classList.add('hidden');
 
             modal.classList.remove('hidden');
             modal.classList.add('flex');
@@ -254,17 +346,26 @@ document.addEventListener('DOMContentLoaded', () => {
             modal.classList.add('hidden');
             modal.classList.remove('flex');
             form.reset();
-            setNameError(false);
+            nameInput.setCustomValidity('');
+            descInput.setCustomValidity('');
+            nameInput.classList.remove('border-rose-500');
+            descInput.classList.remove('border-rose-500');
+            nameError.innerHTML = '';
+            nameError.classList.add('hidden');
         }
     };
 
     // --- 4. Form Submit Handler ---
     form.addEventListener('submit', function (e) {
         // Final guard — validate before letting it through
-        if (!validateName(nameInput.value)) {
+        const nameValid = validateName();
+        const descriptionValid = validateDescription();
+
+        if (!nameValid || !descriptionValid) {
             e.preventDefault();
-            setNameError(true);
-            nameInput.focus();
+            const firstInvalid = !nameValid ? nameInput : descInput;
+            firstInvalid.focus();
+            firstInvalid.reportValidity();
             return;
         }
 
