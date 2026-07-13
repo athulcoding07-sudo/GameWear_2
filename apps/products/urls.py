@@ -86,6 +86,11 @@ urlpatterns = [
     path("orders/admin-order-detail/<int:order_id>/", views.admin_order_detail, name="admin_order_detail"),
     path("orders/admin-update-order/<int:order_id>/status/", views.admin_update_order_status, name="admin_update_order_status"),
 
+    # Per-item return / refund actions
+    path("orders/admin-item/<int:item_id>/approve-return/", views.admin_approve_return_item, name="admin_approve_return_item"),
+    path("orders/admin-item/<int:item_id>/reject-return/",  views.admin_reject_return_item,  name="admin_reject_return_item"),
+    path("orders/admin-item/<int:item_id>/refund/",         views.admin_refund_item,          name="admin_refund_item"),
+
 
 
 

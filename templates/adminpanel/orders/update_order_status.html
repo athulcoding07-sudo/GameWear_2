@@ -71,21 +71,35 @@
         <div class="px-5 py-4 border-b border-neutral-900 flex items-center justify-between">
             <span class="text-xs text-neutral-500 uppercase tracking-widest font-bold">Current status</span>
             <span class="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full
-                {% if order.status == 'delivered' %}bg-emerald-950 text-emerald-400
-                {% elif order.status == 'shipped' %}bg-green-950 text-green-400
-                {% elif order.status == 'confirmed' %}bg-sky-950 text-sky-400
-                {% elif order.status == 'pending' %}bg-amber-950 text-amber-400
-                {% elif order.status == 'cancelled' %}bg-rose-950 text-rose-400
-                {% elif order.status == 'returned' %}bg-orange-950 text-orange-400
+                {% if order.status == 'DELIVERED' %}bg-emerald-950 text-emerald-400
+                {% elif order.status == 'OUT_FOR_DELIVERY' %}bg-violet-950 text-violet-400
+                {% elif order.status == 'SHIPPED' %}bg-blue-950 text-blue-400
+                {% elif order.status == 'PACKED' %}bg-sky-950 text-sky-400
+                {% elif order.status == 'CONFIRMED' %}bg-sky-950 text-sky-400
+                {% elif order.status == 'PENDING' %}bg-amber-950 text-amber-400
+                {% elif order.status == 'CANCELLED' %}bg-rose-950 text-rose-400
+                {% elif order.status == 'PARTIAL_CANCELLED' %}bg-orange-950 text-orange-400
+                {% elif order.status == 'RETURN_REQUESTED' %}bg-amber-950 text-amber-400
+                {% elif order.status == 'PARTIAL_RETURNED' %}bg-orange-950 text-orange-400
+                {% elif order.status == 'RETURNED' %}bg-orange-950 text-orange-400
+                {% elif order.status == 'REFUNDED' %}bg-teal-950 text-teal-400
+                {% elif order.status == 'PARTIAL_REFUNDED' %}bg-teal-950 text-teal-400
                 {% else %}bg-neutral-900 text-neutral-400{% endif %}
             ">
                 <span class="w-1.5 h-1.5 rounded-full
-                    {% if order.status == 'delivered' %}bg-emerald-400
-                    {% elif order.status == 'shipped' %}bg-green-400
-                    {% elif order.status == 'confirmed' %}bg-sky-400
-                    {% elif order.status == 'pending' %}bg-amber-400
-                    {% elif order.status == 'cancelled' %}bg-rose-400
-                    {% elif order.status == 'returned' %}bg-orange-400
+                    {% if order.status == 'DELIVERED' %}bg-emerald-400
+                    {% elif order.status == 'OUT_FOR_DELIVERY' %}bg-violet-400
+                    {% elif order.status == 'SHIPPED' %}bg-blue-400
+                    {% elif order.status == 'PACKED' %}bg-sky-400
+                    {% elif order.status == 'CONFIRMED' %}bg-sky-400
+                    {% elif order.status == 'PENDING' %}bg-amber-400
+                    {% elif order.status == 'CANCELLED' %}bg-rose-400
+                    {% elif order.status == 'PARTIAL_CANCELLED' %}bg-orange-400
+                    {% elif order.status == 'RETURN_REQUESTED' %}bg-amber-400
+                    {% elif order.status == 'PARTIAL_RETURNED' %}bg-orange-400
+                    {% elif order.status == 'RETURNED' %}bg-orange-400
+                    {% elif order.status == 'REFUNDED' %}bg-teal-400
+                    {% elif order.status == 'PARTIAL_REFUNDED' %}bg-teal-400
                     {% else %}bg-neutral-500{% endif %}
                 "></span>
                 {{ order.status|capfirst }}
@@ -105,23 +119,25 @@
                         onclick="selectStatus(this, '{{ value }}')">
                     <div class="flex items-center gap-3 flex-1 min-w-0">
                         <span class="w-2.5 h-2.5 rounded-full shrink-0
-                            {% if value == 'pending' %}bg-amber-400
-                            {% elif value == 'confirmed' %}bg-sky-400
-                            {% elif value == 'shipped' %}bg-green-400
-                            {% elif value == 'delivered' %}bg-emerald-400
-                            {% elif value == 'cancelled' %}bg-rose-400
-                            {% elif value == 'returned' %}bg-orange-400
+                            {% if value == 'PENDING' %}bg-amber-400
+                            {% elif value == 'CONFIRMED' %}bg-sky-400
+                            {% elif value == 'PACKED' %}bg-sky-400
+                            {% elif value == 'SHIPPED' %}bg-blue-400
+                            {% elif value == 'OUT_FOR_DELIVERY' %}bg-violet-400
+                            {% elif value == 'DELIVERED' %}bg-emerald-400
+                            {% elif value == 'CANCELLED' %}bg-rose-400
                             {% else %}bg-neutral-500{% endif %}
                         "></span>
                         <div class="text-left">
                             <p class="text-sm font-bold text-white leading-tight">{{ label }}</p>
                             <p class="text-xs text-neutral-500 mt-0.5">
-                                {% if value == 'pending' %}Awaiting confirmation from the team.
-                                {% elif value == 'confirmed' %}Order has been verified and accepted.
-                                {% elif value == 'shipped' %}Package is on the way to the customer.
-                                {% elif value == 'delivered' %}Customer has received the order.
-                                {% elif value == 'cancelled' %}Order was cancelled before fulfillment.
-                                {% elif value == 'returned' %}Customer returned the delivered order.
+                                {% if value == 'PENDING' %}Awaiting confirmation from the team.
+                                {% elif value == 'CONFIRMED' %}Order has been verified and accepted.
+                                {% elif value == 'PACKED' %}Items packed and ready for dispatch.
+                                {% elif value == 'SHIPPED' %}Package is on the way to the customer.
+                                {% elif value == 'OUT_FOR_DELIVERY' %}Package is out for last-mile delivery.
+                                {% elif value == 'DELIVERED' %}Customer has received the order.
+                                {% elif value == 'CANCELLED' %}Order was cancelled before fulfillment.
                                 {% endif %}
                             </p>
                         </div>

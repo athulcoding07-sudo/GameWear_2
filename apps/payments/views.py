@@ -28,7 +28,7 @@ def start_payment(request, order_id):
         )
     )
 
-    amount = int(order.total_amount * 100)
+    amount = int(order.final_amount * 100)
 
     razorpay_order = client.order.create({
         "amount": amount,
@@ -39,7 +39,7 @@ def start_payment(request, order_id):
     payment, created = Payment.objects.get_or_create(
         order=order,
         defaults={
-            "amount": order.total_amount
+            "amount": order.final_amount
         }
     )
 
@@ -160,7 +160,7 @@ def payment_failed(request, order_id):
 
     return render(
         request,
-        "payments/payment_failed.html",
+        "payments/payments_failed.html",
         {
             "order": order
         }

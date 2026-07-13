@@ -2826,7 +2826,10 @@ def admin_order_list(request):
 def admin_order_detail(request, order_id):
 
     order = get_object_or_404(
-        Order.objects.prefetch_related("items"),
+        Order.objects.prefetch_related(
+            "items__variant__images",
+            "items__variant__product",
+        ),
         id=order_id
     )
 
@@ -2856,6 +2859,27 @@ def admin_order_detail(request, order_id):
 
 @admin_required
 def admin_update_order_status(request, order_id):
+    """Handles fulfillment-only status transitions for the whole order.
+
+    Return / refund workflows are handled per-item from the order detail page.
+    """
+
+    # Statuses that can be set from this page (fulfillment flow only)
+    FULFILLMENT_STATUSES = [
+        "PENDING",
+        "CONFIRMED",
+        "PACKED",
+        "SHIPPED",
+        "OUT_FOR_DELIVERY",
+        "DELIVERED",
+        "CANCELLED",
+    ]
+
+    FULFILLMENT_CHOICES = [
+        (value, label)
+        for value, label in Order.STATUS_CHOICES
+        if value in FULFILLMENT_STATUSES
+    ]
 
     order = get_object_or_404(
         Order.objects.prefetch_related("items__variant"),
@@ -2868,61 +2892,72 @@ def admin_update_order_status(request, order_id):
             "adminpanel/orders/update_order_status.html",
             {
                 "order": order,
-                "status_choices": Order.STATUS_CHOICES
+                "status_choices": FULFILLMENT_CHOICES,
             }
         )
 
     new_status = request.POST.get("status")
 
-    ALLOWED_TRANSITIONS = {
-        "PENDING": ["CONFIRMED", "CANCELLED"],
-        "CONFIRMED": ["PACKED", "CANCELLED"],
-        "PACKED": ["SHIPPED", "CANCELLED"],
-        "SHIPPED": ["OUT_FOR_DELIVERY", "CANCELLED"],
-        "OUT_FOR_DELIVERY": ["DELIVERED"],
-        "DELIVERED": ["RETURN_REQUESTED"],
-        "RETURN_REQUESTED": ["RETURNED"],
-        "RETURNED": ["REFUNDED"],
-        "PARTIAL_RETURNED": ["REFUNDED", "RETURNED", "RETURN_REQUESTED"],
-        "PARTIAL_CANCELLED": ["CONFIRMED", "PACKED", "SHIPPED", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED"],
-        "CANCELLED": [],
-        "REFUNDED": [],
-    }
-
-    if new_status not in dict(Order.STATUS_CHOICES):
+    # Guard: only fulfillment statuses are accepted here
+    if new_status not in FULFILLMENT_STATUSES:
         messages.error(
             request,
-            "Invalid status."
+            "Invalid status. Return and refund actions must be performed "
+            "from the order detail page."
         )
         return redirect(
             "products:admin_update_order_status",
             order_id=order.id
         )
 
+    ALLOWED_TRANSITIONS = {
+        "PENDING":           ["CONFIRMED", "CANCELLED"],
+        "CONFIRMED":         ["PACKED", "CANCELLED"],
+        "PACKED":            ["SHIPPED", "CANCELLED"],
+        "SHIPPED":           ["OUT_FOR_DELIVERY", "CANCELLED"],
+        "OUT_FOR_DELIVERY":  ["DELIVERED"],
+        "DELIVERED":         [],
+        "CANCELLED":         [],
+        # Partial-cancelled orders can be pushed forward or fully cancelled
+        "PARTIAL_CANCELLED": ["CONFIRMED", "PACKED", "SHIPPED",
+                              "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED"],
+    }
+
     current_status = order.status
 
-    if current_status in ["CANCELLED", "REFUNDED"]:
+    # Terminal states that this page cannot modify
+    if current_status in ["CANCELLED", "REFUNDED", "PARTIAL_REFUNDED"]:
         messages.error(
             request,
-            f"{current_status} orders cannot be modified."
+            f"Orders with status '{current_status}' cannot be modified here."
         )
         return redirect(
             "products:admin_update_order_status",
+            order_id=order.id
+        )
+
+    # Return/refund states should be handled on the order detail page
+    if current_status in [
+        "RETURN_REQUESTED", "RETURNED",
+        "PARTIAL_RETURNED", "PARTIAL_REFUNDED",
+    ]:
+        messages.error(
+            request,
+            "This order has an active return/refund process. "
+            "Please manage it from the order detail page."
+        )
+        return redirect(
+            "products:admin_order_detail",
             order_id=order.id
         )
 
     if (
         new_status != current_status and
-        new_status not in ALLOWED_TRANSITIONS.get(
-            current_status,
-            []
-        )
+        new_status not in ALLOWED_TRANSITIONS.get(current_status, [])
     ):
         messages.error(
             request,
-            f"Cannot change status from "
-            f"{current_status} to "
-            f"{new_status}."
+            f"Cannot change status from '{current_status}' to '{new_status}'."
         )
         return redirect(
             "products:admin_update_order_status",
@@ -2931,132 +2966,175 @@ def admin_update_order_status(request, order_id):
 
     with transaction.atomic():
 
-        # -------------------------
-        # CANCEL ORDER
-        # -------------------------
         if new_status == "CANCELLED":
-
-            for item in order.items.exclude(
-                status="CANCELLED"
-            ):
-
+            # Restore stock for all non-cancelled items
+            for item in order.items.exclude(status="CANCELLED"):
                 if item.variant:
                     item.variant.__class__.objects.filter(
                         pk=item.variant.pk
                     ).update(
                         stock=F("stock") + item.quantity
                     )
-
                 item.status = "CANCELLED"
                 item.save()
-
-        # -------------------------
-        # RETURN REQUEST
-        # -------------------------
-        elif new_status == "RETURN_REQUESTED":
-
-            order.items.filter(
-                status="DELIVERED"
-            ).update(
-                status="RETURN_REQUESTED"
-            )
-
-        # -------------------------
-        # RETURN APPROVED
-        # -------------------------
-        elif new_status == "RETURNED":
-
-            return_items = order.items.filter(
-                status="RETURN_REQUESTED"
-            )
-
-            for item in return_items:
-
-                if item.variant:
-                    item.variant.__class__.objects.filter(
-                        pk=item.variant.pk
-                    ).update(
-                        stock=F("stock") + item.quantity
-                    )
-
-                item.status = "RETURNED"
-                item.save()
-
-        # -------------------------
-        # REFUND
-        # -------------------------
-        elif new_status == "REFUNDED":
-
-            refund_items = order.items.filter(
-                status="RETURNED"
-            )
-
-            if not refund_items.exists():
-                messages.error(
-                    request,
-                    "No returned items available for refund."
-                )
-                return redirect(
-                    "products:admin_update_order_status",
-                    order_id=order.id
-                )
-
-            from decimal import Decimal
-            from apps.wallet.models import Wallet
-            from apps.wallet.services.wallet_service import WalletService
-            import uuid
-
-            refund_amount = Decimal("0.00")
-
-            for item in refund_items:
-                refund_amount += item.refund_amount
-                item.status = "REFUNDED"
-                item.save()
-
-            wallet, _ = Wallet.objects.get_or_create(user=order.user)
-
-            description = f"Refund for returned item(s) from order {order.order_id}"
-            reference_id = f"REF-{uuid.uuid4().hex[:8].upper()}"
-
-            WalletService.credit_wallet(
-                wallet=wallet,
-                amount=refund_amount,
-                description=description,
-                reference_id=reference_id
-            )
-
-            messages.success(
-                request,
-                f"₹{refund_amount} refunded to wallet."
-            )
-
-        # -------------------------
-        # NORMAL FLOW
-        # -------------------------
-        else:
-
-            order.items.exclude(
-                status__in=[
-                    "CANCELLED",
-                    "RETURNED",
-                    "REFUNDED"
-                ]
-            ).update(
-                status=new_status
-            )
-
-        if new_status in ["CANCELLED", "RETURN_REQUESTED", "RETURNED", "REFUNDED"]:
             order.update_status()
+
         else:
+            # Normal fulfillment transition — push all non-terminal items forward
+            order.items.exclude(
+                status__in=["CANCELLED", "RETURNED", "REFUNDED"]
+            ).update(status=new_status)
             order.status = new_status
             order.save()
 
     messages.success(
         request,
-        "Order status updated successfully."
+        f"Order status updated to '{new_status}' successfully."
     )
 
     return redirect(
-        "products:admin_update_order_status",
+        "products:admin_order_detail",
         order_id=order.id
     )
+
+
+# -------------------------
+# Per-item return / refund actions (called from Order Detail page)
+# -------------------------
+
+@admin_required
+def admin_approve_return_item(request, item_id):
+    """Approve a return request for a single OrderItem.
+
+    - Restores variant stock.
+    - Sets item status to RETURNED.
+    - Recalculates parent order status.
+    """
+    if request.method != "POST":
+        return redirect("products:admin_order_list")
+
+    item = get_object_or_404(
+        OrderItem.objects.select_related("order", "variant"),
+        id=item_id
+    )
+    order = item.order
+
+    if item.status != "RETURN_REQUESTED":
+        messages.error(
+            request,
+            f"Item is not in 'Return Requested' state (current: {item.status})."
+        )
+        return redirect("products:admin_order_detail", order_id=order.id)
+
+    with transaction.atomic():
+        # Restore stock
+        if item.variant:
+            item.variant.__class__.objects.filter(
+                pk=item.variant.pk
+            ).update(
+                stock=F("stock") + item.quantity
+            )
+
+        item.status = "RETURNED"
+        item.save()
+        order.update_status()
+
+    messages.success(
+        request,
+        "Return approved. Item marked as Returned and stock restored."
+    )
+    return redirect("products:admin_order_detail", order_id=order.id)
+
+
+@admin_required
+def admin_reject_return_item(request, item_id):
+    """Reject a return request for a single OrderItem.
+
+    - Reverts item status back to DELIVERED.
+    - Recalculates parent order status.
+    """
+    if request.method != "POST":
+        return redirect("products:admin_order_list")
+
+    item = get_object_or_404(
+        OrderItem.objects.select_related("order"),
+        id=item_id
+    )
+    order = item.order
+
+    if item.status != "RETURN_REQUESTED":
+        messages.error(
+            request,
+            f"Item is not in 'Return Requested' state (current: {item.status})."
+        )
+        return redirect("products:admin_order_detail", order_id=order.id)
+
+    with transaction.atomic():
+        item.status = "DELIVERED"
+        item.save()
+        order.update_status()
+
+    messages.success(
+        request,
+        "Return request rejected. Item reverted to Delivered."
+    )
+    return redirect("products:admin_order_detail", order_id=order.id)
+
+
+@admin_required
+def admin_refund_item(request, item_id):
+    """Refund a single returned OrderItem to the customer's wallet.
+
+    - Calculates proportional refund amount using item.refund_amount.
+    - Credits the wallet via WalletService.
+    - Sets item status to REFUNDED.
+    - Recalculates parent order status.
+    """
+    if request.method != "POST":
+        return redirect("products:admin_order_list")
+
+    item = get_object_or_404(
+        OrderItem.objects.select_related("order", "order__user"),
+        id=item_id
+    )
+    order = item.order
+
+    if item.status != "RETURNED":
+        messages.error(
+            request,
+            f"Item must be in 'Returned' state to issue a refund "
+            f"(current: {item.status})."
+        )
+        return redirect("products:admin_order_detail", order_id=order.id)
+
+    from decimal import Decimal
+    from apps.wallet.models import Wallet
+    from apps.wallet.services.wallet_service import WalletService
+    import uuid as _uuid
+
+    refund_amount = item.refund_amount
+
+    with transaction.atomic():
+        item.status = "REFUNDED"
+        item.save()
+
+        wallet, _ = Wallet.objects.get_or_create(user=order.user)
+
+        WalletService.credit_wallet(
+            wallet=wallet,
+            amount=refund_amount,
+            description=(
+                f"Refund for item '{item.variant.product.name if item.variant else 'Unknown'}' "
+                f"from order {order.order_id}"
+            ),
+            reference_id=f"REF-{_uuid.uuid4().hex[:8].upper()}",
+        )
+
+        order.update_status()
+
+    messages.success(
+        request,
+        f"\u20b9{refund_amount} refunded to customer's wallet for item "
+        f"'{item.variant.product.name if item.variant else 'Unknown'}'."
+    )
+    return redirect("products:admin_order_detail", order_id=order.id)

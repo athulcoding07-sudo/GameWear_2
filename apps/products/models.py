@@ -519,6 +519,7 @@ class Order(models.Model):
         ("PARTIAL_RETURNED", "Partial Returned"),
 
         ("REFUNDED", "Refunded"),
+        ("PARTIAL_REFUNDED", "Partial Refunded"),
     )
 
     PAYMENT_METHOD_CHOICES = (
@@ -598,6 +599,20 @@ class Order(models.Model):
         super().save(*args, **kwargs)
 
     def update_status(self):
+        """
+        Recalculate the parent Order status based on the current statuses
+        of all its OrderItems.
+
+        Priority (highest first):
+          1. all CANCELLED              → CANCELLED
+          2. all REFUNDED               → REFUNDED
+          3. all RETURNED               → RETURNED
+          4. any RETURN_REQUESTED       → RETURN_REQUESTED
+          5. all DELIVERED              → DELIVERED
+          6. any REFUNDED (mixed)       → PARTIAL_REFUNDED
+          7. any RETURNED (mixed)       → PARTIAL_RETURNED
+          8. any CANCELLED (mixed)      → PARTIAL_CANCELLED
+        """
         items = self.items.all()
         if not items.exists():
             return
@@ -614,7 +629,9 @@ class Order(models.Model):
             self.status = "RETURN_REQUESTED"
         elif all(s == "DELIVERED" for s in statuses):
             self.status = "DELIVERED"
-        elif any(s in ["RETURNED", "REFUNDED"] for s in statuses):
+        elif any(s == "REFUNDED" for s in statuses):
+            self.status = "PARTIAL_REFUNDED"
+        elif any(s == "RETURNED" for s in statuses):
             self.status = "PARTIAL_RETURNED"
         elif any(s == "CANCELLED" for s in statuses):
             self.status = "PARTIAL_CANCELLED"

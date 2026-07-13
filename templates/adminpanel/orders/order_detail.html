@@ -44,7 +44,7 @@
                 </span>
             {% elif s == 'PACKED' %}
                 <span class="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-sky-400 bg-sky-950/40 border border-sky-900/40 px-3 py-1.5 rounded-full">
-                    <span class="w-1.5 h-1.5 rounded-full bg-sky-400"></span>Packed & Ready
+                    <span class="w-1.5 h-1.5 rounded-full bg-sky-400"></span>Packed &amp; Ready
                 </span>
             {% elif s == 'SHIPPED' %}
                 <span class="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-blue-400 bg-blue-950/40 border border-blue-900/40 px-3 py-1.5 rounded-full">
@@ -81,6 +81,10 @@
             {% elif s == 'REFUNDED' %}
                 <span class="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-teal-400 bg-teal-950/40 border border-teal-900/40 px-3 py-1.5 rounded-full">
                     <span class="w-1.5 h-1.5 rounded-full bg-teal-400"></span>Refunded
+                </span>
+            {% elif s == 'PARTIAL_REFUNDED' %}
+                <span class="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-teal-400 bg-teal-950/40 border border-teal-900/40 px-3 py-1.5 rounded-full">
+                    <span class="w-1.5 h-1.5 rounded-full bg-teal-400"></span>Partially Refunded
                 </span>
             {% endif %}
         </div>
@@ -328,7 +332,7 @@
         </div>
 
        
-        {% elif s == 'RETURN_REQUESTED' or s == 'PARTIAL_RETURNED' or s == 'RETURNED' or s == 'REFUNDED' %}
+        {% elif s == 'RETURN_REQUESTED' or s == 'PARTIAL_RETURNED' or s == 'RETURNED' or s == 'REFUNDED' or s == 'PARTIAL_REFUNDED' %}
 
         
         <div class="flex items-center opacity-20 pointer-events-none mb-5">
@@ -434,7 +438,11 @@
 
             {% if s == 'PARTIAL_RETURNED' %}
             <p class="text-amber-600/70 text-xs mt-3 leading-relaxed">
-                Some items have been returned. A refund for those items is being processed.
+                Some items have been returned. Select individual items below to issue refunds.
+            </p>
+            {% elif s == 'PARTIAL_REFUNDED' %}
+            <p class="text-teal-600/70 text-xs mt-3 leading-relaxed">
+                Some items have been refunded. Remaining returned items can still be refunded below.
             </p>
             {% endif %}
 
@@ -518,6 +526,48 @@
                             <p class="font-bold text-white">₹{% widthratio item.price 1 item.quantity %}</p>
                             <p class="text-xs text-neutral-600 mt-0.5">subtotal</p>
                         </div>
+
+                        {# ── Per-item admin actions ── #}
+                        {% if item.status == 'RETURN_REQUESTED' %}
+                        <div class="mt-3 flex items-center gap-2 flex-wrap">
+                            <form method="POST" action="{% url 'products:admin_approve_return_item' item.id %}" class="inline">
+                                {% csrf_token %}
+                                <button type="submit"
+                                        onclick="return confirm('Approve return for this item? Stock will be restored.')"
+                                        class="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg bg-emerald-950 text-emerald-400 border border-emerald-900/60 hover:bg-emerald-900/60 transition">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                    Approve Return
+                                </button>
+                            </form>
+                            <form method="POST" action="{% url 'products:admin_reject_return_item' item.id %}" class="inline">
+                                {% csrf_token %}
+                                <button type="submit"
+                                        onclick="return confirm('Reject this return request? Item will revert to Delivered.')"
+                                        class="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg bg-rose-950 text-rose-400 border border-rose-900/60 hover:bg-rose-900/60 transition">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                    Reject Return
+                                </button>
+                            </form>
+                        </div>
+                        {% elif item.status == 'RETURNED' %}
+                        <div class="mt-3">
+                            <form method="POST" action="{% url 'products:admin_refund_item' item.id %}" class="inline">
+                                {% csrf_token %}
+                                <button type="submit"
+                                        onclick="return confirm('Issue a wallet refund of ₹{{ item.refund_amount }} for this item?')"
+                                        class="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg bg-teal-950 text-teal-400 border border-teal-900/60 hover:bg-teal-900/60 transition">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    Refund Item &mdash; &#8377;{{ item.refund_amount }}
+                                </button>
+                            </form>
+                        </div>
+                        {% endif %}
 
                     </div>
                     {% empty %}
@@ -613,6 +663,7 @@
                             {% elif s == 'PARTIAL_RETURNED' %}text-orange-400
                             {% elif s == 'RETURNED' %}text-orange-400
                             {% elif s == 'REFUNDED' %}text-teal-400
+                            {% elif s == 'PARTIAL_REFUNDED' %}text-teal-400
                             {% else %}text-neutral-500{% endif %}
                         ">
                             <span class="w-1.5 h-1.5 rounded-full
@@ -628,6 +679,7 @@
                                 {% elif s == 'PARTIAL_RETURNED' %}bg-orange-400
                                 {% elif s == 'RETURNED' %}bg-orange-400
                                 {% elif s == 'REFUNDED' %}bg-teal-400
+                                {% elif s == 'PARTIAL_REFUNDED' %}bg-teal-400
                                 {% else %}bg-neutral-700{% endif %}
                             "></span>
                             {{ s|capfirst|lower|title }}
@@ -676,8 +728,30 @@
             </div>
             {% endif %}
 
-            
-            
+            {# ── Actions ── #}
+            {% if order.status not in 'CANCELLED,REFUNDED,PARTIAL_REFUNDED' %}
+            <div class="bg-black border border-neutral-900 rounded-2xl overflow-hidden">
+                <div class="px-6 py-4 border-b border-neutral-900">
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-neutral-400">Actions</h2>
+                </div>
+                <div class="px-6 py-5 space-y-3">
+                    {% if order.status not in 'RETURN_REQUESTED,RETURNED,PARTIAL_RETURNED,PARTIAL_REFUNDED,REFUNDED' %}
+                    <a href="{% url 'products:admin_update_order_status' order.id %}"
+                       class="flex items-center justify-center gap-2 w-full text-sm font-bold py-3 rounded-xl bg-white text-black hover:bg-neutral-200 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                        Update Fulfillment Status
+                    </a>
+                    {% endif %}
+                    {% if return_items %}
+                    <p class="text-[10px] text-amber-400 font-bold uppercase tracking-wider text-center">
+                        {{ return_items.count }} item{{ return_items.count|pluralize }} awaiting return decision — see below
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
 
         </div>{# end sidebar #}
     </div>{# end main grid #}

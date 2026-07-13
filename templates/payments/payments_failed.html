@@ -1,1 +1,193 @@
-<h1>failed</h1>
+{% extends "users/user_dashboard_base.html" %}
+{% load static %}
+
+{% block title %}GameWear — Payment Failed{% endblock %}
+
+{% block content %}
+
+<style>
+
+@keyframes flare-in{
+0%{transform:scale(.4) rotate(-15deg);opacity:0;}
+70%{transform:scale(1.08);opacity:1;}
+100%{transform:scale(1);}
+}
+
+@keyframes rise{
+from{transform:translateY(25px);opacity:0;}
+to{transform:translateY(0);opacity:1;}
+}
+
+@keyframes pulse-ring{
+0%{transform:scale(1);opacity:.5;}
+100%{transform:scale(1.5);opacity:0;}
+}
+
+.animate-icon{animation:flare-in .7s cubic-bezier(.34,1.56,.64,1);}
+.animate-1{animation:rise .5s ease .2s both;}
+.animate-2{animation:rise .5s ease .35s both;}
+.animate-3{animation:rise .5s ease .5s both;}
+.animate-4{animation:rise .5s ease .65s both;}
+
+.pulse-ring{
+position:absolute;
+inset:-12px;
+border-radius:999px;
+border:2px solid rgba(239,68,68,.35);
+animation:pulse-ring 1.8s infinite;
+}
+
+.pulse-ring2{
+position:absolute;
+inset:-26px;
+border-radius:999px;
+border:1px solid rgba(239,68,68,.15);
+animation:pulse-ring 1.8s .6s infinite;
+}
+
+</style>
+
+<div class="max-w-5xl mx-auto">
+
+<div class="bg-neutral-900 border border-neutral-800 rounded-3xl px-8 py-16 text-center relative overflow-hidden">
+
+<div class="absolute w-96 h-96 rounded-full bg-red-500/10 blur-[120px] -top-32 -right-24"></div>
+<div class="absolute w-80 h-80 rounded-full bg-white/5 blur-[100px] -bottom-24 -left-20"></div>
+
+<div class="relative inline-block mb-8 animate-icon">
+
+<div class="pulse-ring"></div>
+<div class="pulse-ring2"></div>
+
+<div class="w-24 h-24 rounded-full bg-red-500 flex items-center justify-center relative z-10 shadow-[0_0_60px_rgba(239,68,68,.35)]">
+
+<svg class="w-10 h-10 text-white"
+fill="none"
+stroke="currentColor"
+viewBox="0 0 24 24">
+
+<path
+stroke-linecap="round"
+stroke-linejoin="round"
+stroke-width="3"
+d="M6 6L18 18M18 6L6 18"/>
+
+</svg>
+
+</div>
+
+</div>
+
+<p class="animate-1 uppercase tracking-[0.4em] text-xs text-red-400 font-black mb-3">
+Payment Failed
+</p>
+
+<h1 class="animate-2 text-5xl md:text-7xl font-black italic uppercase text-white mb-6">
+Oops...
+<br>
+Something
+<span class="text-red-500">
+Went Wrong
+</span>
+</h1>
+
+<p class="animate-3 text-neutral-400 max-w-lg mx-auto leading-relaxed">
+Your payment could not be completed.
+No amount has been deducted successfully.
+Please try again or choose another payment method.
+</p>
+
+{% if order %}
+<div class="animate-4 inline-flex mt-8 items-center gap-3 rounded-full border border-neutral-700 bg-black px-6 py-3">
+
+<span class="w-2 h-2 rounded-full bg-red-500"></span>
+
+<span class="uppercase tracking-[0.3em] text-[10px] text-neutral-500 font-black">
+Order
+</span>
+
+<span class="text-white font-black tracking-widest">
+#{{ order.id }}
+</span>
+
+</div>
+{% endif %}
+
+</div>
+
+<div class="grid md:grid-cols-2 gap-6 mt-8">
+
+<div class="bg-neutral-900 border border-neutral-800 rounded-2xl p-6">
+
+<p class="uppercase tracking-[0.3em] text-xs text-neutral-500 font-black mb-4">
+Possible Reasons
+</p>
+
+<ul class="space-y-3 text-sm text-neutral-400">
+
+<li>• Payment was cancelled.</li>
+
+<li>• Bank declined the transaction.</li>
+
+<li>• Insufficient account balance.</li>
+
+<li>• Network interruption.</li>
+
+<li>• UPI/Card authentication failed.</li>
+
+</ul>
+
+</div>
+
+<div class="bg-neutral-900 border border-neutral-800 rounded-2xl p-6">
+
+<p class="uppercase tracking-[0.3em] text-xs text-neutral-500 font-black mb-4">
+What You Can Do
+</p>
+
+<ul class="space-y-3 text-sm text-neutral-400">
+
+<li>✓ Retry the payment.</li>
+
+<li>✓ Choose another payment method.</li>
+
+<li>✓ Check your bank balance.</li>
+
+<li>✓ Contact your bank if needed.</li>
+
+<li>✓ Reach out to GameWear support.</li>
+
+</ul>
+
+</div>
+
+</div>
+
+<div class="grid md:grid-cols-3 gap-4 mt-10">
+
+<a href="{% url 'payments:start_payment' order.id %}"
+class="bg-white text-black rounded-full py-4 text-center uppercase tracking-widest font-black hover:bg-neutral-200 transition">
+
+Retry Payment
+
+</a>
+
+<a href="{% url 'products:order_detail' order.id %}"
+class="border border-neutral-700 text-white rounded-full py-4 text-center uppercase tracking-widest font-black hover:border-white transition">
+
+View Order
+
+</a>
+
+<a href="{% url 'products:users_product_listing' %}"
+class="border border-neutral-700 text-neutral-400 rounded-full py-4 text-center uppercase tracking-widest font-black hover:text-white hover:border-white transition">
+
+Continue Shopping
+
+</a>
+
+</div>
+
+</div>
+
+{% endblock %}
