@@ -539,7 +539,7 @@ def product_edit(request, product_id=None):
                 # UPDATE EXISTING PRODUCT
                 product.name = name
                 product.description = description
-                product.highlights = highlights
+                
                 product.category = category
                 product.brand_id = brand_id if brand_id else None
                 product.is_active = True
@@ -633,7 +633,13 @@ def product_edit(request, product_id=None):
                 # )
                 variant.stock = int(stocks[i]) if stocks[i] else 0
                 variant.is_active = is_active_flag
-                variant.save()
+                try:
+                    variant.full_clean()
+                    variant.save()
+
+                except ValidationError as e:
+                    messages.error(request, e.messages[0])
+                    return redirect(request.path)
 
             else:
                 variant = ProductVariant.objects.create(

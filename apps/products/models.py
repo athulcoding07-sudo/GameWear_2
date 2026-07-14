@@ -261,6 +261,17 @@ class ProductVariant(models.Model):
                 "Price must be greater than zero."
             )
 
+        duplicate = ProductVariant.objects.filter(
+            product=self.product,
+            size=self.size,
+            color=self.color,
+        ).exclude(pk=self.pk)
+
+        if duplicate.exists():
+            raise ValidationError(
+                "A variant with the same size and color already exists for this product."
+            )
+
     def save(self, *args, **kwargs):
 
         if not self.sku:
