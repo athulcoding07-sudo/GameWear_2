@@ -29,17 +29,14 @@
 
         {# Main image #}
         <div class="relative aspect-[4/5] bg-neutral-900 border border-neutral-800 rounded-[2rem] overflow-hidden group">
-          {% if default_variant and default_variant.images.all %}
-            <img id="main-image"
-                 src="{{ default_variant.images.first.image.url }}"
-                 alt="{{ product.name }}"
-                 onclick="openImageModal(this.src)"
-                 class="w-full h-full object-contain p-12 transition-transform duration-500 group-hover:scale-110 cursor-zoom-in">
-          {% else %}
-            <div class="w-full h-full flex items-center justify-center text-neutral-800 font-black italic">
-              NO GEAR IMAGE
-            </div>
-          {% endif %}
+          <img id="main-image"
+               src="{% if default_variant and default_variant.images.all %}{{ default_variant.images.first.image.url }}{% endif %}"
+               alt="{{ product.name }}"
+               onclick="openImageModal(this.src)"
+               class="w-full h-full object-contain p-12 transition-transform duration-500 group-hover:scale-110 cursor-zoom-in {% if not default_variant or not default_variant.images.all %}hidden{% endif %}">
+          <div id="no-gear-image-placeholder" class="w-full h-full flex items-center justify-center text-neutral-800 font-black italic {% if default_variant and default_variant.images.all %}hidden{% endif %}">
+            NO GEAR IMAGE
+          </div>
 
           {% if product.old_price and default_variant.price %}
             <div class="absolute top-8 left-8 bg-white text-black text-[10px] font-black uppercase px-4 py-1.5 rounded-full italic tracking-tighter">
@@ -49,16 +46,16 @@
         </div>
 
         {# Thumbnail strip #}
-        {% if default_variant and default_variant.images.all %}
-        <div class="grid grid-cols-4 gap-4">
+        <div class="grid grid-cols-4 gap-4 {% if not default_variant or not default_variant.images.all %}hidden{% endif %}" id="thumbnail-container">
+          {% if default_variant %}
           {% for img in default_variant.images.all %}
           <button onclick="changeImage('{{ img.image.url }}')"
                   class="aspect-square bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden p-2 hover:border-white transition">
             <img src="{{ img.image.url }}" class="w-full h-full object-contain">
           </button>
           {% endfor %}
+          {% endif %}
         </div>
-        {% endif %}
 
       </div>
 
@@ -92,7 +89,7 @@
           </div>
 
           {# Price #}
-          <div class="flex items-center gap-6">
+          <div class="flex items-center gap-6" id="price-display-container">
             {% if pricing.discount_percentage > 0 %}
               <span class="text-4xl font-black italic">₹{{ pricing.offer_price }}</span>
               <span class="text-xl text-neutral-600 line-through font-bold">₹{{ pricing.original_price }}</span>
@@ -496,7 +493,96 @@
 </div>
 
 {# ─── Scripts ──────────────────────────────────────────────────────────── #}
+<script id="variants-data" type="application/json">
+  [
+    {% for variant in product.variants.all %}
+      {
+        "id": "{{ variant.id }}",
+        "price": "{{ variant.price }}",
+        "offer_price": "{{ variant.pricing.offer_price }}",
+        "original_price": "{{ variant.pricing.original_price }}",
+        "discount_percentage": {{ variant.pricing.discount_percentage|default:0 }},
+        "stock": {{ variant.stock }},
+        "color": "{{ variant.color }}",
+        "size": "{{ variant.size }}",
+        "images": [
+          {% for img in variant.images.all %}
+            "{{ img.image.url }}"{% if not forloop.last %},{% endif %}
+          {% endfor %}
+        ]
+      }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ]
+</script>
+
 <script>
+  const variantsData = JSON.parse(document.getElementById('variants-data').textContent);
+
+  function updateSelectedVariantUI(variantId) {
+    const variant = variantsData.find(v => String(v.id) === String(variantId));
+    if (!variant) return;
+
+    // 1. Update Price
+    const priceContainer = document.getElementById('price-display-container');
+    if (priceContainer) {
+      if (parseFloat(variant.discount_percentage) > 0) {
+        priceContainer.innerHTML = `
+          <span class="text-4xl font-black italic">₹${variant.offer_price}</span>
+          <span class="text-xl text-neutral-600 line-through font-bold">₹${variant.original_price}</span>
+          <span class="text-green-400 text-sm font-bold">${variant.discount_percentage}% OFF</span>
+        `;
+      } else {
+        priceContainer.innerHTML = `
+          <span class="text-4xl font-black italic">₹${variant.price}</span>
+        `;
+      }
+    }
+
+    // 2. Update Stock text and Add-to-cart button
+    const stockLabel = document.getElementById('stock-text');
+    const inStock = variant.stock > 0;
+    const btn = document.getElementById('add-to-cart-btn');
+    if (btn) btn.disabled = !inStock;
+    if (stockLabel) {
+      stockLabel.textContent = inStock ? 'In Stock' : 'Out of Stock';
+      stockLabel.className = inStock
+        ? 'text-green-500 text-sm font-bold mt-2'
+        : 'text-red-500 text-sm font-bold mt-2';
+    }
+
+    // 3. Update Images
+    const mainImg = document.getElementById('main-image');
+    if (mainImg) {
+      if (variant.images && variant.images.length > 0) {
+        mainImg.src = variant.images[0];
+        mainImg.classList.remove('hidden');
+        const placeholder = document.getElementById('no-gear-image-placeholder');
+        if (placeholder) placeholder.classList.add('hidden');
+      } else {
+        mainImg.classList.add('hidden');
+        const placeholder = document.getElementById('no-gear-image-placeholder');
+        if (placeholder) placeholder.classList.remove('hidden');
+      }
+    }
+
+    // 4. Update Thumbnails
+    const thumbContainer = document.getElementById('thumbnail-container');
+    if (thumbContainer) {
+      if (variant.images && variant.images.length > 0) {
+        thumbContainer.classList.remove('hidden');
+        thumbContainer.innerHTML = variant.images.map(imgUrl => `
+          <button type="button" onclick="changeImage('${imgUrl}')"
+                  class="aspect-square bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden p-2 hover:border-white transition">
+            <img src="${imgUrl}" class="w-full h-full object-contain">
+          </button>
+        `).join('');
+      } else {
+        thumbContainer.classList.add('hidden');
+        thumbContainer.innerHTML = '';
+      }
+    }
+  }
+
   // ── Review tabs ──────────────────────────────────────────────────────
   function switchReviewTab(tab) {
     const isView = tab === 'view';
@@ -538,40 +624,52 @@
   // ── Variant stock sync ───────────────────────────────────────────────
   document.querySelectorAll('.variant-radio').forEach(function(radio) {
     radio.addEventListener('change', function() {
-      const inStock = parseInt(this.dataset.stock) > 0;
-      const btn     = document.getElementById('add-to-cart-btn');
-      const label   = document.getElementById('stock-text');
-      btn.disabled        = !inStock;
-      label.textContent   = inStock ? 'In Stock' : 'Out of Stock';
-      label.className     = inStock
-        ? 'text-green-500 text-sm font-bold mt-2'
-        : 'text-red-500 text-sm font-bold mt-2';
-
       // Keep wishlist variant in sync
       document.getElementById('wishlist-variant-id').value = this.value;
+      updateSelectedVariantUI(this.value);
     });
   });
 
-  // ── Wishlist toggle — data-attribute driven, no classList swapping ───
+  // ── Wishlist toggle — data-attribute driven, async fetch ──────────
   function toggleWishlist() {
     const btn      = document.getElementById('wishlist-btn');
     const icon     = document.getElementById('wishlist-icon');
     const isActive = btn.dataset.wishlisted === 'true';
 
-    // Flip state — CSS handles all visual changes via [data-wishlisted] selector
-    btn.dataset.wishlisted = isActive ? 'false' : 'true';
-    btn.title = isActive ? 'Save to Wishlist' : 'Remove from Wishlist';
-    icon.setAttribute('fill', isActive ? 'none' : 'currentColor');
+    // Optimistic flip — CSS handles all visual changes via [data-wishlisted] selector
+    const newState = !isActive;
+    btn.dataset.wishlisted = newState ? 'true' : 'false';
+    btn.title = newState ? 'Remove from Wishlist' : 'Save to Wishlist';
+    icon.setAttribute('fill', newState ? 'currentColor' : 'none');
 
     // Spring pop for tactile feedback
     icon.style.transition = 'transform 0.2s cubic-bezier(0.34,1.56,0.64,1)';
     icon.style.transform  = 'scale(1.3)';
     setTimeout(function() { icon.style.transform = 'scale(1)'; }, 200);
 
-    // Submit after animation lands
-    setTimeout(function() {
-      document.getElementById('wishlist-form').submit();
-    }, 260);
+    // Async request — no page reload
+    const form = document.getElementById('wishlist-form');
+    const formData = new FormData(form);
+
+    fetch(form.action, {
+      method: 'POST',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      body: formData,
+    })
+    .then(function(response) { return response.json(); })
+    .then(function(data) {
+      // Server is the source of truth — reconcile if different
+      const serverState = data.wishlisted;
+      btn.dataset.wishlisted = serverState ? 'true' : 'false';
+      btn.title = serverState ? 'Remove from Wishlist' : 'Save to Wishlist';
+      icon.setAttribute('fill', serverState ? 'currentColor' : 'none');
+    })
+    .catch(function() {
+      // Rollback on network error
+      btn.dataset.wishlisted = isActive ? 'true' : 'false';
+      btn.title = isActive ? 'Remove from Wishlist' : 'Save to Wishlist';
+      icon.setAttribute('fill', isActive ? 'currentColor' : 'none');
+    });
   }
 
   // ── Review image previews ────────────────────────────────────────────
@@ -665,9 +763,14 @@
         // Auto-select the first available size for the newly selected color if current selection is hidden
         const activeCheckedSize = document.querySelector(".variant-radio:checked");
         if (activeCheckedSize && activeCheckedSize.closest(".size-label").style.display === "none") {
-            const firstAvailableSize = document.querySelector(`.size-label[data-color="${selectedColor}"] .variant-radio:not([disabled])`);
-            if (firstAvailableSize) {
-                firstAvailableSize.checked = true;
+            let nextSize = document.querySelector(`.size-label[data-color="${selectedColor}"] .variant-radio:not([disabled])`);
+            if (!nextSize) {
+                nextSize = document.querySelector(`.size-label[data-color="${selectedColor}"] .variant-radio`);
+            }
+            if (nextSize) {
+                nextSize.checked = true;
+                document.getElementById('wishlist-variant-id').value = nextSize.value;
+                updateSelectedVariantUI(nextSize.value);
             }
         }
     }
@@ -679,6 +782,11 @@
 
     // Run on page load to establish default state
     updateSizeVisibility();
+    const initialChecked = document.querySelector(".variant-radio:checked");
+    if (initialChecked) {
+        document.getElementById('wishlist-variant-id').value = initialChecked.value;
+        updateSelectedVariantUI(initialChecked.value);
+    }
 });
 </script>
 

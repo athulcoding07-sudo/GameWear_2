@@ -45,8 +45,7 @@ def start_payment(request, order_id):
 
     payment.razorpay_order_id = razorpay_order["id"]
     payment.save()
-    print("KEY:", settings.RAZORPAY_KEY_ID)
-    print("ORDER:", razorpay_order)
+    
 
     context = {
         "order": order,

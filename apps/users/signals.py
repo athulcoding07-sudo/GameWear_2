@@ -53,7 +53,8 @@ def reward_referral_on_order_placed(sender, instance, created, **kwargs):
         user.referral_reward_granted = True
         user.save(update_fields=["referral_reward_granted"])
 
-        print("₹10 referral reward added to both wallets ✅")
+        
+        
 
 
 def connect_signals():

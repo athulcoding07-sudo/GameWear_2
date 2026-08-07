@@ -55,14 +55,14 @@ def signup_view(request):
             else:
                 messages.error(request, "Please correct the errors below.")
         except IntegrityError as e:
-            print("REAL ERROR:", e)
+            
             raise
             messages.error(
                 request,
                 "A user with this email or phone already exists."
             )
         except Exception as e:
-            print("REAL ERROR:", e)
+            
             raise
             messages.error(
                 request,
@@ -258,7 +258,7 @@ def reset_password_view(request):
 
         password1 = request.POST.get('password1')
         password2 = request.POST.get('password2')
-        print(f'{password1},{password2}')
+        
 
         if not password1 or not password2:
             messages.error(request, "All fields are required.")
@@ -401,15 +401,33 @@ def verify_email_change_otp(request):
     if not request.session.get("email_change"):
         return redirect("users:user_profile_edit")
 
+    otp = OTP.objects.filter(
+        user=request.user,
+        purpose="email_change",
+        is_used=False
+    ).last()
+
+    remaining_seconds = 0
+
+    if otp:
+        remaining_seconds = int((otp.expires_at - timezone.now()).total_seconds())
+
+        if remaining_seconds < 0:
+            remaining_seconds = 0
+
     if request.method == "POST":
         otp = request.POST.get("otp")
-        if verify_otp(
+
+        success, message = verify_otp(
             user=request.user,
             purpose="email_change",
             code=otp
-        ):
+        )
+
+        if success:
             pending = PendingEmail.objects.get(user=request.user)
-            # Update real email ONLY now
+
+            # Update email only after successful OTP verification
             request.user.email = pending.new_email
             request.user.save(update_fields=["email"])
 
@@ -419,9 +437,9 @@ def verify_email_change_otp(request):
             messages.success(request, "Email updated successfully.")
             return redirect("users:user_profile_edit")
 
-        messages.error(request, "Invalid or expired OTP.")
+        messages.error(request, message)
 
-    return render(request, "users/profile/verify_email_otp.html")
+    return render(request, "users/profile/verify_email_otp.html", {"remaining_seconds": remaining_seconds})
 
 @login_required
 def resend_email_change_otp(request):

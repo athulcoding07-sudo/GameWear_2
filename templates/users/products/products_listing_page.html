@@ -68,7 +68,7 @@
                             {% for category in categories %}
                             <label class="flex items-center cursor-pointer group">
                                 <input type="checkbox" name="category" value="{{ category.slug }}" class="hidden peer"
-                                    {% if category.slug in request.GET.getlist.category %}checked{% endif %}>
+                                    {% if category.slug in selected_category %}checked{% endif %}>
                                 <div
                                     class="w-5 h-5 border border-neutral-800 rounded-md bg-black peer-checked:bg-white peer-checked:border-white transition flex items-center justify-center mr-3">
                                     <svg class="w-3 h-3 text-black opacity-0 peer-checked:opacity-100" fill="none"
@@ -77,7 +77,12 @@
                                             d="M5 13l4 4L19 7" />
                                     </svg>
                                 </div>
-                                <span class="text-sm font-medium text-neutral-400 group-hover:text-white transition">{{category.name }}</span>
+                                <span class="text-sm font-medium {% if category.slug in selected_category %}text-white{% else %}text-neutral-400{% endif %} group-hover:text-white transition">{{ category.name }}</span>
+                                {% if category.slug in selected_category %}
+                                <span class="ml-auto px-2 py-0.5 bg-white text-black text-[9px] font-black uppercase rounded-full">
+                                    Active
+                                </span>
+                                {% endif %}
                             </label>
                             {% endfor %}
                         </div>
@@ -126,7 +131,7 @@
                 </div>
             </div>
 
-            {% if request.GET.category or request.GET.min_price or request.GET.max_price or request.GET.search %}
+            {% if selected_category or request.GET.min_price or request.GET.max_price or request.GET.search %}
             <div class="flex flex-wrap gap-2 mb-8 items-center animate-in fade-in slide-in-from-top-4 duration-500">
                 <span class="text-[9px] font-black uppercase text-neutral-600 mr-2">Applied:</span>
                 {% if request.GET.search %}
@@ -138,10 +143,10 @@
                 {% endif %}
 
                 {% for cat_obj in categories %}
-                {% if cat_obj.slug in request.GET.getlist.category or cat_obj.slug in request.GET.category %}
+                {% if cat_obj.slug in selected_category %}
                 <div class="flex items-center gap-2 bg-white text-black px-3 py-1.5 rounded-full shadow-lg">
                     <span class="text-[10px] font-black uppercase italic">{{ cat_obj.name }}</span>
-                    <a href="?{% for key,value in request.GET.items %}{% if key == 'category' %}{% for v in request.GET.getlist.category %}{% if v != cat_obj.slug %}category={{v}}&{% endif %}{% endfor %}{% elif key != 'page' %}{{key}}={{value}}&{% endif %}{% endfor %}"
+                    <a href="?{% for key,value in request.GET.items %}{% if key == 'category' %}{% for v in selected_category %}{% if v != cat_obj.slug %}category={{v}}&{% endif %}{% endfor %}{% elif key != 'page' %}{{key}}={{value}}&{% endif %}{% endfor %}"
                         class="text-black/40 hover:text-black transition font-bold">✕</a>
                 </div>
                 {% endif %}
@@ -267,28 +272,28 @@
 
 <!--  ADD PAGINATION HERE -->
 <div class="flex justify-center mt-10 gap-2">
-
+    {% with query_params=request.GET.urlencode %}
     {% if page_obj.has_previous %}
-        <a href="?page={{ page_obj.previous_page_number }}"
+        <a href="?{% if query_params %}{{ query_params }}&{% endif %}page={{ page_obj.previous_page_number }}"
            class="px-4 py-2 bg-neutral-800 text-white rounded">
            Previous
         </a>
     {% endif %}
 
     {% for num in page_obj.paginator.page_range %}
-        <a href="?page={{ num }}"
+        <a href="?{% if query_params %}{{ query_params }}&{% endif %}page={{ num }}"
            class="px-4 py-2 {% if page_obj.number == num %}bg-white text-black{% else %}bg-neutral-800 text-white{% endif %} rounded">
            {{ num }}
         </a>
     {% endfor %}
 
     {% if page_obj.has_next %}
-        <a href="?page={{ page_obj.next_page_number }}"
+        <a href="?{% if query_params %}{{ query_params }}&{% endif %}page={{ page_obj.next_page_number }}"
            class="px-4 py-2 bg-neutral-800 text-white rounded">
            Next
         </a>
     {% endif %}
-
+    {% endwith %}
 </div>
 
 

@@ -20,32 +20,6 @@ def get_pricing(variant):
         start_date__lte=now,
         end_date__gte=now,
     ).first()
-    print("\n========== OFFER DEBUG ==========")
-    print("NOW:", now)
-
-    print("\nALL PRODUCT OFFERS:")
-    for offer in ProductOffer.objects.filter(product=variant.product):
-        print(
-            "NAME:", offer.name,
-            "| ACTIVE:", offer.is_active,
-            "| START:", offer.start_date,
-            "| END:", offer.end_date,
-            "| VALID:", offer.is_valid,
-        )
-
-    print("\nALL CATEGORY OFFERS:")
-    for offer in CategoryOffer.objects.filter(
-        category=variant.product.category
-    ):
-        print(
-            "NAME:", offer.name,
-            "| ACTIVE:", offer.is_active,
-            "| START:", offer.start_date,
-            "| END:", offer.end_date,
-            "| VALID:", offer.is_valid,
-        )
-
-    print("=================================\n")
 
     offer = None
 
@@ -72,13 +46,10 @@ def get_pricing(variant):
         rounding=ROUND_HALF_UP
     )
 
-    
-
     return {
         "original_price": original_price,
         "discount_percentage": percentage,
         "offer_price": offer_price,
-        
         "offer": offer,
     }
 

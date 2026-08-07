@@ -158,58 +158,74 @@
                     </svg>
                 </button>
             </div>
-            <form method="POST" action="{% url 'users:add_address' %}" class="p-8 space-y-6">
+            <form method="POST" action="{% url 'users:add_address' %}" class="p-8 space-y-6" id="addAddressForm" novalidate>
                 {% csrf_token %}
                 <input type="hidden" name="next" value="{{ next_page }}">
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="col-span-2 space-y-2">
                         <label class="text-[9px] font-black text-neutral-500 uppercase tracking-widest px-1">Full
-                            Name</label>
-                        <input type="text" name="full_name" required
-                            class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-sm text-neutral-300 focus:outline-none focus:border-white transition" />
+                            Name <span class="text-rose-500">*</span></label>
+                        <input type="text" name="full_name" id="add_full_name" required maxlength="100" pattern="[A-Za-z]+"
+                            class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-sm text-neutral-300 focus:outline-none focus:border-white transition"
+                            placeholder="Letters only, no spaces or numbers" />
+                        <p id="add_full_name_error" class="text-rose-500 text-[10px] font-medium hidden">Name must contain only letters (A-Z, a-z), no spaces, numbers, or special characters.</p>
                     </div>
                     <div class="col-span-2 space-y-2">
                         <label
-                            class="text-[9px] font-black text-neutral-500 uppercase tracking-widest px-1">Phone</label>
-                        <input type="tel" name="phone" required
-                            class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-sm text-neutral-300 focus:outline-none focus:border-white transition" />
+                            class="text-[9px] font-black text-neutral-500 uppercase tracking-widest px-1">Phone <span class="text-rose-500">*</span></label>
+                        <input type="tel" name="phone" id="add_phone" required maxlength="10" pattern="[6-9][0-9]{9}"
+                            class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-sm text-neutral-300 focus:outline-none focus:border-white transition"
+                            placeholder="10-digit Indian mobile (6-9)" />
+                        <p id="add_phone_error" class="text-rose-500 text-[10px] font-medium hidden">Enter a valid 10-digit Indian mobile number starting with 6-9, no repeated digits.</p>
                     </div>
                     <div class="col-span-2 space-y-2">
                         <label class="text-[9px] font-black text-neutral-500 uppercase tracking-widest px-1">Address
-                            1</label>
-                        <input type="text" name="address_line_1" required
-                            class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-sm text-neutral-300 focus:outline-none focus:border-white transition" />
+                            1 <span class="text-rose-500">*</span></label>
+                        <input type="text" name="address_line_1" id="add_address_line_1" required maxlength="255"
+                            class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-sm text-neutral-300 focus:outline-none focus:border-white transition"
+                            placeholder="Street address, building name, etc." />
+                        <p id="add_address_line_1_error" class="text-rose-500 text-[10px] font-medium hidden">Address line 1 is required (max 255 characters).</p>
                     </div>
                     <div class="col-span-2 space-y-2">
                         <label class="text-[9px] font-black text-neutral-500 uppercase tracking-widest px-1">Address
                             2</label>
-                        <input type="text" name="address_line_2"
-                            class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-sm text-neutral-300 focus:outline-none focus:border-white transition" />
+                        <input type="text" name="address_line_2" id="add_address_line_2" maxlength="255"
+                            class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-sm text-neutral-300 focus:outline-none focus:border-white transition"
+                            placeholder="Apartment, suite, floor, etc. (optional)" />
+                        <p id="add_address_line_2_error" class="text-rose-500 text-[10px] font-medium hidden">Address line 2 must be 255 characters or less.</p>
                     </div>
                     <div class="space-y-2">
                         <label
-                            class="text-[9px] font-black text-neutral-500 uppercase tracking-widest px-1">Country</label>
-                        <input type="text" name="country" required
-                            class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-sm text-neutral-300 focus:outline-none focus:border-white transition" />
+                            class="text-[9px] font-black text-neutral-500 uppercase tracking-widest px-1">Country <span class="text-rose-500">*</span></label>
+                        <input type="text" name="country" id="add_country" required maxlength="100"
+                            class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-sm text-neutral-300 focus:outline-none focus:border-white transition"
+                            placeholder="Country name" />
+                        <p id="add_country_error" class="text-rose-500 text-[10px] font-medium hidden">Country is required (max 100 characters).</p>
                     </div>
                     <div class="space-y-2">
                         <label
-                            class="text-[9px] font-black text-neutral-500 uppercase tracking-widest px-1">State</label>
-                        <input type="text" name="state" required
-                            class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-sm text-neutral-300 focus:outline-none focus:border-white transition" />
+                            class="text-[9px] font-black text-neutral-500 uppercase tracking-widest px-1">State <span class="text-rose-500">*</span></label>
+                        <input type="text" name="state" id="add_state" required maxlength="100"
+                            class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-sm text-neutral-300 focus:outline-none focus:border-white transition"
+                            placeholder="State/Province" />
+                        <p id="add_state_error" class="text-rose-500 text-[10px] font-medium hidden">State is required (max 100 characters).</p>
                     </div>
                     <div class="space-y-2">
                         <label
-                            class="text-[9px] font-black text-neutral-500 uppercase tracking-widest px-1">City</label>
-                        <input type="text" name="city" required
-                            class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-sm text-neutral-300 focus:outline-none focus:border-white transition" />
+                            class="text-[9px] font-black text-neutral-500 uppercase tracking-widest px-1">City <span class="text-rose-500">*</span></label>
+                        <input type="text" name="city" id="add_city" required maxlength="100"
+                            class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-sm text-neutral-300 focus:outline-none focus:border-white transition"
+                            placeholder="City" />
+                        <p id="add_city_error" class="text-rose-500 text-[10px] font-medium hidden">City is required (max 100 characters).</p>
                     </div>
                     <div class="space-y-2">
                         <label class="text-[9px] font-black text-neutral-500 uppercase tracking-widest px-1">Zip
-                            Code</label>
-                        <input type="text" name="postal_code" required
-                            class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-sm text-neutral-300 focus:outline-none focus:border-white transition" />
+                            Code <span class="text-rose-500">*</span></label>
+                        <input type="text" name="postal_code" id="add_postal_code" required maxlength="10" pattern="[0-9]{4,10}"
+                            class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-sm text-neutral-300 focus:outline-none focus:border-white transition"
+                            placeholder="4-10 digit postal code" />
+                        <p id="add_postal_code_error" class="text-rose-500 text-[10px] font-medium hidden">Enter a valid 4-10 digit postal code.</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-3">
@@ -244,57 +260,73 @@
                     </svg>
                 </button>
             </div>
-            <form method="POST" action="{% url 'users:edit_address' %}" class="p-8 space-y-6">
+            <form method="POST" action="{% url 'users:edit_address' %}" class="p-8 space-y-6" id="editAddressForm" novalidate>
                 {% csrf_token %}
                 <input type="hidden" name="address_id" id="edit_address_id">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="col-span-2 space-y-2">
                         <label class="text-[9px] font-black text-neutral-500 uppercase tracking-widest px-1">Full
-                            Name</label>
-                        <input type="text" name="full_name" id="edit_full_name" required
-                            class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-sm text-neutral-300 focus:outline-none focus:border-white transition" />
+                            Name <span class="text-rose-500">*</span></label>
+                        <input type="text" name="full_name" id="edit_full_name" required maxlength="100" pattern="[A-Za-z]+"
+                            class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-sm text-neutral-300 focus:outline-none focus:border-white transition"
+                            placeholder="Letters only, no spaces or numbers" />
+                        <p id="edit_full_name_error" class="text-rose-500 text-[10px] font-medium hidden">Name must contain only letters (A-Z, a-z), no spaces, numbers, or special characters.</p>
                     </div>
                     <div class="col-span-2 space-y-2">
                         <label
-                            class="text-[9px] font-black text-neutral-500 uppercase tracking-widest px-1">Phone</label>
-                        <input type="tel" name="phone" id="edit_phone" required
-                            class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-sm text-neutral-300 focus:outline-none focus:border-white transition" />
+                            class="text-[9px] font-black text-neutral-500 uppercase tracking-widest px-1">Phone <span class="text-rose-500">*</span></label>
+                        <input type="tel" name="phone" id="edit_phone" required maxlength="10" pattern="[6-9][0-9]{9}"
+                            class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-sm text-neutral-300 focus:outline-none focus:border-white transition"
+                            placeholder="10-digit Indian mobile (6-9)" />
+                        <p id="edit_phone_error" class="text-rose-500 text-[10px] font-medium hidden">Enter a valid 10-digit Indian mobile number starting with 6-9, no repeated digits.</p>
                     </div>
                     <div class="col-span-2 space-y-2">
                         <label class="text-[9px] font-black text-neutral-500 uppercase tracking-widest px-1">Address
-                            1</label>
-                        <input type="text" name="address_line_1" id="edit_address_line_1" required
-                            class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-sm text-neutral-300 focus:outline-none focus:border-white transition" />
+                            1 <span class="text-rose-500">*</span></label>
+                        <input type="text" name="address_line_1" id="edit_address_line_1" required maxlength="255"
+                            class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-sm text-neutral-300 focus:outline-none focus:border-white transition"
+                            placeholder="Street address, building name, etc." />
+                        <p id="edit_address_line_1_error" class="text-rose-500 text-[10px] font-medium hidden">Address line 1 is required (max 255 characters).</p>
                     </div>
                     <div class="col-span-2 space-y-2">
                         <label class="text-[9px] font-black text-neutral-500 uppercase tracking-widest px-1">Address
                             2</label>
-                        <input type="text" name="address_line_2" id="edit_address_line_2"
-                            class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-sm text-neutral-300 focus:outline-none focus:border-white transition" />
+                        <input type="text" name="address_line_2" id="edit_address_line_2" maxlength="255"
+                            class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-sm text-neutral-300 focus:outline-none focus:border-white transition"
+                            placeholder="Apartment, suite, floor, etc. (optional)" />
+                        <p id="edit_address_line_2_error" class="text-rose-500 text-[10px] font-medium hidden">Address line 2 must be 255 characters or less.</p>
                     </div>
                     <div class="space-y-2">
                         <label
-                            class="text-[9px] font-black text-neutral-500 uppercase tracking-widest px-1">Country</label>
-                        <input type="text" name="country" id="edit_country" required
-                            class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-sm text-neutral-300 focus:outline-none focus:border-white transition" />
+                            class="text-[9px] font-black text-neutral-500 uppercase tracking-widest px-1">Country <span class="text-rose-500">*</span></label>
+                        <input type="text" name="country" id="edit_country" required maxlength="100"
+                            class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-sm text-neutral-300 focus:outline-none focus:border-white transition"
+                            placeholder="Country name" />
+                        <p id="edit_country_error" class="text-rose-500 text-[10px] font-medium hidden">Country is required (max 100 characters).</p>
                     </div>
                     <div class="space-y-2">
                         <label
-                            class="text-[9px] font-black text-neutral-500 uppercase tracking-widest px-1">State</label>
-                        <input type="text" name="state" id="edit_state" required
-                            class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-sm text-neutral-300 focus:outline-none focus:border-white transition" />
+                            class="text-[9px] font-black text-neutral-500 uppercase tracking-widest px-1">State <span class="text-rose-500">*</span></label>
+                        <input type="text" name="state" id="edit_state" required maxlength="100"
+                            class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-sm text-neutral-300 focus:outline-none focus:border-white transition"
+                            placeholder="State/Province" />
+                        <p id="edit_state_error" class="text-rose-500 text-[10px] font-medium hidden">State is required (max 100 characters).</p>
                     </div>
                     <div class="space-y-2">
                         <label
-                            class="text-[9px] font-black text-neutral-500 uppercase tracking-widest px-1">City</label>
-                        <input type="text" name="city" id="edit_city" required
-                            class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-sm text-neutral-300 focus:outline-none focus:border-white transition" />
+                            class="text-[9px] font-black text-neutral-500 uppercase tracking-widest px-1">City <span class="text-rose-500">*</span></label>
+                        <input type="text" name="city" id="edit_city" required maxlength="100"
+                            class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-sm text-neutral-300 focus:outline-none focus:border-white transition"
+                            placeholder="City" />
+                        <p id="edit_city_error" class="text-rose-500 text-[10px] font-medium hidden">City is required (max 100 characters).</p>
                     </div>
                     <div class="space-y-2">
                         <label class="text-[9px] font-black text-neutral-500 uppercase tracking-widest px-1">Zip
-                            Code</label>
-                        <input type="text" name="postal_code" id="edit_postal_code" required
-                            class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-sm text-neutral-300 focus:outline-none focus:border-white transition" />
+                            Code <span class="text-rose-500">*</span></label>
+                        <input type="text" name="postal_code" id="edit_postal_code" required maxlength="10" pattern="[0-9]{4,10}"
+                            class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-sm text-neutral-300 focus:outline-none focus:border-white transition"
+                            placeholder="4-10 digit postal code" />
+                        <p id="edit_postal_code_error" class="text-rose-500 text-[10px] font-medium hidden">Enter a valid 4-10 digit postal code.</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-3">
@@ -349,6 +381,284 @@
         document.body.classList.remove('overflow-hidden');
     }
 
+    // Validation Functions
+    function validateFullName(value, errorId) {
+        const errorEl = document.getElementById(errorId);
+        const nameRegex = /^[A-Za-z]+$/;
+        if (!value.trim()) {
+            showError(errorEl, 'Full name is required.');
+            return false;
+        }
+        if (!nameRegex.test(value.trim())) {
+            showError(errorEl, 'Name must contain only letters (A-Z, a-z), no spaces, numbers, or special characters.');
+            return false;
+        }
+        if (value.length > 100) {
+            showError(errorEl, 'Name must be 100 characters or less.');
+            return false;
+        }
+        hideError(errorEl);
+        return true;
+    }
+
+    function validatePhone(value, errorId) {
+        const errorEl = document.getElementById(errorId);
+        const phoneRegex = /^[6-9][0-9]{9}$/;
+        if (!value.trim()) {
+            showError(errorEl, 'Phone number is required.');
+            return false;
+        }
+        if (!phoneRegex.test(value.trim())) {
+            showError(errorEl, 'Enter a valid 10-digit Indian mobile number starting with 6-9.');
+            return false;
+        }
+        // Check for repeated digits (e.g., 9999999999, 1111111111)
+        if (/^(\d)\1{9}$/.test(value.trim())) {
+            showError(errorEl, 'Phone number cannot contain the same digit repeated.');
+            return false;
+        }
+        hideError(errorEl);
+        return true;
+    }
+
+    function validateAddressLine1(value, errorId) {
+        const errorEl = document.getElementById(errorId);
+        if (!value.trim()) {
+            showError(errorEl, 'Address line 1 is required.');
+            return false;
+        }
+        if (value.length > 255) {
+            showError(errorEl, 'Address line 1 must be 255 characters or less.');
+            return false;
+        }
+        hideError(errorEl);
+        return true;
+    }
+
+    function validateAddressLine2(value, errorId) {
+        const errorEl = document.getElementById(errorId);
+        if (value && value.length > 255) {
+            showError(errorEl, 'Address line 2 must be 255 characters or less.');
+            return false;
+        }
+        hideError(errorEl);
+        return true;
+    }
+
+    function validateCountry(value, errorId) {
+        const errorEl = document.getElementById(errorId);
+        if (!value.trim()) {
+            showError(errorEl, 'Country is required.');
+            return false;
+        }
+        if (value.length > 100) {
+            showError(errorEl, 'Country must be 100 characters or less.');
+            return false;
+        }
+        hideError(errorEl);
+        return true;
+    }
+
+    function validateState(value, errorId) {
+        const errorEl = document.getElementById(errorId);
+        if (!value.trim()) {
+            showError(errorEl, 'State is required.');
+            return false;
+        }
+        if (value.length > 100) {
+            showError(errorEl, 'State must be 100 characters or less.');
+            return false;
+        }
+        hideError(errorEl);
+        return true;
+    }
+
+    function validateCity(value, errorId) {
+        const errorEl = document.getElementById(errorId);
+        if (!value.trim()) {
+            showError(errorEl, 'City is required.');
+            return false;
+        }
+        if (value.length > 100) {
+            showError(errorEl, 'City must be 100 characters or less.');
+            return false;
+        }
+        hideError(errorEl);
+        return true;
+    }
+
+    function validatePostalCode(value, errorId) {
+        const errorEl = document.getElementById(errorId);
+        const postalRegex = /^[0-9]{4,10}$/;
+        if (!value.trim()) {
+            showError(errorEl, 'Postal code is required.');
+            return false;
+        }
+        if (!postalRegex.test(value.trim())) {
+            showError(errorEl, 'Enter a valid 4-10 digit postal code.');
+            return false;
+        }
+        hideError(errorEl);
+        return true;
+    }
+
+    function showError(element, message) {
+        if (element) {
+            element.textContent = message;
+            element.classList.remove('hidden');
+        }
+    }
+
+    function hideError(element) {
+        if (element) {
+            element.classList.add('hidden');
+        }
+    }
+
+    function clearErrors(formId) {
+        const form = document.getElementById(formId);
+        if (!form) return;
+        const errorElements = form.querySelectorAll('[id$="_error"]');
+        errorElements.forEach(el => el.classList.add('hidden'));
+        const inputs = form.querySelectorAll('input[required]');
+        inputs.forEach(input => {
+            input.classList.remove('border-rose-500', 'focus:border-rose-500');
+            input.classList.add('border-neutral-800', 'focus:border-white');
+        });
+    }
+
+    function setInputError(inputId) {
+        const input = document.getElementById(inputId);
+        if (input) {
+            input.classList.add('border-rose-500', 'focus:border-rose-500');
+            input.classList.remove('border-neutral-800', 'focus:border-white');
+        }
+    }
+
+    function clearInputError(inputId) {
+        const input = document.getElementById(inputId);
+        if (input) {
+            input.classList.remove('border-rose-500', 'focus:border-rose-500');
+            input.classList.add('border-neutral-800', 'focus:border-white');
+        }
+    }
+
+    // Real-time validation on input/blur
+    function setupRealTimeValidation() {
+        // Add Address Form
+        const addForm = document.getElementById('addAddressForm');
+        if (addForm) {
+            addForm.addEventListener('input', (e) => {
+                const target = e.target;
+                if (target.id === 'add_full_name') {
+                    validateFullName(target.value, 'add_full_name_error') ? clearInputError('add_full_name') : setInputError('add_full_name');
+                } else if (target.id === 'add_phone') {
+                    validatePhone(target.value, 'add_phone_error') ? clearInputError('add_phone') : setInputError('add_phone');
+                } else if (target.id === 'add_address_line_1') {
+                    validateAddressLine1(target.value, 'add_address_line_1_error') ? clearInputError('add_address_line_1') : setInputError('add_address_line_1');
+                } else if (target.id === 'add_address_line_2') {
+                    validateAddressLine2(target.value, 'add_address_line_2_error') ? clearInputError('add_address_line_2') : setInputError('add_address_line_2');
+                } else if (target.id === 'add_country') {
+                    validateCountry(target.value, 'add_country_error') ? clearInputError('add_country') : setInputError('add_country');
+                } else if (target.id === 'add_state') {
+                    validateState(target.value, 'add_state_error') ? clearInputError('add_state') : setInputError('add_state');
+                } else if (target.id === 'add_city') {
+                    validateCity(target.value, 'add_city_error') ? clearInputError('add_city') : setInputError('add_city');
+                } else if (target.id === 'add_postal_code') {
+                    validatePostalCode(target.value, 'add_postal_code_error') ? clearInputError('add_postal_code') : setInputError('add_postal_code');
+                }
+            });
+
+            addForm.addEventListener('submit', (e) => {
+                const isValid = validateAddAddressForm();
+                if (!isValid) {
+                    e.preventDefault();
+                }
+            });
+        }
+
+        // Edit Address Form
+        const editForm = document.getElementById('editAddressForm');
+        if (editForm) {
+            editForm.addEventListener('input', (e) => {
+                const target = e.target;
+                if (target.id === 'edit_full_name') {
+                    validateFullName(target.value, 'edit_full_name_error') ? clearInputError('edit_full_name') : setInputError('edit_full_name');
+                } else if (target.id === 'edit_phone') {
+                    validatePhone(target.value, 'edit_phone_error') ? clearInputError('edit_phone') : setInputError('edit_phone');
+                } else if (target.id === 'edit_address_line_1') {
+                    validateAddressLine1(target.value, 'edit_address_line_1_error') ? clearInputError('edit_address_line_1') : setInputError('edit_address_line_1');
+                } else if (target.id === 'edit_address_line_2') {
+                    validateAddressLine2(target.value, 'edit_address_line_2_error') ? clearInputError('edit_address_line_2') : setInputError('edit_address_line_2');
+                } else if (target.id === 'edit_country') {
+                    validateCountry(target.value, 'edit_country_error') ? clearInputError('edit_country') : setInputError('edit_country');
+                } else if (target.id === 'edit_state') {
+                    validateState(target.value, 'edit_state_error') ? clearInputError('edit_state') : setInputError('edit_state');
+                } else if (target.id === 'edit_city') {
+                    validateCity(target.value, 'edit_city_error') ? clearInputError('edit_city') : setInputError('edit_city');
+                } else if (target.id === 'edit_postal_code') {
+                    validatePostalCode(target.value, 'edit_postal_code_error') ? clearInputError('edit_postal_code') : setInputError('edit_postal_code');
+                }
+            });
+
+            editForm.addEventListener('submit', (e) => {
+                const isValid = validateEditAddressForm();
+                if (!isValid) {
+                    e.preventDefault();
+                }
+            });
+        }
+    }
+
+    function validateAddAddressForm() {
+        let isValid = true;
+        const form = document.getElementById('addAddressForm');
+
+        isValid = validateFullName(document.getElementById('add_full_name').value, 'add_full_name_error') && isValid;
+        isValid = validatePhone(document.getElementById('add_phone').value, 'add_phone_error') && isValid;
+        isValid = validateAddressLine1(document.getElementById('add_address_line_1').value, 'add_address_line_1_error') && isValid;
+        isValid = validateAddressLine2(document.getElementById('add_address_line_2').value, 'add_address_line_2_error') && isValid;
+        isValid = validateCountry(document.getElementById('add_country').value, 'add_country_error') && isValid;
+        isValid = validateState(document.getElementById('add_state').value, 'add_state_error') && isValid;
+        isValid = validateCity(document.getElementById('add_city').value, 'add_city_error') && isValid;
+        isValid = validatePostalCode(document.getElementById('add_postal_code').value, 'add_postal_code_error') && isValid;
+
+        if (!isValid) {
+            // Focus first invalid field
+            const firstInvalid = form.querySelector('[id$="_error"]:not(.hidden)');
+            if (firstInvalid) {
+                const inputId = firstInvalid.id.replace('_error', '');
+                const input = document.getElementById(inputId);
+                if (input) input.focus();
+            }
+        }
+        return isValid;
+    }
+
+    function validateEditAddressForm() {
+        let isValid = true;
+        const form = document.getElementById('editAddressForm');
+
+        isValid = validateFullName(document.getElementById('edit_full_name').value, 'edit_full_name_error') && isValid;
+        isValid = validatePhone(document.getElementById('edit_phone').value, 'edit_phone_error') && isValid;
+        isValid = validateAddressLine1(document.getElementById('edit_address_line_1').value, 'edit_address_line_1_error') && isValid;
+        isValid = validateAddressLine2(document.getElementById('edit_address_line_2').value, 'edit_address_line_2_error') && isValid;
+        isValid = validateCountry(document.getElementById('edit_country').value, 'edit_country_error') && isValid;
+        isValid = validateState(document.getElementById('edit_state').value, 'edit_state_error') && isValid;
+        isValid = validateCity(document.getElementById('edit_city').value, 'edit_city_error') && isValid;
+        isValid = validatePostalCode(document.getElementById('edit_postal_code').value, 'edit_postal_code_error') && isValid;
+
+        if (!isValid) {
+            const firstInvalid = form.querySelector('[id$="_error"]:not(.hidden)');
+            if (firstInvalid) {
+                const inputId = firstInvalid.id.replace('_error', '');
+                const input = document.getElementById(inputId);
+                if (input) input.focus();
+            }
+        }
+        return isValid;
+    }
+
     function openEditModal(id, fullName, phone, addr1, addr2, city, state, zip, country, isDefault) {
         // Correct IDs (fixed the 'addrress' typo)
         document.getElementById("edit_address_id").value = id;
@@ -364,6 +674,9 @@
         // Django renders booleans as 'True'/'False' strings
         document.getElementById("edit_is_default").checked = (isDefault === "True");
 
+        // Clear any previous validation errors when opening edit modal
+        clearErrors('editAddressForm');
+
         openModal("editAddressModal");
     }
 
@@ -371,5 +684,8 @@
         document.getElementById('delete_address_id').value = id;
         openModal('deleteAddressModal');
     }
+
+    // Initialize real-time validation when DOM is loaded
+    document.addEventListener('DOMContentLoaded', setupRealTimeValidation);
 </script>
 {% endblock %}

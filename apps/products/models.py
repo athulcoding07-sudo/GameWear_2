@@ -204,6 +204,10 @@ class ProductVariant(models.Model):
         default=True
     )
 
+    is_default = models.BooleanField(
+        default=False
+    )
+
     created_at = models.DateTimeField(
         auto_now_add=True
     )
@@ -217,6 +221,11 @@ class ProductVariant(models.Model):
                     "color",
                 ],
                 name="unique_variant_per_product",
+            ),
+            models.UniqueConstraint(
+                fields=["product"],
+                condition=models.Q(is_default=True),
+                name="one_default_variant_per_product",
             )
         ]
 
@@ -273,15 +282,17 @@ class ProductVariant(models.Model):
             )
 
     def save(self, *args, **kwargs):
-
         if not self.sku:
             self.sku = self.generate_sku()
 
-        self.is_active = (
-            self.stock > 0
-        )
+        with transaction.atomic():
+            if self.is_default:
+                ProductVariant.objects.filter(
+                    product=self.product,
+                    is_default=True,
+                ).exclude(pk=self.pk).update(is_default=False)
 
-        super().save(*args, **kwargs)
+            super().save(*args, **kwargs)
 
     @property
     def pricing(self):
