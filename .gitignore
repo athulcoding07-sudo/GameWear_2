@@ -8,4 +8,7 @@ media/
 yes
 yes.pub
 packages.microsoft.gpg
+ai-context
+test_plan.md
+.pylintrc
 # Django settings (local)
