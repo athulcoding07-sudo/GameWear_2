@@ -27,6 +27,8 @@ from django.views.decorators.http import require_http_methods
 from apps.products.models import Product, Category
 from apps.offers.models import ProductOffer
 from apps.offers.services.product_offer_service import ProductOfferService
+from apps.common.decorators import admin_required
+
 
 
 def _parse_body(request):
@@ -42,7 +44,7 @@ def _parse_body(request):
             return {}
     return request.POST.dict()
 
-
+@admin_required
 def product_offer_list(request):
     """
     Renders the Product Offers page. If called with ?ajax=1, returns just
@@ -79,7 +81,7 @@ def product_offer_list(request):
         },
     )
 
-
+@admin_required
 @require_http_methods(["POST"])
 def product_offer_create(request):
     data = _parse_body(request)
@@ -94,7 +96,7 @@ def product_offer_create(request):
 
     return JsonResponse({"success": True, "message": "Product offer created successfully."})
 
-
+@admin_required
 def product_offer_update(request, pk):
     offer = get_object_or_404(ProductOffer, pk=pk)
 
@@ -126,14 +128,14 @@ def product_offer_update(request, pk):
 
     return JsonResponse({"success": False, "message": "Invalid request."}, status=400)
 
-
+@admin_required
 @require_http_methods(["DELETE"])
 def product_offer_delete(request, pk):
     offer = get_object_or_404(ProductOffer, pk=pk)
     ProductOfferService.delete(offer)
     return JsonResponse({"success": True, "message": "Product offer deleted."})
 
-
+@admin_required
 @require_http_methods(["POST"])
 def product_offer_toggle(request, pk):
     offer = get_object_or_404(ProductOffer, pk=pk)
@@ -141,7 +143,7 @@ def product_offer_toggle(request, pk):
     status_word = "activated" if offer.is_active else "deactivated"
     return JsonResponse({"success": True, "message": f"Offer {status_word}."})
 
-
+@admin_required
 def products_by_category(request, category_id):
     products = Product.objects.filter(
         category_id=category_id,
@@ -153,7 +155,7 @@ def products_by_category(request, category_id):
 # ============================================================
 # Category Offers
 # ============================================================
-
+@admin_required
 def category_offer_list(request):
 
     offers = CategoryOfferService.get_all()
@@ -181,7 +183,7 @@ def category_offer_list(request):
         },
     )
 
-
+@admin_required
 @require_http_methods(["POST"])
 def category_offer_add(request):
 
@@ -201,7 +203,7 @@ def category_offer_add(request):
             "message": str(e),
         }, status=400)
 
-
+@admin_required
 @require_http_methods(["GET", "POST"])
 def category_offer_edit(request, pk):
 
@@ -233,7 +235,7 @@ def category_offer_edit(request, pk):
             "message": str(e),
         }, status=400)
 
-
+@admin_required
 @require_http_methods(["POST"])
 def category_offer_toggle(request, pk):
     offer = get_object_or_404(CategoryOffer, pk=pk)
@@ -251,7 +253,7 @@ def category_offer_toggle(request, pk):
         "message": f"Offer {status_word}.",
     })
 
-
+@admin_required
 @require_http_methods(["DELETE"])
 def category_offer_delete(request, pk):
 
