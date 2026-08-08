@@ -7,5 +7,5 @@ staticfiles/
 media/
 yes
 yes.pub
-
+packages.microsoft.gpg
 # Django settings (local)
