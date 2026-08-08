@@ -11,4 +11,5 @@ packages.microsoft.gpg
 ai-context
 test_plan.md
 .pylintric
+.vscode
 # Django settings (local)
