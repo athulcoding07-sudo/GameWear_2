@@ -22,7 +22,8 @@ from apps.coupons.services.dashboard_coupon_services import (
 
 @admin_required
 def coupon_list_view(request):
-    coupons = get_all_coupons()
+    status = request.GET.get('status', 'all')
+    coupons = get_all_coupons(status=status)
 
     # AJAX table refresh
     if request.GET.get("ajax"):

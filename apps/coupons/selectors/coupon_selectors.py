@@ -15,6 +15,14 @@ def get_coupon_by_code(code):
     ).first()
 
 
-def get_all_coupons():
+def get_all_coupons(status=None):
 
-    return Coupon.objects.all()
+    queryset = Coupon.objects.all()
+
+    if status == 'active':
+        queryset = queryset.filter(is_active=True)
+    elif status == 'inactive':
+        queryset = queryset.filter(is_active=False)
+    # 'all' or None returns all coupons
+
+    return queryset

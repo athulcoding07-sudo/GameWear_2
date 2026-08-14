@@ -7,60 +7,209 @@
 
 <style>
   @keyframes rise {
-    from { transform: translateY(24px); opacity: 0; }
-    to   { transform: translateY(0);    opacity: 1; }
+    from {
+      transform: translateY(24px);
+      opacity: 0;
+    }
+
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
   }
-  .a1 { animation: rise 0.5s ease both 0.05s; }
-  .a2 { animation: rise 0.5s ease both 0.15s; }
-  .a3 { animation: rise 0.5s ease both 0.25s; }
-  .a4 { animation: rise 0.5s ease both 0.35s; }
-  .a5 { animation: rise 0.5s ease both 0.45s; }
-  .a6 { animation: rise 0.5s ease both 0.55s; }
+
+  .a1 {
+    animation: rise 0.5s ease both 0.05s;
+  }
+
+  .a2 {
+    animation: rise 0.5s ease both 0.15s;
+  }
+
+  .a3 {
+    animation: rise 0.5s ease both 0.25s;
+  }
+
+  .a4 {
+    animation: rise 0.5s ease both 0.35s;
+  }
+
+  .a5 {
+    animation: rise 0.5s ease both 0.45s;
+  }
+
+  .a6 {
+    animation: rise 0.5s ease both 0.55s;
+  }
 
   /* Toast */
-  @keyframes toast-in  { from { transform: translateY(-16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-  @keyframes toast-out { from { opacity: 1; } to { opacity: 0; transform: translateY(-8px); } }
-  .toast       { animation: toast-in 0.35s cubic-bezier(0.34,1.56,0.64,1) both; }
-  .toast-dying { animation: toast-out 0.4s ease both; }
+  @keyframes toast-in {
+    from {
+      transform: translateY(-16px);
+      opacity: 0;
+    }
+
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes toast-out {
+    from {
+      opacity: 1;
+    }
+
+    to {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+  }
+
+  .toast {
+    animation: toast-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+
+  .toast-dying {
+    animation: toast-out 0.4s ease both;
+  }
 
   /* Status badge colours */
-  .badge-pending          { background: rgba(234,179,8,0.12);  border-color: rgba(234,179,8,0.4);  color: #facc15; }
-  .badge-confirmed        { background: rgba(59,130,246,0.12); border-color: rgba(59,130,246,0.4); color: #60a5fa; }
-  .badge-preparing        { background: rgba(249,115,22,0.12); border-color: rgba(249,115,22,0.4); color: #fb923c; }
-  .badge-shipped          { background: rgba(168,85,247,0.12); border-color: rgba(168,85,247,0.4); color: #c084fc; }
-  .badge-delivered        { background: rgba(34,197,94,0.12);  border-color: rgba(34,197,94,0.4);  color: #4ade80; }
-  .badge-cancelled        { background: rgba(239,68,68,0.12);  border-color: rgba(239,68,68,0.4);  color: #f87171; }
-  .badge-partial_cancelled{ background: rgba(249,115,22,0.12); border-color: rgba(249,115,22,0.4); color: #fb923c; }
-  .badge-return_requested { background: rgba(245,158,11,0.12); border-color: rgba(245,158,11,0.4); color: #fbbf24; }
-  .badge-returned         { background: rgba(115,115,115,0.15); border-color: rgba(115,115,115,0.4); color: #a3a3a3; }
-  .badge-refunded         { background: rgba(20,184,166,0.12); border-color: rgba(20,184,166,0.4); color: #2dd4bf; }
+  .badge-pending {
+    background: rgba(234, 179, 8, 0.12);
+    border-color: rgba(234, 179, 8, 0.4);
+    color: #facc15;
+  }
+
+  .badge-confirmed {
+    background: rgba(59, 130, 246, 0.12);
+    border-color: rgba(59, 130, 246, 0.4);
+    color: #60a5fa;
+  }
+
+  .badge-packed {
+    background: rgba(249, 115, 22, 0.12);
+    border-color: rgba(249, 115, 22, 0.4);
+    color: #fb923c;
+  }
+
+  .badge-out_for_delivery {
+    background: rgba(249, 115, 22, 0.12);
+    border-color: rgba(249, 115, 22, 0.4);
+    color: #fb923c;
+  }
+
+  .badge-shipped {
+    background: rgba(168, 85, 247, 0.12);
+    border-color: rgba(168, 85, 247, 0.4);
+    color: #c084fc;
+  }
+
+  .badge-delivered {
+    background: rgba(34, 197, 94, 0.12);
+    border-color: rgba(34, 197, 94, 0.4);
+    color: #4ade80;
+  }
+
+  .badge-cancelled {
+    background: rgba(239, 68, 68, 0.12);
+    border-color: rgba(239, 68, 68, 0.4);
+    color: #f87171;
+  }
+
+  .badge-partial_cancelled {
+    background: rgba(249, 115, 22, 0.12);
+    border-color: rgba(249, 115, 22, 0.4);
+    color: #fb923c;
+  }
+
+  .badge-return_requested {
+    background: rgba(245, 158, 11, 0.12);
+    border-color: rgba(245, 158, 11, 0.4);
+    color: #fbbf24;
+  }
+
+  .badge-returned {
+    background: rgba(115, 115, 115, 0.15);
+    border-color: rgba(115, 115, 115, 0.4);
+    color: #a3a3a3;
+  }
+
+  .badge-refunded {
+    background: rgba(20, 184, 166, 0.12);
+    border-color: rgba(20, 184, 166, 0.4);
+    color: #2dd4bf;
+  }
+
+  .badge-partial_returned {
+    background: rgba(245, 158, 11, 0.12);
+    border-color: rgba(245, 158, 11, 0.4);
+    color: #fbbf24;
+  }
+
+  .badge-partial_refunded {
+    background: rgba(20, 184, 166, 0.12);
+    border-color: rgba(20, 184, 166, 0.4);
+    color: #2dd4bf;
+  }
 
   /* Item-level cancelled/returned stripe overlay */
-  .item-muted { position: relative; }
+  .item-muted {
+    position: relative;
+  }
+
   .item-muted::after {
     content: '';
     position: absolute;
     inset: 0;
-    background: rgba(10,10,10,0.55);
+    background: rgba(10, 10, 10, 0.55);
     pointer-events: none;
   }
 
   /* Progress track */
-  .track-step-done   .track-dot  { background: white; border-color: white; }
-  .track-step-done   .track-label{ color: white; }
-  .track-step-active .track-dot  { background: transparent; border-color: white; box-shadow: 0 0 0 4px rgba(255,255,255,0.15); }
-  .track-step-active .track-label{ color: white; }
-  .track-step-idle   .track-dot  { background: transparent; border-color: #404040; }
-  .track-step-idle   .track-label{ color: #525252; }
-  .track-line-done { background: white;   }
-  .track-line-idle { background: #262626; }
+  .track-step-done .track-dot {
+    background: white;
+    border-color: white;
+  }
+
+  .track-step-done .track-label {
+    color: white;
+  }
+
+  .track-step-active .track-dot {
+    background: transparent;
+    border-color: white;
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.15);
+  }
+
+  .track-step-active .track-label {
+    color: white;
+  }
+
+  .track-step-idle .track-dot {
+    background: transparent;
+    border-color: #404040;
+  }
+
+  .track-step-idle .track-label {
+    color: #525252;
+  }
+
+  .track-line-done {
+    background: white;
+  }
+
+  .track-line-idle {
+    background: #262626;
+  }
 </style>
 
 <!-- ────────────────────────────────────────────────────────── -->
 <!-- TOAST MESSAGES                                            -->
 <!-- ────────────────────────────────────────────────────────── -->
 {% if messages %}
-<div id="toast-container" class="fixed top-5 left-1/2 -translate-x-1/2 z-[999] flex flex-col gap-2 w-full max-w-sm px-4">
+<!-- <div id="toast-container"
+  class="fixed top-5 left-1/2 -translate-x-1/2 z-[999] flex flex-col gap-2 w-full max-w-sm px-4">
   {% for msg in messages %}
   <div class="toast flex items-center gap-3 rounded-2xl border px-5 py-4 shadow-2xl backdrop-blur-md
     {% if msg.tags == 'success' %}
@@ -72,31 +221,32 @@
     <div class="shrink-0 w-8 h-8 rounded-full flex items-center justify-center
       {% if msg.tags == 'success' %}bg-green-500/15{% else %}bg-red-500/15{% endif %}">
       {% if msg.tags == 'success' %}
-        <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
-        </svg>
+      <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+      </svg>
       {% else %}
-        <svg class="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-        </svg>
+      <svg class="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
       {% endif %}
     </div>
 
-    <p class="text-xs font-semibold {% if msg.tags == 'success' %}text-green-300{% else %}text-red-300{% endif %} flex-1">
+    <p
+      class="text-xs font-semibold {% if msg.tags == 'success' %}text-green-300{% else %}text-red-300{% endif %} flex-1">
       {{ msg }}
     </p>
 
     <button onclick="dismissToast(this.parentElement)"
-            class="shrink-0 text-neutral-600 hover:text-white transition-colors ml-1">
+      class="shrink-0 text-neutral-600 hover:text-white transition-colors ml-1">
       <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
       </svg>
     </button>
   </div>
   {% endfor %}
-</div>
+</div> -->
 
-<script>
+<!-- <script>
   function dismissToast(el) {
     el.classList.add('toast-dying');
     el.addEventListener('animationend', () => el.remove(), { once: true });
@@ -108,21 +258,25 @@
     });
   });
 </script>
-{% endif %}
+{% endif %} -->
 
 
 <!-- ── PAGE HEADER ──────────────────────────────────────────── -->
-<div class="a1 relative -mt-10 mb-10 w-full overflow-hidden rounded-3xl bg-neutral-900 border border-neutral-800 px-8 md:px-12 py-10">
-  <div class="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-white rounded-full blur-[100px] opacity-5 pointer-events-none"></div>
+<div
+  class="a1 relative -mt-10 mb-10 w-full overflow-hidden rounded-3xl bg-neutral-900 border border-neutral-800 px-8 md:px-12 py-10">
+  <div
+    class="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-white rounded-full blur-[100px] opacity-5 pointer-events-none">
+  </div>
   <div class="absolute inset-0 opacity-[0.025] pointer-events-none"
-    style="background-image:repeating-linear-gradient(45deg,white 0,white 1px,transparent 0,transparent 50%);background-size:18px 18px;"></div>
+    style="background-image:repeating-linear-gradient(45deg,white 0,white 1px,transparent 0,transparent 50%);background-size:18px 18px;">
+  </div>
 
   <div class="relative flex flex-col md:flex-row md:items-end md:justify-between gap-5">
     <div>
       <span class="text-neutral-500 font-bold tracking-[0.3em] uppercase text-[10px]">Order Details</span>
       <h1 class="text-4xl md:text-6xl font-black italic uppercase text-white tracking-tighter leading-none mt-2">
-        Orders<br />
-        <span class="text-transparent bg-clip-text bg-gradient-to-r from-white to-neutral-600"></span>
+        Order<br />
+        <span class="text-transparent bg-clip-text bg-gradient-to-r from-white to-neutral-600">{{ order.order_id }}</span>
       </h1>
       <p class="text-neutral-600 text-[10px] font-bold uppercase tracking-widest mt-3">
         Placed on {{ order.created_at|date:"d M Y, H:i" }}
@@ -134,11 +288,17 @@
       <span class="badge-{{ s }} border text-[10px] font-black uppercase tracking-widest px-5 py-2 rounded-full">
         {% if s == "pending" %}⏳
         {% elif s == "confirmed" %}✅
-        {% elif s == "preparing" %}📦
+        {% elif s == "packed" %}📦
+        {% elif s == "out_for_delivery" %}🚚
         {% elif s == "shipped" %}🚚
         {% elif s == "delivered" %}🏠
         {% elif s == "cancelled" %}✕
         {% elif s == "partial_cancelled" %}⚠️
+        {% elif s == "return_requested" %}⟳
+        {% elif s == "returned" %}↩
+        {% elif s == "partial_returned" %}↩
+        {% elif s == "refunded" %}✓
+        {% elif s == "partial_refunded" %}✓
         {% endif %}
         &nbsp;{{ order.status }}
       </span>
@@ -147,7 +307,7 @@
       <a href="{% url 'products:order_history' %}"
         class="inline-flex items-center gap-2 border border-neutral-700 text-neutral-400 hover:text-white hover:border-white font-bold uppercase tracking-widest text-[10px] px-5 py-3 rounded-full transition-all">
         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
         </svg>
         All Orders
       </a>
@@ -169,16 +329,20 @@
       <div class="px-7 py-5 border-b border-neutral-800 flex items-center justify-between">
         <h2 class="text-sm font-black uppercase italic tracking-tighter text-white">Items Ordered</h2>
         <span class="text-[10px] font-bold uppercase tracking-widest text-neutral-600">
-          {{ order.items.count }} item{{ order.items.count|pluralize }}
+          {{ order.items.all|length }} item{{ order.items.all|length|pluralize }}
         </span>
       </div>
 
       <!-- Column headers (desktop) -->
       <div class="hidden md:grid grid-cols-12 gap-4 px-7 py-3 border-b border-neutral-800/60">
-        <div class="col-span-6"><span class="text-[9px] font-bold uppercase tracking-widest text-neutral-700">Product</span></div>
-        <div class="col-span-2 text-center"><span class="text-[9px] font-bold uppercase tracking-widest text-neutral-700">Size</span></div>
-        <div class="col-span-2 text-center"><span class="text-[9px] font-bold uppercase tracking-widest text-neutral-700">Qty</span></div>
-        <div class="col-span-2 text-right"><span class="text-[9px] font-bold uppercase tracking-widest text-neutral-700">Price</span></div>
+        <div class="col-span-6"><span
+            class="text-[9px] font-bold uppercase tracking-widest text-neutral-700">Product</span></div>
+        <div class="col-span-2 text-center"><span
+            class="text-[9px] font-bold uppercase tracking-widest text-neutral-700">Size</span></div>
+        <div class="col-span-2 text-center"><span
+            class="text-[9px] font-bold uppercase tracking-widest text-neutral-700">Qty</span></div>
+        <div class="col-span-2 text-right"><span
+            class="text-[9px] font-bold uppercase tracking-widest text-neutral-700">Price</span></div>
       </div>
 
       <div class="divide-y divide-neutral-800/60">
@@ -188,7 +352,7 @@
 
         <!-- Item row -->
         <div class="relative grid grid-cols-12 gap-4 items-center px-7 py-5 transition-colors
-            {% if item_status == 'cancelled' or item_status == 'returned' or item_status == 'refunded' %}
+            {% if item_status == 'cancelled' or item_status == 'returned' or item_status == 'refunded' or item_status == 'partial_returned' or item_status == 'partial_refunded' %}
                 item-muted opacity-50
             {% else %}
                 hover:bg-neutral-800/30
@@ -199,10 +363,8 @@
             <div class="shrink-0 w-14 h-18 bg-black rounded-xl overflow-hidden border border-neutral-800">
               {% with img=item.variant.images.all|first %}
               <img
-                src="{% if img %}{{ img.image.url }}{% else %}https://campeonsports.com/cdn/shop/files/33AE88D9-C2F3-4676-B489-E566B284B2DB.jpg?v=1767157312&width=720{% endif %}"
-                alt="{{ item.product.name }}"
-                class="w-full h-full object-contain"
-              />
+                src="{% if img %}{{ img.image.url }}{% else %}{% static 'images/placeholder-product.svg' %}{% endif %}"
+                alt="{{ item.product.name }}" class="w-full h-full object-contain" />
               {% endwith %}
             </div>
             <div class="min-w-0">
@@ -213,10 +375,12 @@
                 {{ item.product.name }}
               </h3>
               {% if item.variant.color %}
-              <p class="text-neutral-600 text-[9px] uppercase tracking-widest font-bold mt-1">{{ item.variant.color }}</p>
+              <p class="text-neutral-600 text-[9px] uppercase tracking-widest font-bold mt-1">{{ item.variant.color }}
+              </p>
               {% endif %}
               {% if item.variant.sku %}
-              <p class="text-neutral-700 text-[9px] uppercase tracking-widest font-bold mt-0.5">SKU: {{ item.variant.sku }}</p>
+              <p class="text-neutral-700 text-[9px] uppercase tracking-widest font-bold mt-0.5">SKU: {{ item.variant.sku
+                }}</p>
               {% endif %}
 
               <!-- Item-level status badge -->
@@ -240,16 +404,48 @@
                            text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full">
                 ✓ Refunded
               </span>
+              {% elif item_status == "partial_returned" %}
+              <span class="badge-partial_returned inline-flex items-center gap-1 mt-2 border
+                           text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full">
+                ↩ Partial Returned
+              </span>
+              {% elif item_status == "partial_refunded" %}
+              <span class="badge-partial_refunded inline-flex items-center gap-1 mt-2 border
+                           text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full">
+                ✓ Partial Refunded
+              </span>
+              {% elif item_status == "packed" %}
+              <span class="badge-packed inline-flex items-center gap-1 mt-2 border
+                           text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full">
+                📦 Packed
+              </span>
+              {% elif item_status == "out_for_delivery" %}
+              <span class="badge-out_for_delivery inline-flex items-center gap-1 mt-2 border
+                           text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full">
+                🚚 Out for Delivery
+              </span>
+              {% elif item_status == "shipped" %}
+              <span class="badge-shipped inline-flex items-center gap-1 mt-2 border
+                           text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full">
+                🚚 Shipped
+              </span>
+              {% elif item_status == "delivered" %}
+              <span class="badge-delivered inline-flex items-center gap-1 mt-2 border
+                           text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full">
+                🏠 Delivered
+              </span>
               {% endif %}
 
               <!-- Mobile: size + qty inline -->
               <div class="flex items-center gap-2 mt-2 md:hidden">
                 {% if item.variant.size %}
-                <span class="text-[9px] font-bold uppercase tracking-widest bg-neutral-800 text-neutral-400 px-2 py-0.5 rounded-full border border-neutral-700">
+                <span
+                  class="text-[9px] font-bold uppercase tracking-widest bg-neutral-800 text-neutral-400 px-2 py-0.5 rounded-full border border-neutral-700">
                   {{ item.variant.size }}
                 </span>
                 {% endif %}
-                <span class="text-neutral-500 text-[9px] uppercase tracking-widest font-bold">× {{ item.quantity }}</span>
+                <span class="text-neutral-500 text-[9px] uppercase tracking-widest font-bold">× {{ item.quantity
+                  }}</span>
                 <span class="text-white font-black italic text-sm ml-auto">₹{{ item.price }}</span>
               </div>
             </div>
@@ -258,7 +454,8 @@
           <!-- Size -->
           <div class="hidden md:flex col-span-2 justify-center">
             {% if item.variant.size %}
-            <span class="text-[9px] font-bold uppercase tracking-widest bg-neutral-800 text-neutral-400 px-3 py-1.5 rounded-full border border-neutral-700">
+            <span
+              class="text-[9px] font-bold uppercase tracking-widest bg-neutral-800 text-neutral-400 px-3 py-1.5 rounded-full border border-neutral-700">
               {{ item.variant.size }}
             </span>
             {% else %}
@@ -278,190 +475,208 @@
 
         </div><!-- /item row -->
 
-        
 
-        {% if item_status != "cancelled" and item_status != "return_requested" and item_status != "returned" and item_status != "refunded" %}
 
-          {% if order_status == "pending" or order_status == "confirmed" or order_status == "preparing" %}
-          <!-- Cancel window: order hasn't shipped yet -->
-          <div class="px-7 pb-4 -mt-2">
-            <form method="POST" action="{% url 'products:cancel_order_item' item.id %}"
+        {% if item_status != "cancelled" and item_status != "return_requested" and item_status != "returned" and item_status != "refunded" and item_status != "partial_returned" and item_status != "partial_refunded" %}
+
+    {% if item_status == "pending" or item_status == "confirmed" or item_status == "packed" %}
+
+        <!-- Cancel window: item hasn't shipped yet -->
+        <div class="px-7 pb-4 -mt-2">
+            <form method="POST"
+                  action="{% url 'products:cancel_order_item' item.id %}"
                   onsubmit="return confirmCancel(event, '{{ item.product.name|escapejs }}')">
-              {% csrf_token %}
-              <button type="submit"
-                class="inline-flex items-center gap-2 border border-red-900/50 text-red-500/70
-                       hover:border-red-400 hover:text-red-400 hover:bg-red-500/5
-                       font-bold uppercase tracking-widest text-[9px] px-4 py-2 rounded-full transition-all">
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-                Cancel This Item
-              </button>
-            </form>
-          </div>
 
-          {% elif item_status == "delivered" %}
-          <!-- Return window: order has been delivered -->
-          <div class="px-7 pb-4 -mt-2">
-            <button type="button" onclick="openReturnModal(this)" data-item-id="{{ item.id }}"
-              class="inline-flex items-center gap-2 border border-amber-900/50 text-amber-500/70
-                     hover:border-amber-400 hover:text-amber-400 hover:bg-amber-500/5
-                     font-bold uppercase tracking-widest text-[9px] px-4 py-2 rounded-full transition-all">
-              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
-              </svg>
-              Return This Item
-            </button>
-          </div>
-
-          <!-- Per-item return modal — gets portaled to <body> on load (see script below)
-               so it always escapes any transformed ancestor's containing block.
-               Matched to its trigger button via data-item-id, not DOM position. -->
-          <div class="return-modal-backdrop hidden fixed inset-0 z-[998] flex items-center justify-center p-4"
-               data-item-id="{{ item.id }}"
-               style="background:rgba(0,0,0,0.80);backdrop-filter:blur(6px);"
-               onclick="handleBackdropClick(event)">
-            <div class="return-modal" style="
-                 background:#0f0f0f; border:1px solid #1f1f1f; border-radius:24px;
-                 padding:36px; max-width:440px; width:100%;
-                 animation:rise 0.35s cubic-bezier(0.34,1.56,0.64,1) both;">
-
-              <div style="width:48px;height:48px;border-radius:50%;
-                          background:rgba(245,158,11,0.10);border:1px solid rgba(245,158,11,0.30);
-                          display:flex;align-items:center;justify-content:center;margin-bottom:22px;">
-                <svg width="20" height="20" fill="none" stroke="#fbbf24" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round"
-                    d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
-                </svg>
-              </div>
-
-              <p style="font-size:10px;font-weight:900;letter-spacing:0.22em;text-transform:uppercase;
-                        color:#737373;margin-bottom:8px;">Return Request</p>
-              <p style="color:#fff;font-weight:800;font-size:16px;margin-bottom:6px;line-height:1.4;">
-                Why are you returning "{{ item.product.name }}"?
-              </p>
-              <p style="color:#4a4a4a;font-size:11px;line-height:1.65;margin-bottom:24px;">
-                Only this item will be marked as returned — the rest of your order is unaffected.
-              </p>
-
-              <div class="reason-chips" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;">
-                {% for reason_text in return_reasons %}
-                <button type="button"
-                  onclick="selectChip(this)"
-                  data-reason="{{ reason_text }}"
-                  style="
-                    padding:7px 14px;border-radius:100px;font-size:9px;font-weight:800;
-                    letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;
-                    border:1px solid #2a2a2a;background:transparent;color:#525252;
-                    transition:all 0.18s;"
-                  onmouseover="if(!this.classList.contains('chip-active')){this.style.borderColor='#404040';this.style.color='#aaa';}"
-                  onmouseout="if(!this.classList.contains('chip-active')){this.style.borderColor='#2a2a2a';this.style.color='#525252';}">
-                  {{ reason_text }}
-                </button>
-                {% endfor %}
-              </div>
-
-              <form method="POST" action="{% url 'products:return_order_item' item.id %}"
-                    onsubmit="return validateReturn(event, this)">
                 {% csrf_token %}
 
-                <textarea
-                  class="return-reason"
-                  name="reason"
-                  rows="3"
-                  placeholder="Describe your reason in detail…"
-                  oninput="syncTextarea(this)"
-                  style="
-                    width:100%;box-sizing:border-box;resize:none;
-                    background:#161616;border:1px solid #2a2a2a;border-radius:14px;
-                    color:#e5e5e5;font-size:12px;line-height:1.6;
-                    padding:14px 16px;outline:none;font-family:inherit;
-                    transition:border-color 0.2s;"
-                  onfocus="this.style.borderColor='#404040'"
-                  onblur="this.style.borderColor='#2a2a2a'"
-                ></textarea>
+                <button type="submit"
+                        class="inline-flex items-center gap-2 border border-red-900/50 text-red-500/70
+                               hover:border-red-400 hover:text-red-400 hover:bg-red-500/5
+                               font-bold uppercase tracking-widest text-[9px] px-4 py-2 rounded-full transition-all">
 
-                <p class="return-error"
-                   style="display:none;margin-top:8px;font-size:10px;font-weight:700;
-                          letter-spacing:0.1em;text-transform:uppercase;color:#f87171;">
-                  ⚠ Please enter a reason before submitting.
-                </p>
+                    <svg class="w-3 h-3"
+                         fill="none"
+                         stroke="currentColor"
+                         viewBox="0 0 24 24">
 
-                <div style="display:flex;gap:10px;margin-top:22px;">
-                  <button type="button" onclick="closeReturnModal(this)"
-                    style="
-                      flex:1;padding:13px;border:1px solid #262626;background:transparent;
-                      color:#737373;font-weight:700;font-size:10px;letter-spacing:0.15em;
-                      text-transform:uppercase;border-radius:100px;cursor:pointer;transition:all 0.2s;"
-                    onmouseover="this.style.borderColor='#404040';this.style.color='#fff'"
-                    onmouseout="this.style.borderColor='#262626';this.style.color='#737373'">
-                    Cancel
-                  </button>
-                  <button type="submit"
-                    style="
-                      flex:1;padding:13px;
-                      border:1px solid rgba(245,158,11,0.45);
-                      background:rgba(245,158,11,0.10);color:#fbbf24;font-weight:900;
-                      font-size:10px;letter-spacing:0.15em;text-transform:uppercase;
-                      border-radius:100px;cursor:pointer;transition:all 0.2s;"
-                    onmouseover="this.style.background='rgba(245,158,11,0.20)'"
-                    onmouseout="this.style.background='rgba(245,158,11,0.10)'">
-                    Submit Return
-                  </button>
-                </div>
-              </form>
+                        <path stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M6 18L18 6M6 6l12 12" />
+
+                    </svg>
+
+                    Cancel This Item
+                </button>
+            </form>
+        </div>
+
+    {% elif item_status == "delivered" %}
+
+        <!-- Return window: item has been delivered -->
+        <div class="px-7 pb-4 -mt-2">
+
+            <button type="button"
+                    onclick="openReturnModal(this)"
+                    data-item-id="{{ item.id }}"
+                    class="inline-flex items-center gap-2 border border-amber-900/50 text-amber-500/70
+                           hover:border-amber-400 hover:text-amber-400 hover:bg-amber-500/5
+                           font-bold uppercase tracking-widest text-[9px] px-4 py-2 rounded-full transition-all">
+
+                <svg class="w-3 h-3"
+                     fill="none"
+                     stroke="currentColor"
+                     viewBox="0 0 24 24">
+
+                    <path stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+
+                </svg>
+
+                Return This Item
+            </button>
+        </div>
+
+        <!-- Return modal -->
+        <div class="return-modal-backdrop hidden fixed inset-0 z-[998] flex items-center justify-center p-4"
+             data-item-id="{{ item.id }}"
+             style="background:rgba(0,0,0,0.80);backdrop-filter:blur(6px);"
+             onclick="handleBackdropClick(event)">
+
+            <div class="return-modal">
+
+                <div class="return-modal" style="
+           background:#0f0f0f; border:1px solid #1f1f1f; border-radius:24px;
+           padding:36px; max-width:440px; width:100%;
+           animation:rise 0.35s cubic-bezier(0.34,1.56,0.64,1) both;">
+
+      <div style="width:48px;height:48px;border-radius:50%;
+                    background:rgba(245,158,11,0.10);border:1px solid rgba(245,158,11,0.30);
+                    display:flex;align-items:center;justify-content:center;margin-bottom:22px;">
+        <svg width="20" height="20" fill="none" stroke="#fbbf24" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+        </svg>
+      </div>
+
+      <p style="font-size:10px;font-weight:900;letter-spacing:0.22em;text-transform:uppercase;
+                  color:#737373;margin-bottom:8px;">Return Request</p>
+      <p style="color:#fff;font-weight:800;font-size:16px;margin-bottom:6px;line-height:1.4;">
+        Why are you returning "{{ item.product.name }}"?
+      </p>
+      <p style="color:#4a4a4a;font-size:11px;line-height:1.65;margin-bottom:24px;">
+        Only this item will be marked as returned — the rest of your order is unaffected.
+      </p>
+
+      <div class="reason-chips" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;">
+        {% for reason_text in return_reasons %}
+        <button type="button" onclick="selectChip(this)" data-reason="{{ reason_text }}" style="
+              padding:7px 14px;border-radius:100px;font-size:9px;font-weight:800;
+              letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;
+              border:1px solid #2a2a2a;background:transparent;color:#525252;
+              transition:all 0.18s;"
+          onmouseover="if(!this.classList.contains('chip-active')){this.style.borderColor='#404040';this.style.color='#aaa';}"
+          onmouseout="if(!this.classList.contains('chip-active')){this.style.borderColor='#2a2a2a';this.style.color='#525252';}">
+          {{ reason_text }}
+        </button>
+        {% endfor %}
+      </div>
+
+      <form method="POST" action="{% url 'products:return_order_item' item.id %}"
+        onsubmit="return validateReturn(event, this)">
+        {% csrf_token %}
+
+        <textarea class="return-reason" name="reason" rows="3" placeholder="Describe your reason in detail…"
+          oninput="syncTextarea(this)" style="
+              width:100%;box-sizing:border-box;resize:none;
+              background:#161616;border:1px solid #2a2a2a;border-radius:14px;
+              color:#e5e5e5;font-size:12px;line-height:1.6;
+              padding:14px 16px;outline:none;font-family:inherit;
+              transition:border-color 0.2s;" onfocus="this.style.borderColor='#404040'"
+          onblur="this.style.borderColor='#2a2a2a'"></textarea>
+
+        <p class="return-error" style="display:none;margin-top:8px;font-size:10px;font-weight:700;
+                    letter-spacing:0.1em;text-transform:uppercase;color:#f87171;">
+          ⚠ Please enter a reason before submitting.
+        </p>
+
+        <div style="display:flex;gap:10px;margin-top:22px;">
+          <button type="button" onclick="closeReturnModal(this)" style="
+                flex:1;padding:13px;border:1px solid #262626;background:transparent;
+                color:#737373;font-weight:700;font-size:10px;letter-spacing:0.15em;
+                text-transform:uppercase;border-radius:100px;cursor:pointer;transition:all 0.2s;"
+            onmouseover="this.style.borderColor='#404040';this.style.color='#fff'"
+            onmouseout="this.style.borderColor='#262626';this.style.color='#737373'">
+            Cancel
+          </button>
+          <button type="submit" style="
+                flex:1;padding:13px;
+                border:1px solid rgba(245,158,11,0.45);
+                background:rgba(245,158,11,0.10);color:#fbbf24;font-weight:900;
+                font-size:10px;letter-spacing:0.15em;text-transform:uppercase;
+                border-radius:100px;cursor:pointer;transition:all 0.2s;"
+            onmouseover="this.style.background='rgba(245,158,11,0.20)'"
+            onmouseout="this.style.background='rgba(245,158,11,0.10)'">
+            Submit Return
+          </button>
+        </div>
+      </form>
+
+    </div>
 
             </div>
-          </div>
-          {% endif %}
+        </div>
 
-        {% endif %}
+    {% endif %}
 
-        {% endwith %}{# end item_status / order_status #}
-        {% endfor %}
+{% endif %}
+
+{% endwith %}
+{% endfor %}
       </div>
     </div>
 
     <!-- Delivery address -->
     <div class="a4 bg-neutral-900 border border-neutral-800 rounded-2xl p-7">
 
-        <div class="flex items-center gap-2 mb-5">
-            <div class="w-7 h-7 rounded-full bg-neutral-800 border border-neutral-700 flex items-center justify-center shrink-0">
-                <svg class="w-3.5 h-3.5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-                </svg>
-            </div>
-            <h2 class="text-[10px] font-black uppercase tracking-widest text-neutral-400">Delivery Address</h2>
+      <div class="flex items-center gap-2 mb-5">
+        <div
+          class="w-7 h-7 rounded-full bg-neutral-800 border border-neutral-700 flex items-center justify-center shrink-0">
+          <svg class="w-3.5 h-3.5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
         </div>
+        <h2 class="text-[10px] font-black uppercase tracking-widest text-neutral-400">Delivery Address</h2>
+      </div>
 
-        {% if order.shipping_address %}
-            <p class="text-white font-black text-sm">{{ order.shipping_address.full_name }}</p>
-            <p class="text-neutral-400 text-[11px] leading-relaxed mt-1.5">
-                {{ order.shipping_address.address_line_1 }}
-                <br>
-                {% if order.shipping_address.address_line_2 %}
-                    {{ order.shipping_address.address_line_2 }}
-                    <br>
-                {% endif %}
-                {{ order.shipping_address.city }},
-                {{ order.shipping_address.state }}
-                —
-                {{ order.shipping_address.postal_code }}
-                <br>
-                {{ order.shipping_address.country }}
-            </p>
-            {% if order.shipping_address.phone %}
-                <p class="text-neutral-600 text-[10px] uppercase tracking-widest font-bold mt-3">
-                    📞 {{ order.shipping_address.phone }}
-                </p>
-            {% endif %}
-        {% else %}
-            <p class="text-red-400 text-xs">No delivery address found for this order.</p>
+      {% if order.shipping_address %}
+      <p class="text-white font-black text-sm">{{ order.shipping_address.full_name }}</p>
+      <p class="text-neutral-400 text-[11px] leading-relaxed mt-1.5">
+        {{ order.shipping_address.address_line_1 }}
+        <br>
+        {% if order.shipping_address.address_line_2 %}
+        {{ order.shipping_address.address_line_2 }}
+        <br>
         {% endif %}
+        {{ order.shipping_address.city }},
+        {{ order.shipping_address.state }}
+        —
+        {{ order.shipping_address.postal_code }}
+        <br>
+        {{ order.shipping_address.country }}
+      </p>
+      {% if order.shipping_address.phone %}
+      <p class="text-neutral-600 text-[10px] uppercase tracking-widest font-bold mt-3">
+        📞 {{ order.shipping_address.phone }}
+      </p>
+      {% endif %}
+      {% else %}
+      <p class="text-red-400 text-xs">No delivery address found for this order.</p>
+      {% endif %}
     </div>
 
   </div><!-- /left -->
@@ -517,12 +732,14 @@
           </div>
           {% with s=order.status|lower %}
           {% if s == "delivered" %}
-          <div class="mt-2 inline-flex items-center gap-1.5 bg-green-400/10 border border-green-400/30 rounded-full px-3 py-1">
+          <div
+            class="mt-2 inline-flex items-center gap-1.5 bg-green-400/10 border border-green-400/30 rounded-full px-3 py-1">
             <div class="w-1.5 h-1.5 rounded-full bg-green-400"></div>
             <span class="text-[9px] font-black uppercase tracking-widest text-green-400">Paid</span>
           </div>
           {% else %}
-          <div class="mt-2 inline-flex items-center gap-1.5 bg-yellow-400/10 border border-yellow-400/30 rounded-full px-3 py-1">
+          <div
+            class="mt-2 inline-flex items-center gap-1.5 bg-yellow-400/10 border border-yellow-400/30 rounded-full px-3 py-1">
             <div class="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse"></div>
             <span class="text-[9px] font-black uppercase tracking-widest text-yellow-400">{{ order.status }}</span>
           </div>
@@ -536,9 +753,8 @@
 
         {# ── Invoice Download Button ── #}
         {% with s=order.status|lower %}
-        {% if s != "pending" and s != "cancelled" and s != "partial_cancelled" %}
-        <a href="{% url 'products:download_invoice' order.id %}"
-          class="group relative flex items-center justify-center gap-2.5 w-full overflow-hidden
+        {% if s != "pending" and s != "cancelled" and s != "partial_cancelled" and s != "return_requested" and s != "returned" and s != "refunded" and s != "partial_refunded" %}
+        <a href="{% url 'products:download_invoice' order.id %}" class="group relative flex items-center justify-center gap-2.5 w-full overflow-hidden
                  bg-neutral-900 border border-neutral-700 hover:border-white
                  text-neutral-300 hover:text-white
                  font-black uppercase tracking-widest text-[10px] py-4 rounded-full
@@ -549,7 +765,7 @@
                        transition-transform duration-700 ease-in-out"></span>
           <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h4a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+              d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h4a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
           </svg>
           Download Invoice
         </a>
@@ -560,7 +776,7 @@
                     py-4 rounded-full cursor-not-allowed select-none">
           <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
           </svg>
           Invoice Pending
           <span class="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2
@@ -573,7 +789,7 @@
         {% endif %}
         {% endwith %}
 
-        
+
 
         <a href="{% url 'products:users_product_listing' %}"
           class="block w-full bg-white text-black text-center font-black uppercase tracking-widest text-[10px] py-4 rounded-full hover:bg-neutral-200 transition-all transform hover:-translate-y-0.5 shadow-[0_0_20px_rgba(255,255,255,0.1)]">
@@ -589,19 +805,22 @@
       <div class="bg-neutral-900 border border-neutral-800 rounded-2xl px-6 py-5 grid grid-cols-3 gap-3 text-center">
         <div>
           <svg class="w-4 h-4 text-neutral-700 mx-auto mb-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
           </svg>
           <p class="text-[9px] uppercase tracking-widest font-bold text-neutral-700">Secure</p>
         </div>
         <div>
           <svg class="w-4 h-4 text-neutral-700 mx-auto mb-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z" />
           </svg>
           <p class="text-[9px] uppercase tracking-widest font-bold text-neutral-700">Returns</p>
         </div>
         <div>
           <svg class="w-4 h-4 text-neutral-700 mx-auto mb-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
           </svg>
           <p class="text-[9px] uppercase tracking-widest font-bold text-neutral-700">Support</p>
         </div>
@@ -692,8 +911,8 @@
 <!-- ── RETURN MODAL LOGIC (per-item, post-delivery) ─────────── -->
 <style>
   .chip-active {
-    border-color: rgba(245,158,11,0.55) !important;
-    background: rgba(245,158,11,0.10) !important;
+    border-color: rgba(245, 158, 11, 0.55) !important;
+    background: rgba(245, 158, 11, 0.10) !important;
     color: #fbbf24 !important;
   }
 </style>
@@ -780,8 +999,8 @@
       modal.querySelectorAll('.reason-chips button').forEach(b => {
         b.classList.remove('chip-active');
         b.style.borderColor = '#2a2a2a';
-        b.style.background  = 'transparent';
-        b.style.color       = '#525252';
+        b.style.background = 'transparent';
+        b.style.color = '#525252';
       });
     }
     modal.querySelector('.return-error').style.display = 'none';

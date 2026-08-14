@@ -104,6 +104,15 @@ class CouponForm(forms.ModelForm):
 
         if valid_from and valid_to:
 
+            # Make naive datetimes timezone-aware for comparison
+            if timezone.is_naive(valid_from):
+                valid_from = timezone.make_aware(valid_from)
+                cleaned_data["valid_from"] = valid_from
+
+            if timezone.is_naive(valid_to):
+                valid_to = timezone.make_aware(valid_to)
+                cleaned_data["valid_to"] = valid_to
+
             if valid_from >= valid_to:
                 raise forms.ValidationError(
                     "End date must be greater than start date.",

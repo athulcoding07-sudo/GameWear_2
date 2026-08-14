@@ -151,7 +151,7 @@
           <h2 class="text-sm font-black uppercase tracking-widest text-white">Payment Method</h2>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
 
           <!-- Cash on Delivery -->
           <label for="pay-cod"
@@ -183,6 +183,25 @@
                 <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
               </svg>
               <span class="text-[9px] font-black uppercase tracking-widest text-neutral-400">UPI · Cards · Net Banking · Wallets</span>
+            </div>
+          </label>
+
+          <!-- Wallet Payment -->
+          <label for="pay-wallet"
+            class="relative cursor-pointer block bg-neutral-900 border border-neutral-800 rounded-2xl p-5 transition-all duration-200 {% if wallet.balance < totals.final_amount %}opacity-50 cursor-not-allowed{% else %}hover:border-emerald-500/60 has-[:checked]:border-emerald-400 has-[:checked]:bg-emerald-400/5 has-[:checked]:shadow-[0_0_0_1px_#10B981]{% endif %}">
+            <input type="radio" id="pay-wallet" name="payment_method" value="WALLET" class="sr-only"
+              {% if wallet.balance < totals.final_amount %}disabled{% endif %} />
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-neutral-800 border border-neutral-700 flex items-center justify-center text-lg shrink-0">💼</div>
+              <div>
+                <p class="text-white font-black text-sm">Wallet Payment</p>
+                <p class="text-neutral-500 text-[10px] uppercase tracking-widest font-bold mt-0.5">
+                  Balance: ₹{{ wallet.balance|default:"0.00" }}
+                  {% if wallet.balance < totals.final_amount %}
+                    <span class="text-rose-500 block font-extrabold mt-1">(Insufficient Funds)</span>
+                  {% endif %}
+                </p>
+              </div>
             </div>
           </label>
 
@@ -375,7 +394,7 @@
   }
 
   /* Online badge shown when that radio is selected */
-  #pay-online:checked ~ div .online-badge {
+  #pay-online:checked ~ .online-badge {
     display: flex;
   }
 </style>

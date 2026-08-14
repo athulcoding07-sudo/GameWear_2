@@ -547,6 +547,8 @@ class Order(models.Model):
     PAYMENT_METHOD_CHOICES = (
         ("COD", "Cash On Delivery"),
         ("RAZORPAY", "Razorpay"),
+        ("ONLINE", "Online Payment"),
+        ("WALLET", "Wallet"),
     )
 
     order_id = models.CharField(

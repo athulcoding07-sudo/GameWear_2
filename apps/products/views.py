@@ -1883,6 +1883,9 @@ def checkout_view(request):
         ],
     )
 
+    from apps.wallet.models import Wallet
+    wallet, _ = Wallet.objects.get_or_create(user=request.user)
+
     context = {
 
         "items": items,
@@ -1892,6 +1895,8 @@ def checkout_view(request):
         ),
 
         "totals": totals,
+
+        "wallet": wallet,
 
         "applied_coupon":
             coupon_data[
@@ -1964,6 +1969,18 @@ def place_order(request):
         user=request.user,
     )
 
+    payment_method = request.POST.get(
+        "payment_method"
+    )
+
+    if payment_method == "WALLET":
+        from apps.wallet.models import Wallet
+        wallet, _ = Wallet.objects.get_or_create(user=request.user)
+        wallet = Wallet.objects.select_for_update().get(pk=wallet.pk)
+        if wallet.balance < totals["grand_total"]:
+            messages.error(request, "Insufficient wallet balance.")
+            return redirect("products:checkout")
+
     order_address = OrderAddress.objects.create(
         full_name=selected_address.full_name,
         phone=selected_address.phone,
@@ -1975,10 +1992,6 @@ def place_order(request):
         state=selected_address.state,
         postal_code=selected_address.postal_code,
         country=selected_address.country,
-    )
-
-    payment_method = request.POST.get(
-        "payment_method"
     )
 
     order = Order.objects.create(
@@ -2027,11 +2040,15 @@ def place_order(request):
             price=item.price,
         )
 
-    # Clear coupon after successful order
-    request.session.pop(
-        "coupon_id",
-        None,
-    )
+    # Clear coupon after successful order and increment usage count
+    coupon_id = request.session.pop("coupon_id", None)
+    if coupon_id:
+        try:
+            coupon = Coupon.objects.get(id=coupon_id)
+            coupon.used_count += 1
+            coupon.save(update_fields=["used_count"])
+        except Coupon.DoesNotExist:
+            pass
 
     # Cash On Delivery
     if payment_method == "COD":
@@ -2050,6 +2067,32 @@ def place_order(request):
 
         order.save()
 
+        return redirect(
+            "products:order_success",
+            order_id=order.id,
+        )
+
+    # Wallet Payment
+    if payment_method == "WALLET":
+        from apps.wallet.services.wallet_service import WalletService
+        import uuid as _uuid
+
+        WalletService.debit_wallet(
+            wallet=wallet,
+            amount=order.final_amount,
+            description=f"Payment for order {order.order_id}",
+            reference_id=f"PAY-{_uuid.uuid4().hex[:8].upper()}"
+        )
+
+        for item in items:
+            item.variant.stock -= item.quantity
+            item.variant.save()
+
+        items.delete()
+        order.status = "CONFIRMED"
+        order.save()
+
+        messages.success(request, "Order placed successfully using wallet.")
         return redirect(
             "products:order_success",
             order_id=order.id,
@@ -2196,6 +2239,30 @@ def cancel_order_item(request, item_id):
     if item.variant:
         item.variant.stock += item.quantity
         item.variant.save()
+
+    # Refund if paid via Wallet or Online (and order is confirmed/paid)
+    if item.order.payment_method in ["WALLET", "ONLINE", "RAZORPAY"] and item.order.status != "PENDING":
+        from apps.wallet.models import Wallet
+        from apps.wallet.services.wallet_service import WalletService
+        import uuid as _uuid
+
+        wallet, _ = Wallet.objects.get_or_create(user=request.user)
+        refund_val = item.refund_amount
+        if refund_val > 0:
+            WalletService.credit_wallet(
+                wallet=wallet,
+                amount=refund_val,
+                description=(
+                    f"Refund for cancellation of item "
+                    f"'{item.product.name if item.product else 'Unknown'}' "
+                    f"from order {item.order.order_id}"
+                ),
+                reference_id=f"REF-{_uuid.uuid4().hex[:8].upper()}"
+            )
+            messages.success(
+                request,
+                f"₹{refund_val} refunded to your wallet."
+            )
 
     # Check active items in same order
     active_items = item.order.items.exclude(
@@ -2634,13 +2701,34 @@ def admin_update_order_status(request, order_id):
 
         if new_status == "CANCELLED":
             # Restore stock for all non-cancelled items
-            for item in order.items.exclude(status="CANCELLED"):
+            for item in order.items.exclude(status__in=["CANCELLED", "RETURNED", "REFUNDED"]):
                 if item.variant:
                     item.variant.__class__.objects.filter(
                         pk=item.variant.pk
                     ).update(
                         stock=F("stock") + item.quantity
                     )
+                
+                # Refund if paid via Wallet or Online (and order is confirmed/paid)
+                if order.payment_method in ["WALLET", "ONLINE", "RAZORPAY"] and current_status != "PENDING":
+                    from apps.wallet.models import Wallet
+                    from apps.wallet.services.wallet_service import WalletService
+                    import uuid as _uuid
+
+                    wallet, _ = Wallet.objects.get_or_create(user=order.user)
+                    refund_val = item.refund_amount
+                    if refund_val > 0:
+                        WalletService.credit_wallet(
+                            wallet=wallet,
+                            amount=refund_val,
+                            description=(
+                                f"Refund for cancellation of item "
+                                f"'{item.product.name if item.product else 'Unknown'}' "
+                                f"from order {order.order_id}"
+                            ),
+                            reference_id=f"REF-{_uuid.uuid4().hex[:8].upper()}"
+                        )
+
                 item.status = "CANCELLED"
                 item.save()
             order.update_status()

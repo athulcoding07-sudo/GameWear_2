@@ -59,12 +59,19 @@
                         onchange="this.form.submit()"
                         class="flex-1 lg:flex-none bg-neutral-950 border border-neutral-800 text-sm rounded-xl px-4 py-3 text-white focus:border-white outline-none cursor-pointer">
                     <option value="">All Statuses</option>
-                    <option value="pending"    {% if request.GET.status == 'pending'    %}selected{% endif %}>Pending</option>
-                    <option value="confirmed"  {% if request.GET.status == 'confirmed'  %}selected{% endif %}>Confirmed</option>
-                    <option value="shipped"    {% if request.GET.status == 'shipped'    %}selected{% endif %}>Shipped</option>
-                    <option value="delivered"  {% if request.GET.status == 'delivered'  %}selected{% endif %}>Delivered</option>
-                    <option value="cancelled"  {% if request.GET.status == 'cancelled'  %}selected{% endif %}>Cancelled</option>
-                    <option value="returned"   {% if request.GET.status == 'returned'   %}selected{% endif %}>Returned</option>
+                    <option value="PENDING"            {% if request.GET.status == 'PENDING'            %}selected{% endif %}>Pending</option>
+                    <option value="CONFIRMED"          {% if request.GET.status == 'CONFIRMED'          %}selected{% endif %}>Confirmed</option>
+                    <option value="PACKED"             {% if request.GET.status == 'PACKED'             %}selected{% endif %}>Packed</option>
+                    <option value="SHIPPED"            {% if request.GET.status == 'SHIPPED'            %}selected{% endif %}>Shipped</option>
+                    <option value="OUT_FOR_DELIVERY"   {% if request.GET.status == 'OUT_FOR_DELIVERY'   %}selected{% endif %}>Out for Delivery</option>
+                    <option value="DELIVERED"          {% if request.GET.status == 'DELIVERED'          %}selected{% endif %}>Delivered</option>
+                    <option value="CANCELLED"          {% if request.GET.status == 'CANCELLED'          %}selected{% endif %}>Cancelled</option>
+                    <option value="PARTIAL_CANCELLED"  {% if request.GET.status == 'PARTIAL_CANCELLED'  %}selected{% endif %}>Partial Cancelled</option>
+                    <option value="RETURN_REQUESTED"   {% if request.GET.status == 'RETURN_REQUESTED'   %}selected{% endif %}>Return Requested</option>
+                    <option value="RETURNED"           {% if request.GET.status == 'RETURNED'           %}selected{% endif %}>Returned</option>
+                    <option value="PARTIAL_RETURNED"   {% if request.GET.status == 'PARTIAL_RETURNED'   %}selected{% endif %}>Partial Returned</option>
+                    <option value="REFUNDED"           {% if request.GET.status == 'REFUNDED'           %}selected{% endif %}>Refunded</option>
+                    <option value="PARTIAL_REFUNDED"   {% if request.GET.status == 'PARTIAL_REFUNDED'   %}selected{% endif %}>Partial Refunded</option>
                 </select>
 
                 <!-- Sort Filter -->

@@ -30,7 +30,13 @@ class Coupon(models.Model):
 
     valid_to = models.DateTimeField()
 
-    
+    usage_limit = models.PositiveIntegerField(
+        default=100,
+    )
+
+    used_count = models.PositiveIntegerField(
+        default=0,
+    )
 
     is_active = models.BooleanField(
         default=True,

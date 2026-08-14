@@ -166,22 +166,6 @@
                         </div>
                     </div>
 
-                    <!-- Is Active -->
-                    <div class="space-y-2">
-                        <label class="text-xs font-semibold text-neutral-500 uppercase tracking-widest invisible sm:visible">Status</label>
-                        <label class="flex items-center gap-3 cursor-pointer group h-[46px] px-1">
-                            <div class="relative">
-                                <input type="checkbox" id="f-is-active" name="is_active" class="sr-only peer" checked>
-                                <div class="w-11 h-6 bg-neutral-800 peer-checked:bg-white rounded-full transition-all">
-                                </div>
-                                <div
-                                    class="absolute top-0.5 left-0.5 w-5 h-5 bg-neutral-500 peer-checked:bg-black rounded-full transition-all peer-checked:translate-x-5">
-                                </div>
-                            </div>
-                            <span class="text-sm font-semibold text-white">Active</span>
-                        </label>
-                    </div>
-
                     <!-- Start Date -->
                     <div class="space-y-2">
                         <label class="text-xs font-semibold text-neutral-500 uppercase tracking-widest">Start Date
@@ -319,7 +303,6 @@
             document.getElementById('f-discount').value = '';
             document.getElementById('f-start-date').value = '';
             document.getElementById('f-end-date').value = '';
-            document.getElementById('f-is-active').checked = true;
             clearErrors();
         }
 
@@ -375,7 +358,6 @@
                         document.getElementById('f-discount').value = o.discount_percentage || '';
                         document.getElementById('f-start-date').value = o.start_date || '';
                         document.getElementById('f-end-date').value = o.end_date || '';
-                        document.getElementById('f-is-active').checked = o.is_active;
                     }
                 } catch (err) {
                     showToast('Failed to load offer data.', 'error');
@@ -417,7 +399,7 @@
                 discount_percentage: document.getElementById('f-discount').value,
                 start_date: document.getElementById('f-start-date').value,
                 end_date: document.getElementById('f-end-date').value,
-                is_active: document.getElementById('f-is-active').checked,
+                is_active: true,
             };
 
             const url = id ? URL_EDIT(id) : URL_CREATE;

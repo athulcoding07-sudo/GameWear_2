@@ -172,24 +172,6 @@
                         <input type="datetime-local" id="f-valid-to" name="valid_to" required
                             class="w-full bg-black border border-neutral-800 rounded-xl p-3 focus:border-white outline-none transition text-white [color-scheme:dark]">
                     </div>
-
-                    <!-- Is Active -->
-                    <div class="sm:col-span-2">
-                        <label class="flex items-center gap-3 cursor-pointer group">
-                            <div class="relative">
-                                <input type="checkbox" id="f-is-active" name="is_active" class="sr-only peer" checked>
-                                <div class="w-11 h-6 bg-neutral-800 peer-checked:bg-white rounded-full transition-all">
-                                </div>
-                                <div
-                                    class="absolute top-0.5 left-0.5 w-5 h-5 bg-neutral-500 peer-checked:bg-black rounded-full transition-all peer-checked:translate-x-5">
-                                </div>
-                            </div>
-                            <div>
-                                <span class="text-sm font-semibold text-white">Active</span>
-                                <p class="text-xs text-neutral-500">Coupon can be applied by customers when enabled.</p>
-                            </div>
-                        </label>
-                    </div>
                 </div>
 
                 <!-- Submit -->
@@ -325,8 +307,6 @@
             document.getElementById('f-min-amount').value = '';
             document.getElementById('f-valid-from').value = '';
             document.getElementById('f-valid-to').value = '';
-            // Default every new coupon to Active
-            document.getElementById('f-is-active').checked = true;
 
             clearErrors();
         }
@@ -371,7 +351,7 @@
 
                     if (data.coupon) {
                         const c = data.coupon;
-                        
+
                         console.log("Valid From:", c.valid_from);
                         console.log("Valid To:", c.valid_to);
                         document.getElementById('f-code').value = c.code || '';
@@ -379,9 +359,6 @@
                         document.getElementById('f-min-amount').value = c.minimum_amount || '';
                         document.getElementById('f-valid-from').value = toDatetimeLocalValue(c.valid_from);
                         document.getElementById('f-valid-to').value = toDatetimeLocalValue(c.valid_to);
-                        // Preserve the coupon's actual current status instead of
-                        // forcing it back to active on every edit
-                        document.getElementById('f-is-active').checked = !!c.is_active;
                     }
                 } catch (err) {
                     showToast('Failed to load coupon data.', 'error');
@@ -391,8 +368,6 @@
                 title.textContent = 'Add New Coupon';
                 subtitle.textContent = 'Fill in the details to create a coupon.';
                 label.textContent = 'Create Coupon';
-                // Explicit default for a brand new coupon
-                document.getElementById('f-is-active').checked = true;
             }
 
             modal.classList.remove('hidden');
@@ -428,7 +403,7 @@
                 minimum_amount: document.getElementById('f-min-amount').value,
                 valid_from: document.getElementById('f-valid-from').value,
                 valid_to: document.getElementById('f-valid-to').value,
-                is_active: document.getElementById('f-is-active').checked,
+                is_active: true,
             };
 
             const url = id ? URL_UPDATE(id) : URL_CREATE;
@@ -549,7 +524,7 @@
             }
         };
 
-        /* ─── REFRESH TABLE ─────────────────────────────────────────────────────── 
+        /* ─── REFRESH TABLE ───────────────────────────────────────────────────────
            Fetches the updated table body HTML from the server via a partial-render
            approach. The view detects `?ajax=1` and returns just the rendered rows
            as { html: "<tr>...</tr>" } so we can swap them in without reloading
@@ -557,7 +532,9 @@
         ─────────────────────────────────────────────────────────────────────────── */
         async function refreshTable() {
             try {
-                const res = await fetch(`${URL_LIST}?ajax=1`, {
+                // Preserve current status filter when refreshing
+                const status = new URLSearchParams(window.location.search).get('status') || 'all';
+                const res = await fetch(`${URL_LIST}?ajax=1&status=${encodeURIComponent(status)}`, {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 });
                 const data = await res.json();

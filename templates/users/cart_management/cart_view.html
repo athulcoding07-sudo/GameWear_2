@@ -239,6 +239,21 @@
             </span>
             <span id="cart-discount" class="text-green-400 font-black italic">−₹{{ totals.discount_amount|default:"0.00" }}</span>
           </div>
+
+          <div id="shipping-row" class="flex justify-between items-center {% if not totals.shipping_cost %}hidden{% endif %}">
+            <span class="text-neutral-400 text-xs uppercase tracking-widest font-bold">
+              Shipping
+              {% if totals.shipping_cost == 0 %}
+              <span class="ml-1 text-green-500/70 normal-case tracking-normal font-bold">(Free)</span>
+              {% endif %}
+            </span>
+            <span id="cart-shipping" class="text-neutral-300 font-black italic">₹{{ totals.shipping_cost|default:"0.00" }}</span>
+          </div>
+
+          <div id="tax-row" class="flex justify-between items-center">
+            <span class="text-neutral-400 text-xs uppercase tracking-widest font-bold">Tax (5%)</span>
+            <span id="cart-tax" class="text-neutral-300 font-black italic">₹{{ totals.tax_amount|default:"0.00" }}</span>
+          </div>
         </div>
 
         <div class="mx-8 border-t border-neutral-800"></div>
@@ -335,6 +350,9 @@
     var countEl      = document.getElementById("cart-item-count");
     var discountRow  = document.getElementById("discount-row");
     var discountEl   = document.getElementById("cart-discount");
+    var shippingRow  = document.getElementById("shipping-row");
+    var shippingEl   = document.getElementById("cart-shipping");
+    var taxEl        = document.getElementById("cart-tax");
 
     if (subtotalEl)   subtotalEl.textContent   = "₹" + data.cart_subtotal;
     if (grandTotalEl) grandTotalEl.textContent  = "₹" + data.grand_total;
@@ -347,6 +365,20 @@
       } else {
         discountRow.classList.add("hidden");
       }
+    }
+
+    if (shippingRow && shippingEl) {
+      var shipping = parseFloat(data.shipping_cost) || 0;
+      shippingEl.textContent = "₹" + data.shipping_cost;
+      if (shipping > 0) {
+        shippingRow.classList.remove("hidden");
+      } else {
+        shippingRow.classList.add("hidden");
+      }
+    }
+
+    if (taxEl) {
+      taxEl.textContent = "₹" + data.tax_amount;
     }
   }
 

@@ -117,6 +117,8 @@
     </header>
 
     <!-- ── TOAST MESSAGES ─────────────────────────────────────────────── -->
+  <div id="toast-container" class="fixed top-24 left-1/2 -translate-x-1/2 z-[60] flex flex-col items-center gap-3 w-full max-w-md px-4 pointer-events-none">
+
     {% if messages %}
       <div id="toast-container" class="fixed top-24 left-1/2 -translate-x-1/2 z-[60] flex flex-col items-center gap-3 w-full max-w-md px-4 pointer-events-none">
         {% for message in messages %}
@@ -154,6 +156,7 @@
         {% endfor %}
       </div>
     {% endif %}
+  </div>
 
     <!-- ── MAIN CONTENT ───────────────────────────────────────────────── -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
