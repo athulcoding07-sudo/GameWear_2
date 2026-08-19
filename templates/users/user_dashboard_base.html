@@ -163,24 +163,111 @@
       {% block content %}{% endblock %}
     </main>
 
-    <!-- ── FOOTER ─────────────────────────────────────────────────────── -->
-    <footer class="bg-black border-t border-neutral-900 py-12">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <!-- <div class="flex flex-wrap justify-center space-x-6 mb-8 text-sm">
-          <a href="#" class="text-neutral-400 hover:text-white transition duration-200">About Us</a>
-          <a href="#" class="text-neutral-400 hover:text-white transition duration-200">Privacy Policy</a>
-          <a href="#" class="text-neutral-400 hover:text-white transition duration-200">Terms</a>
-          <a href="#" class="text-neutral-400 hover:text-white transition duration-200">Contact</a>
+  <!-- ── FOOTER ─────────────────────────────────────────────────────── -->
+<footer class="bg-black border-t border-neutral-900 py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+        <!-- Footer Main Content -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
+
+            <!-- Brand -->
+            <div>
+                <h2 class="text-xl font-bold text-white mb-4">
+                    <span class="text-neutral-500">Game</span>Wear
+                </h2>
+
+                <p class="text-neutral-500 text-sm leading-6 max-w-sm">
+                    Your one-stop shop for premium gaming apparel and accessories.
+                </p>
+            </div>
+
+            <!-- Shop -->
+            <div>
+                <h3 class="text-white font-semibold text-sm uppercase mb-5">
+                    Shop
+                </h3>
+
+                <ul class="space-y-3">
+                    <li>
+                        <a href="{% url 'products:users_product_listing' %}"
+                           class="text-neutral-400 hover:text-white transition duration-200 text-sm">
+                            All Products
+                        </a>
+                    </li>
+
+                    <li>
+                        <a href="{% url 'products:users_product_listing' %}"
+                           class="text-neutral-400 hover:text-white transition duration-200 text-sm">
+                            Categories
+                        </a>
+                    </li>
+
+                    <li>
+                        <a href="{% url 'products:cart_view' %}"
+                           class="text-neutral-400 hover:text-white transition duration-200 text-sm">
+                            Cart
+                        </a>
+                    </li>
+
+                    <li>
+                        <a href="{% url 'products:wishlist' %}"
+                           class="text-neutral-400 hover:text-white transition duration-200 text-sm">
+                            Wishlist
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Account -->
+            <div>
+                <h3 class="text-white font-semibold text-sm uppercase mb-5">
+                    Account
+                </h3>
+
+                <ul class="space-y-3">
+
+                    {% if user.is_authenticated %}
+
+                        <li>
+                            <p class="text-neutral-400 text-sm">
+                                You are already logged in.
+                            </p>
+                        </li>
+
+                    {% else %}
+
+                        <li>
+                            <a href="{% url 'users:login' %}"
+                               class="text-neutral-400 hover:text-white transition duration-200 text-sm">
+                                Login
+                            </a>
+                        </li>
+
+                        <li>
+                            <a href="{% url 'users:signup' %}"
+                               class="text-neutral-400 hover:text-white transition duration-200 text-sm">
+                                Sign Up
+                            </a>
+                        </li>
+
+                    {% endif %}
+
+                </ul>
+            </div>
+
         </div>
-        <div class="flex justify-center space-x-6 mb-8 text-neutral-500 text-2xl">
-          <a href="#" class="hover:text-white transition duration-200">FB</a>
-          <a href="#" class="hover:text-white transition duration-200">IG</a>
-          <a href="#" class="hover:text-white transition duration-200">TW</a>
-          <a href="#" class="hover:text-white transition duration-200">YT</a>
-        </div> -->
-        <p class="text-neutral-500 text-sm">&copy; 2025 GameWear. All rights reserved.</p>
-      </div>
-    </footer>
+
+        <!-- Divider -->
+        <div class="border-t border-neutral-800 mt-10 pt-5">
+
+            <p class="text-neutral-500 text-sm text-center">
+                &copy; 2025 GameWear. All rights reserved.
+            </p>
+
+        </div>
+
+    </div>
+</footer>
 
     <!-- ── BASE SCRIPTS ───────────────────────────────────────────────── -->
     <script>
