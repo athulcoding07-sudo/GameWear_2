@@ -156,9 +156,9 @@ def remove_wishlist_item(user, item_id):
 def move_to_cart(user, item, get_or_create_cart):
     cart = get_or_create_cart(user)
 
-    #  Get correct price
+    #  Get correct price (use offer price if available)
     if item.variant:
-        price = item.variant.price
+        price = item.variant.offer_price
     else:
         return _response(False, "Variant required for this product")
 

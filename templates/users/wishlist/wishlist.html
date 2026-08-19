@@ -111,10 +111,16 @@
                 {{ item.variant.size }}
               </span>
               {% endif %}
-              
-              <span class="text-neutral-400 text-xs font-bold italic">
-                ₹{{ item.variant.price }}
-              </span>
+
+              {% with pricing=item.variant.pricing %}
+                {% if pricing.discount_percentage > 0 %}
+                <span class="text-white text-xs font-black italic">��{{ pricing.offer_price }}</span>
+                <span class="text-neutral-600 text-[10px] line-through font-bold">��{{ pricing.original_price }}</span>
+                <span class="text-green-400 text-[10px] font-bold">{{ pricing.discount_percentage }}% OFF</span>
+                {% else %}
+                <span class="text-neutral-400 text-xs font-bold italic">��{{ item.variant.price }}</span>
+                {% endif %}
+              {% endwith %}
             </div>
 
             <form method="POST" action="{% url 'products:move_to_cart' item.id %}" class="mt-3 md:hidden">
@@ -140,8 +146,16 @@
           {% endif %}
         </div>
 
-        <div class="hidden md:flex col-span-2 justify-center">
-          <p class="text-white font-black italic text-lg">₹{{ item.variant.price }}</p>
+        <div class="hidden md:flex col-span-2 justify-center flex flex-col items-center gap-1">
+          {% with pricing=item.variant.pricing %}
+            {% if pricing.discount_percentage > 0 %}
+            <span class="text-white font-black italic text-lg">₹{{ pricing.offer_price }}</span>
+            <span class="text-neutral-600 text-xs line-through font-bold">₹{{ pricing.original_price }}</span>
+            <span class="text-green-400 text-[10px] font-bold">{{ pricing.discount_percentage }}% OFF</span>
+            {% else %}
+            <span class="text-white font-black italic text-lg">₹{{ item.variant.price }}</span>
+            {% endif %}
+          {% endwith %}
         </div>
 
         <div class="hidden md:flex col-span-2 justify-end pr-8">

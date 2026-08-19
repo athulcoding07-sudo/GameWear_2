@@ -24,6 +24,7 @@ from .views import (
     delete_address,
     logout_view,
     apply_referral,
+    
 )
 #from .views import login_view,signup_view,user_dashboard,verify_signup_otp,resend_signup_otp,forgot_password_view,verify_reset_otp
 

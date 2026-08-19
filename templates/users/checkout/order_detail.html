@@ -753,7 +753,7 @@
 
         {# ── Invoice Download Button ── #}
         {% with s=order.status|lower %}
-        {% if s != "pending" and s != "cancelled" and s != "partial_cancelled" and s != "return_requested" and s != "returned" and s != "refunded" and s != "partial_refunded" %}
+        {% if s != "pending" and s != "cancelled" and s != "partial_cancelled" and s != "return_requested" and s != "returned" and s != "refunded" and s != "partial_refunded" and item_status != "failed" %}
         <a href="{% url 'products:download_invoice' order.id %}" class="group relative flex items-center justify-center gap-2.5 w-full overflow-hidden
                  bg-neutral-900 border border-neutral-700 hover:border-white
                  text-neutral-300 hover:text-white

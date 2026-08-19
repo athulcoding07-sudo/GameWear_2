@@ -305,10 +305,18 @@
                 class="px-10 py-5 border-b-2 border-white text-white font-black uppercase tracking-widest text-xs transition-all">
           All Reviews
         </button>
+        {% if user.is_authenticated and has_purchased %}
         <button onclick="switchReviewTab('write')" id="tab-btn-write"
                 class="px-10 py-5 border-b-2 border-transparent text-neutral-600 font-black uppercase tracking-widest text-xs hover:text-white transition-all">
           Write a Review
         </button>
+        {% elif user.is_authenticated %}
+        <button id="tab-btn-write-disabled"
+                class="px-10 py-5 border-b-2 border-transparent text-neutral-600 font-black uppercase tracking-widest text-xs cursor-not-allowed opacity-50"
+                title="You can only write a review after purchasing this product">
+          Write a Review
+        </button>
+        {% endif %}
       </div>
 
       {# Tab: All Reviews #}
@@ -368,7 +376,7 @@
 
       {# Tab: Write a Review #}
       <div id="tab-content-write" class="hidden animate-fadeIn">
-        {% if user.is_authenticated %}
+        {% if user.is_authenticated and has_purchased %}
         <div class="max-w-3xl mx-auto bg-neutral-900/50 border border-neutral-800 rounded-[2rem] p-10">
           <form id="review-form"
                 method="POST"
@@ -439,6 +447,23 @@
               Deploy Review
             </button>
           </form>
+        </div>
+        {% elif user.is_authenticated %}
+        <div class="max-w-3xl mx-auto bg-neutral-900/50 border border-neutral-800 rounded-[2rem] p-10 text-center">
+          <div class="py-12">
+            <svg class="w-16 h-16 mx-auto text-neutral-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+            </svg>
+            <h3 class="text-xl font-black uppercase tracking-tight mb-3">Verified Purchase Required</h3>
+            <p class="text-neutral-400 text-sm leading-relaxed mb-6 max-w-md mx-auto">
+              To ensure authentic reviews, only customers who have purchased this product can write a review.
+              Once your order is confirmed, you'll be able to share your experience.
+            </p>
+            <a href="{% url 'products:order_history' %}"
+               class="inline-flex items-center px-6 py-3 bg-white text-black font-black uppercase tracking-[0.2em] text-[10px] rounded-full hover:bg-neutral-200 transition">
+              View Your Orders
+            </a>
+          </div>
         </div>
         {% endif %}
       </div>

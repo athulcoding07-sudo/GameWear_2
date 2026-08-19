@@ -601,3 +601,5 @@ def apply_referral(request):
         f"Referral code applied! Both you and {referrer.full_name} will get ₹10 when your first order is delivered."
     )
     return redirect("users:user_profile")
+
+

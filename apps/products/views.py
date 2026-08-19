@@ -1035,10 +1035,19 @@ def user_product_detail(request, slug):
     # WISHLIST STATE (single query, avoids N+1)
     # =====================================================
     is_wishlisted = False
+    has_purchased = False
     if request.user.is_authenticated:
         is_wishlisted = WishlistItem.objects.filter(
             user=request.user,
             product=product,
+        ).exists()
+
+        # Check if user has purchased this product (verified purchase)
+        # Consider orders that are DELIVERED or CONFIRMED as verified purchases
+        has_purchased = OrderItem.objects.filter(
+            product=product,
+            order__user=request.user,
+            order__status__in=["DELIVERED", "CONFIRMED", "PACKED", "SHIPPED", "OUT_FOR_DELIVERY"],
         ).exists()
 
     # =====================================================
@@ -1054,6 +1063,7 @@ def user_product_detail(request, slug):
         "reviews": reviews,
         "pricing": pricing,
         "is_wishlisted": is_wishlisted,
+        "has_purchased": has_purchased,
     }
 
     return render(
@@ -1065,6 +1075,17 @@ def user_product_detail(request, slug):
 @login_required
 def add_or_edit_review(request, slug):
     product = get_object_or_404(Product, slug=slug, is_active=True)
+
+    # Verify the user has purchased this product (verified purchase only)
+    has_purchased = OrderItem.objects.filter(
+        product=product,
+        order__user=request.user,
+        order__status__in=["DELIVERED", "CONFIRMED", "PACKED", "SHIPPED", "OUT_FOR_DELIVERY"],
+    ).exists()
+
+    if not has_purchased:
+        messages.error(request, "You can only review products you have purchased.")
+        return redirect("products:users_product_detail", slug=product.slug)
 
     review = Review.objects.filter(
         product=product,
