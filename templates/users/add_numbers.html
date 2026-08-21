@@ -1,0 +1,48 @@
+<!-- <!DOCTYPE html>
+<html>
+<head>
+    <title>Add Numbers</title>
+</head>
+<body>
+
+    <h1>Add Two Numbers</h1>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <label>Number 1:</label>
+        <input type="number" name="num1" required>
+
+        <br><br>
+
+        <label>Number 2:</label>
+        <input type="number" name="num2" required>
+
+        <br><br>
+
+        <button type="submit">Add</button>
+    </form>
+
+    {% if result is not None %}
+        <h2>Result: {{ result }}</h2>
+    {% endif %}
+
+</body>
+</html> -->
+<h1>Add numbers</h1>
+<form method="POST">
+    {% csrf_token %}
+
+    
+    <label >number1</label>
+    <input type="number" name="number1" required>
+    <label >number2</label>
+    <input type="number" name="number2" required>
+
+    <button  type="submit">Add</button>
+
+
+</form>
+{% if resutlt is not None %}
+<h2>Result : {{ result }} </h2>
+{%  endif %}

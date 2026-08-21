@@ -24,6 +24,7 @@ from .views import (
     delete_address,
     logout_view,
     apply_referral,
+    add_numbers,
     
 )
 #from .views import login_view,signup_view,user_dashboard,verify_signup_otp,resend_signup_otp,forgot_password_view,verify_reset_otp
@@ -53,4 +54,5 @@ urlpatterns = [
     path("delete-address/",delete_address,name = "delete_address"),
     path("logout/", logout_view, name="logout"),
     path("apply-referral/", apply_referral, name="apply_referral"),
+    path("add/", add_numbers, name="add_numbers"),
 ]

@@ -603,3 +603,33 @@ def apply_referral(request):
     return redirect("users:user_profile")
 
 
+# def add_numbers(request):
+#     result = None
+
+#     if request.method == "POST":
+#         num1 = int(request.POST.get("num1"))
+#         num2 = int(request.POST.get("num2"))
+
+#         result = num1 + num2
+
+#     context = {
+#         "result": result,
+#     }
+
+#     return render(request, "users/add_numbers.html", context)
+
+def add_numbers(request):
+    result = None
+    if request.method == 'POST':
+        number1 = int(request.POST.get('num1'))
+        number2 = int(request.POST.get('num1'))
+        result = number1 + number2
+
+    context = {
+        'result' : result,
+    }
+
+    return render(request,'users/add_numbers.html',context)
+
+
+
