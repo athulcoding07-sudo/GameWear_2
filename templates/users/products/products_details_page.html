@@ -9,48 +9,48 @@
 <script>window.location.href = "{% url 'products:users_product_listing' %}";</script>
 {% endif %}
 
-<div class="min-h-screen bg-black text-white py-12">
+<div class="min-h-screen bg-black text-white py-6 sm:py-12">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
     {# ─── Breadcrumbs ─────────────────────────────────────────────────── #}
-    <nav class="flex mb-8 text-[10px] font-bold uppercase tracking-widest text-neutral-500">
+    <nav class="flex flex-wrap items-center gap-y-1 mb-6 sm:mb-8 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-neutral-500">
       <a href="{% url 'users:dashboard' %}" class="hover:text-white transition">Home</a>
       <span class="mx-2">/</span>
       <a href="{% url 'products:users_product_listing' %}" class="hover:text-white transition">Shop</a>
       <span class="mx-2">/</span>
-      <span class="text-white">{{ product.name }}</span>
+      <span class="text-white truncate max-w-[200px] sm:max-w-xs md:max-w-md">{{ product.name }}</span>
     </nav>
 
     {# ─── Product Grid ─────────────────────────────────────────────────── #}
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 xl:gap-24 items-start">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 xl:gap-24 items-start">
 
       {# ── LEFT: Image Gallery ── #}
-      <div class="lg:sticky lg:top-8 space-y-6 self-start">
+      <div class="lg:sticky lg:top-8 space-y-4 sm:space-y-6 self-start w-full max-w-2xl mx-auto lg:max-w-none">
 
         {# Main image #}
-        <div class="relative aspect-[4/5] bg-neutral-900 border border-neutral-800 rounded-[2rem] overflow-hidden group">
+        <div class="relative aspect-[4/5] bg-neutral-900 border border-neutral-800 rounded-2xl sm:rounded-[2rem] overflow-hidden group">
           <img id="main-image"
                src="{% if default_variant and default_variant.images.all %}{{ default_variant.images.first.image.url }}{% endif %}"
                alt="{{ product.name }}"
                onclick="openImageModal(this.src)"
-               class="w-full h-full object-contain p-12 transition-transform duration-500 group-hover:scale-110 cursor-zoom-in {% if not default_variant or not default_variant.images.all %}hidden{% endif %}">
-          <div id="no-gear-image-placeholder" class="w-full h-full flex items-center justify-center text-neutral-800 font-black italic {% if default_variant and default_variant.images.all %}hidden{% endif %}">
+               class="w-full h-full object-contain p-4 sm:p-8 lg:p-12 transition-transform duration-500 group-hover:scale-105 cursor-zoom-in {% if not default_variant or not default_variant.images.all %}hidden{% endif %}">
+          <div id="no-gear-image-placeholder" class="w-full h-full flex items-center justify-center text-neutral-800 text-sm sm:text-base font-black italic {% if default_variant and default_variant.images.all %}hidden{% endif %}">
             NO GEAR IMAGE
           </div>
 
           {% if product.old_price and default_variant.price %}
-            <div class="absolute top-8 left-8 bg-white text-black text-[10px] font-black uppercase px-4 py-1.5 rounded-full italic tracking-tighter">
+            <div class="absolute top-4 left-4 sm:top-8 sm:left-8 bg-white text-black text-[9px] sm:text-[10px] font-black uppercase px-3 sm:px-4 py-1 sm:py-1.5 rounded-full italic tracking-tighter">
               SALE
             </div>
           {% endif %}
         </div>
 
         {# Thumbnail strip #}
-        <div class="grid grid-cols-4 gap-4 {% if not default_variant or not default_variant.images.all %}hidden{% endif %}" id="thumbnail-container">
+        <div class="grid grid-cols-4 gap-2 sm:gap-4 {% if not default_variant or not default_variant.images.all %}hidden{% endif %}" id="thumbnail-container">
           {% if default_variant %}
           {% for img in default_variant.images.all %}
           <button onclick="changeImage('{{ img.image.url }}')"
-                  class="aspect-square bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden p-2 hover:border-white transition">
+                  class="aspect-square bg-neutral-900 border border-neutral-800 rounded-xl sm:rounded-2xl overflow-hidden p-1.5 sm:p-2 hover:border-white transition">
             <img src="{{ img.image.url }}" class="w-full h-full object-contain">
           </button>
           {% endfor %}
@@ -63,24 +63,24 @@
       <div class="flex flex-col justify-center">
 
         {# Meta: category + brand #}
-        <div class="mb-8">
-          <p class="text-xs font-black uppercase text-neutral-500 tracking-[0.3em] mb-4">
+        <div class="mb-6 sm:mb-8">
+          <p class="text-[10px] sm:text-xs font-black uppercase text-neutral-500 tracking-[0.2em] sm:tracking-[0.3em] mb-2 sm:mb-4">
             {{ product.category.name }}
           </p>
 
           {% if product.brand %}
-          <p class="text-xs font-black uppercase text-neutral-500 tracking-[0.3em] mb-4">
+          <p class="text-[10px] sm:text-xs font-black uppercase text-neutral-500 tracking-[0.2em] sm:tracking-[0.3em] mb-2 sm:mb-4">
             {{ product.brand.name }}
           </p>
           {% endif %}
 
-          <h1 class="text-3xl md:text-4xl font-black uppercase italic tracking-tighter leading-none mb-4">
+          <h1 class="text-2xl sm:text-3xl lg:text-4xl font-black uppercase italic tracking-tighter leading-tight sm:leading-none mb-3 sm:mb-4">
             {{ product.name }}
           </h1>
 
           {# Rating #}
-          <div class="flex items-center gap-3 mb-4">
-            <div class="text-yellow-400 text-sm font-bold">
+          <div class="flex flex-wrap items-center gap-2 sm:gap-3 mb-4">
+            <div class="text-yellow-400 text-xs sm:text-sm font-bold">
               ★ {{ avg_rating|default:0|floatformat:1 }}
             </div>
             <div class="text-neutral-500 text-xs">
@@ -89,74 +89,51 @@
           </div>
 
           {# Price #}
-          <div class="flex items-center gap-6" id="price-display-container">
+          <div class="flex flex-wrap items-baseline gap-3 sm:gap-6" id="price-display-container">
             {% if pricing.discount_percentage > 0 %}
-              <span class="text-4xl font-black italic">₹{{ pricing.offer_price }}</span>
-              <span class="text-xl text-neutral-600 line-through font-bold">₹{{ pricing.original_price }}</span>
-              <span class="text-green-400 text-sm font-bold">{{ pricing.discount_percentage }}% OFF</span>
+              <span class="text-3xl sm:text-4xl font-black italic">₹{{ pricing.offer_price }}</span>
+              <span class="text-lg sm:text-xl text-neutral-600 line-through font-bold">₹{{ pricing.original_price }}</span>
+              <span class="text-green-400 text-xs sm:text-sm font-bold">{{ pricing.discount_percentage }}% OFF</span>
             {% else %}
-              <span class="text-4xl font-black italic">₹{{ default_variant.price }}</span>
+              <span class="text-3xl sm:text-4xl font-black italic">₹{{ default_variant.price }}</span>
             {% endif %}
           </div>
 
           {# Stock status #}
           {% if has_stock %}
-            <p id="stock-text" class="text-green-500 text-sm font-bold mt-2">In Stock</p>
+            <p id="stock-text" class="text-green-500 text-xs sm:text-sm font-bold mt-2">In Stock</p>
           {% else %}
-            <p id="stock-text" class="text-red-500 text-sm font-bold mt-2">Out of Stock</p>
+            <p id="stock-text" class="text-red-500 text-xs sm:text-sm font-bold mt-2">Out of Stock</p>
           {% endif %}
         </div>
 
-        {# ── Key Highlights accordion ── #}
-        <!-- <div class="border-t border-neutral-800">
-          <button type="button" onclick="toggleHighlights()"
-                  class="w-full flex items-center justify-between py-6 group text-left">
-            <span class="text-[10px] font-black uppercase tracking-widest text-white group-hover:text-neutral-400 transition">Key Highlights</span>
-            <svg id="highlight-chevron" class="w-4 h-4 text-neutral-500 transition-transform duration-300"
-                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-            </svg>
-          </button>
-          <div id="highlight-content" class="max-h-0 overflow-hidden transition-all duration-500 ease-in-out">
-            <div class="pb-8 text-neutral-400 text-sm leading-relaxed font-medium">
-              {% if product.highlights %}
-                {{ product.highlights|linebreaksbr }}
-              {% else %}
-                <span class="italic text-neutral-600 uppercase text-[9px] tracking-widest">
-                  Technical details coming soon for this model.
-                </span>
-              {% endif %}
-            </div>
-          </div>
-        </div> -->
-
         {# ── Product Description accordion ── #}
-        <div class="border-t border-neutral-800 mb-10">
+        <div class="border-t border-neutral-800 mb-6 sm:mb-10">
           <button type="button" onclick="toggleDescription()"
-                  class="w-full flex items-center justify-between py-6 group text-left">
+                  class="w-full flex items-center justify-between py-4 sm:py-6 group text-left">
             <span class="text-[10px] font-black uppercase tracking-widest text-white group-hover:text-neutral-400 transition">Product Description</span>
-            <svg id="desc-chevron" class="w-4 h-4 text-neutral-500 transition-transform duration-300"
+            <svg id="desc-chevron" class="w-4 h-4 text-neutral-500 transition-transform duration-300 shrink-0"
                  fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
             </svg>
           </button>
           <div id="desc-content" class="max-h-0 overflow-hidden transition-all duration-500 ease-in-out">
-            <div class="pb-8 text-neutral-400 text-sm leading-relaxed font-medium">
+            <div class="pb-6 sm:pb-8 text-neutral-400 text-xs sm:text-sm leading-relaxed font-medium">
               {{ product.description|linebreaksbr }}
             </div>
           </div>
         </div>
 
         {# ── Add to Cart form ── #}
-        <form action="{% url 'products:add_to_cart' product.id %}" method="POST" class="space-y-8">
+        <form action="{% url 'products:add_to_cart' product.id %}" method="POST" class="space-y-6 sm:space-y-8">
           {% csrf_token %}
 
           {# Color selection #}
           <div>
-            <label class="text-[10px] font-black uppercase tracking-widest text-neutral-500 block mb-4">
+            <label class="text-[10px] font-black uppercase tracking-widest text-neutral-500 block mb-3 sm:mb-4">
               Select Color
             </label>
-            <div class="flex flex-wrap gap-3">
+            <div class="flex flex-wrap gap-2 sm:gap-3">
               {# Regroup variants by color to avoid duplicates in the UI #}
               {% regroup product.variants.all by color as color_list %}
               {% for color_group in color_list %}
@@ -165,7 +142,7 @@
                   <input type="radio" name="color" value="{{ color_group.grouper }}"
                          class="hidden peer color-radio"
                          {% if default_variant.color == color_group.grouper %}checked{% endif %}>
-                  <div class="px-6 py-3 border border-neutral-800 rounded-xl text-center text-xs font-bold uppercase transition
+                  <div class="px-4 sm:px-6 py-2.5 sm:py-3 border border-neutral-800 rounded-xl text-center text-[11px] sm:text-xs font-bold uppercase transition
                                peer-checked:bg-white peer-checked:text-black peer-checked:border-white
                                [body:has(.color-label.out-of-stock_&)]:opacity-40">
                     {{ color_group.grouper }}
@@ -183,10 +160,10 @@
 
           {# Size selection #}
           <div>
-            <label class="text-[10px] font-black uppercase tracking-widest text-neutral-500 block mb-4">
+            <label class="text-[10px] font-black uppercase tracking-widest text-neutral-500 block mb-3 sm:mb-4">
               Select Size
             </label>
-            <div class="grid grid-cols-4 gap-3">
+            <div class="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3">
               {% for variant in product.variants.all %}
               <label class="relative cursor-pointer group size-label" 
                      data-color="{{ variant.color }}" 
@@ -196,7 +173,7 @@
                        data-stock="{{ variant.stock }}"
                        {% if variant.stock <= 0 %}disabled{% endif %}
                        {% if variant == default_variant %}checked{% endif %}>
-                <div class="w-full py-4 border border-neutral-800 rounded-xl text-center text-sm font-bold uppercase transition
+                <div class="w-full py-3 sm:py-4 border border-neutral-800 rounded-xl text-center text-xs sm:text-sm font-bold uppercase transition
                              peer-checked:bg-white peer-checked:text-black peer-checked:border-white
                              peer-disabled:opacity-20 peer-disabled:cursor-not-allowed">
                   {{ variant.size|default:"Standard" }}
@@ -212,43 +189,51 @@
           </div>
 
           {# Quantity + Add to Cart + Wishlist #}
-          <div class="flex flex-col sm:flex-row gap-4 pt-4">
+          <div class="flex flex-col sm:flex-row items-stretch gap-3 sm:gap-4 pt-2 sm:pt-4">
 
-            {# Quantity stepper #}
-            <div class="flex border border-neutral-800 rounded-full overflow-hidden h-14 bg-neutral-900/30">
+            <div class="flex items-center justify-between gap-3 w-full sm:w-auto">
+              <!-- Quantity -->
+              <div class="flex items-center justify-between border border-neutral-800 rounded-full overflow-hidden h-12 sm:h-14 bg-neutral-900/30 shrink-0 px-1">
+                <button type="button" onclick="decrementQty()" class="w-10 h-10 flex items-center justify-center text-neutral-400 hover:text-white transition font-black text-lg">-</button>
+                <input type="number" id="quantity-input" name="quantity" value="1" min="1" max="5" class="w-10 text-center bg-transparent text-xs sm:text-sm font-black focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" readonly>
+                <button type="button" onclick="incrementQty()" class="w-10 h-10 flex items-center justify-center text-neutral-400 hover:text-white transition font-black text-lg">+</button>
+              </div>
+
+              <!-- Wishlist (Mobile helper position inside same row) -->
               <button type="button"
-                      onclick="this.nextElementSibling.stepDown()"
-                      class="px-6 text-neutral-500 font-bold hover:text-white transition">—</button>
-              <input type="number" name="quantity" value="1" min="1" max="10"
-                     class="w-12 bg-transparent text-center border-none focus:ring-0 font-black text-lg">
-              <button type="button"
-                      onclick="this.previousElementSibling.stepUp()"
-                      class="px-6 text-neutral-500 font-bold hover:text-white transition">+</button>
+                      id="wishlist-btn"
+                      onclick="toggleWishlist()"
+                      data-wishlisted="{% if is_wishlisted %}true{% else %}false{% endif %}"
+                      title="{% if is_wishlisted %}Remove from Wishlist{% else %}Save to Wishlist{% endif %}"
+                      class="wl-btn shrink-0 w-12 sm:w-14 h-12 sm:h-14 flex sm:hidden items-center justify-center rounded-full border transition-all duration-300">
+                <svg id="wishlist-icon" class="w-5 h-5 transition-transform duration-300"
+                     fill="{% if is_wishlisted %}currentColor{% else %}none{% endif %}"
+                     stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.684a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                </svg>
+              </button>
             </div>
 
-            {# Add to Cart #}
-            <button id="add-to-cart-btn" type="submit"
-                    class="flex-1 bg-white text-black font-black uppercase tracking-[0.2em] text-xs h-14 rounded-full hover:bg-neutral-200 transition disabled:opacity-40">
-              Add to Equipment Bag
+            <!-- Add to Cart -->
+            <button id="add-to-cart-btn"
+                    type="submit"
+                    class="w-full sm:flex-1 min-w-0 bg-white text-black font-black uppercase tracking-[0.15em] sm:tracking-[0.2em] text-xs h-12 sm:h-14 rounded-full hover:bg-neutral-200 transition disabled:opacity-40 shadow-lg">
+                Add to Equipment Bag
             </button>
 
-            {# Wishlist toggle — CSS drives all states via data-wishlisted attr #}
+            <!-- Wishlist (Desktop position) -->
             <button type="button"
-                    id="wishlist-btn"
+                    id="wishlist-btn-desktop"
                     onclick="toggleWishlist()"
-                    title="{% if is_wishlisted %}Remove from Wishlist{% else %}Save to Wishlist{% endif %}"
                     data-wishlisted="{% if is_wishlisted %}true{% else %}false{% endif %}"
-                    class="wl-btn shrink-0 w-14 h-14 flex items-center justify-center rounded-full border transition-all duration-300">
-              <svg id="wishlist-icon"
-                   class="w-5 h-5"
+                    title="{% if is_wishlisted %}Remove from Wishlist{% else %}Save to Wishlist{% endif %}"
+                    class="wl-btn shrink-0 w-14 h-14 hidden sm:flex items-center justify-center rounded-full border transition-all duration-300">
+              <svg class="w-5 h-5 wishlist-icon-desktop transition-transform duration-300"
                    fill="{% if is_wishlisted %}currentColor{% else %}none{% endif %}"
-                   stroke="currentColor"
-                   stroke-width="1.8"
-                   viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682
-                         a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318
-                         a4.5 4.5 0 00-6.364 0z"/>
+                   stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.684a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
               </svg>
             </button>
 
@@ -271,28 +256,28 @@
     {# END product grid #}
 
     {# ─── Reviews Section ──────────────────────────────────────────────── #}
-    <div class="mt-32 pt-16 border-t border-neutral-800" id="reviews-section">
+    <div class="mt-16 sm:mt-32 pt-10 sm:pt-16 border-t border-neutral-800" id="reviews-section">
 
       {# Header #}
-      <div class="text-center mb-16">
-        <h2 class="text-4xl font-black uppercase italic tracking-tighter mb-8">Verified Reviews</h2>
-        <div class="flex flex-col items-center justify-center gap-6">
-          <div class="flex items-center gap-6">
-            <span class="text-6xl font-black italic">{{ avg_rating|floatformat:1 }}</span>
+      <div class="text-center mb-10 sm:mb-16">
+        <h2 class="text-2xl sm:text-4xl font-black uppercase italic tracking-tighter mb-4 sm:mb-8">Verified Reviews</h2>
+        <div class="flex flex-col items-center justify-center gap-4 sm:gap-6">
+          <div class="flex items-center gap-4 sm:gap-6">
+            <span class="text-4xl sm:text-6xl font-black italic">{{ avg_rating|floatformat:1 }}</span>
             <div class="text-left">
-              <div class="text-yellow-400 text-xl tracking-tighter mb-1">
+              <div class="text-yellow-400 text-lg sm:text-xl tracking-tighter mb-0.5 sm:mb-1">
                 ★★★★<span class="text-neutral-800">★</span>
               </div>
-              <p class="text-[10px] font-black uppercase tracking-widest text-neutral-500">
+              <p class="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-neutral-500">
                 Based on {{ review_count }} reviews
               </p>
             </div>
           </div>
-          <div class="flex gap-3">
-            <span class="inline-flex items-center px-4 py-1.5 rounded-full border border-neutral-800 text-neutral-400 text-[10px] font-black uppercase tracking-widest bg-neutral-900/50">
+          <div class="flex flex-wrap justify-center gap-2 sm:gap-3">
+            <span class="inline-flex items-center px-3 sm:px-4 py-1.5 rounded-full border border-neutral-800 text-neutral-400 text-[9px] sm:text-[10px] font-black uppercase tracking-widest bg-neutral-900/50">
               Verified Gear
             </span>
-            <span class="inline-flex items-center px-4 py-1.5 rounded-full bg-white text-black text-[10px] font-black uppercase tracking-widest italic">
+            <span class="inline-flex items-center px-3 sm:px-4 py-1.5 rounded-full bg-white text-black text-[9px] sm:text-[10px] font-black uppercase tracking-widest italic">
               JUDGE.ME TRUSTED
             </span>
           </div>
@@ -300,19 +285,19 @@
       </div>
 
       {# Tab nav #}
-      <div class="flex justify-center border-b border-neutral-800 mb-16">
+      <div class="flex justify-center border-b border-neutral-800 mb-8 sm:mb-16 overflow-x-auto">
         <button onclick="switchReviewTab('view')" id="tab-btn-view"
-                class="px-10 py-5 border-b-2 border-white text-white font-black uppercase tracking-widest text-xs transition-all">
+                class="px-6 sm:px-10 py-3 sm:py-5 border-b-2 border-white text-white font-black uppercase tracking-widest text-[11px] sm:text-xs transition-all whitespace-nowrap">
           All Reviews
         </button>
         {% if user.is_authenticated and has_purchased %}
         <button onclick="switchReviewTab('write')" id="tab-btn-write"
-                class="px-10 py-5 border-b-2 border-transparent text-neutral-600 font-black uppercase tracking-widest text-xs hover:text-white transition-all">
+                class="px-6 sm:px-10 py-3 sm:py-5 border-b-2 border-transparent text-neutral-600 font-black uppercase tracking-widest text-[11px] sm:text-xs hover:text-white transition-all whitespace-nowrap">
           Write a Review
         </button>
         {% elif user.is_authenticated %}
         <button id="tab-btn-write-disabled"
-                class="px-10 py-5 border-b-2 border-transparent text-neutral-600 font-black uppercase tracking-widest text-xs cursor-not-allowed opacity-50"
+                class="px-6 sm:px-10 py-3 sm:py-5 border-b-2 border-transparent text-neutral-600 font-black uppercase tracking-widest text-[11px] sm:text-xs cursor-not-allowed opacity-50 whitespace-nowrap"
                 title="You can only write a review after purchasing this product">
           Write a Review
         </button>
@@ -321,51 +306,51 @@
 
       {# Tab: All Reviews #}
       <div id="tab-content-view" class="block animate-fadeIn">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
           {% for review in reviews %}
-          <div class="bg-neutral-900/30 border border-neutral-800 rounded-[2rem] p-8 flex flex-col justify-between hover:border-neutral-700 transition-colors">
+          <div class="bg-neutral-900/30 border border-neutral-800 rounded-2xl sm:rounded-[2rem] p-5 sm:p-8 flex flex-col justify-between hover:border-neutral-700 transition-colors">
             <div>
-              <div class="flex justify-between items-start mb-6">
+              <div class="flex justify-between items-start mb-4 sm:mb-6">
                 <div>
-                  <div class="flex items-center gap-3">
-                    <span class="font-black uppercase text-sm tracking-tight text-white">
+                  <div class="flex items-center gap-2 sm:gap-3">
+                    <span class="font-black uppercase text-xs sm:text-sm tracking-tight text-white">
                       {{ review.user.username }}
                     </span>
-                    <span class="text-[9px] bg-white text-black px-2 py-0.5 rounded-sm font-black uppercase italic">
+                    <span class="text-[8px] sm:text-[9px] bg-white text-black px-1.5 sm:px-2 py-0.5 rounded-sm font-black uppercase italic">
                       VERIFIED
                     </span>
                   </div>
-                  <p class="text-[10px] text-neutral-600 font-bold uppercase tracking-widest mt-1">
+                  <p class="text-[9px] sm:text-[10px] text-neutral-600 font-bold uppercase tracking-widest mt-1">
                     {{ review.created_at|date:"M d, Y" }}
                   </p>
                 </div>
-                <div class="text-yellow-400 flex text-sm">
+                <div class="text-yellow-400 flex text-xs sm:text-sm">
                   {% for i in "12345" %}
                     <span class="{% if forloop.counter <= review.rating %}text-yellow-400{% else %}text-neutral-800{% endif %}">★</span>
                   {% endfor %}
                 </div>
               </div>
 
-              <h4 class="text-sm font-black uppercase tracking-tight mb-3">
+              <h4 class="text-xs sm:text-sm font-black uppercase tracking-tight mb-2 sm:mb-3">
                 {{ review.title|default:"Quality Gear" }}
               </h4>
-              <p class="text-neutral-400 text-sm leading-relaxed mb-6 font-medium">
+              <p class="text-neutral-400 text-xs sm:text-sm leading-relaxed mb-4 sm:mb-6 font-medium">
                 {{ review.comment }}
               </p>
 
               {% if review.images.all %}
-              <div class="flex gap-3 mb-4">
+              <div class="flex gap-2 sm:gap-3 mb-4">
                 {% for img in review.images.all|slice:":2" %}
                 <img src="{{ img.image.url }}"
                      onclick="openImageModal(this.src)"
-                     class="w-20 h-20 object-cover rounded-xl border border-neutral-800 cursor-zoom-in hover:opacity-80 transition">
+                     class="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-xl border border-neutral-800 cursor-zoom-in hover:opacity-80 transition">
                 {% endfor %}
               </div>
               {% endif %}
             </div>
           </div>
           {% empty %}
-          <div class="col-span-2 py-20 text-center">
+          <div class="col-span-1 md:col-span-2 py-12 sm:py-20 text-center">
             <p class="text-neutral-600 font-black uppercase tracking-widest text-xs italic">
               No Gear Reports Yet.
             </p>
@@ -377,21 +362,21 @@
       {# Tab: Write a Review #}
       <div id="tab-content-write" class="hidden animate-fadeIn">
         {% if user.is_authenticated and has_purchased %}
-        <div class="max-w-3xl mx-auto bg-neutral-900/50 border border-neutral-800 rounded-[2rem] p-10">
+        <div class="max-w-3xl mx-auto bg-neutral-900/50 border border-neutral-800 rounded-2xl sm:rounded-[2rem] p-5 sm:p-10">
           <form id="review-form"
                 method="POST"
                 enctype="multipart/form-data"
                 action="{% url 'products:add_or_edit_review' product.slug %}"
-                class="space-y-6">
+                class="space-y-4 sm:space-y-6">
             {% csrf_token %}
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               <div class="space-y-2">
                 <label class="text-[10px] font-black uppercase tracking-widest text-neutral-500">
                   Gear Rating
                 </label>
                 <select name="rating" required
-                        class="w-full bg-black border border-neutral-800 rounded-xl px-5 py-4 text-xs font-bold focus:border-white outline-none appearance-none">
+                        class="w-full bg-black border border-neutral-800 rounded-xl px-4 sm:px-5 py-3.5 sm:py-4 text-xs font-bold focus:border-white outline-none appearance-none">
                   <option value="5">★★★★★ (EXCELLENT)</option>
                   <option value="4">★★★★☆ (GOOD)</option>
                   <option value="3">★★★☆☆ (AVERAGE)</option>
@@ -404,7 +389,7 @@
                   Headline
                 </label>
                 <input type="text" name="title" placeholder="E.G. PERFECT FIT"
-                       class="w-full bg-black border border-neutral-800 rounded-xl px-5 py-4 text-xs font-bold focus:border-white outline-none">
+                       class="w-full bg-black border border-neutral-800 rounded-xl px-4 sm:px-5 py-3.5 sm:py-4 text-xs font-bold focus:border-white outline-none">
               </div>
             </div>
 
@@ -412,8 +397,8 @@
               <label class="text-[10px] font-black uppercase tracking-widest text-neutral-500">
                 Detailed Review
               </label>
-              <textarea name="comment" rows="6" placeholder="DESCRIBE YOUR EXPERIENCE..."
-                        class="w-full bg-black border border-neutral-800 rounded-xl px-5 py-4 text-xs font-bold focus:border-white outline-none resize-none"></textarea>
+              <textarea name="comment" rows="5" placeholder="DESCRIBE YOUR EXPERIENCE..."
+                        class="w-full bg-black border border-neutral-800 rounded-xl px-4 sm:px-5 py-3.5 sm:py-4 text-xs font-bold focus:border-white outline-none resize-none"></textarea>
             </div>
 
             {# Review image upload grid #}
@@ -421,7 +406,7 @@
               <label class="text-[10px] uppercase font-bold text-neutral-500 block mb-2">
                 Review Images (Min 2 – Max 5)
               </label>
-              <div class="grid grid-cols-5 gap-2">
+              <div class="grid grid-cols-5 gap-1.5 sm:gap-2">
                 {% for i in "12345" %}
                 <label class="relative aspect-square border-2 border-dashed border-neutral-800 rounded-xl flex items-center justify-center cursor-pointer hover:bg-neutral-900 transition overflow-hidden group">
                   <input type="file" name="images" accept="image/*"
@@ -430,7 +415,7 @@
                     <img src="" class="w-full h-full object-cover">
                   </div>
                   <div class="placeholder-icon text-neutral-600 group-hover:text-neutral-400">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                     </svg>
                   </div>
@@ -443,24 +428,24 @@
             </div>
 
             <button type="submit"
-                    class="w-full bg-white text-black px-8 py-5 rounded-full font-black uppercase tracking-[0.2em] text-[10px] hover:bg-neutral-200 transition shadow-xl">
+                    class="w-full bg-white text-black px-6 sm:px-8 py-4 sm:py-5 rounded-full font-black uppercase tracking-[0.2em] text-[10px] hover:bg-neutral-200 transition shadow-xl">
               Deploy Review
             </button>
           </form>
         </div>
         {% elif user.is_authenticated %}
-        <div class="max-w-3xl mx-auto bg-neutral-900/50 border border-neutral-800 rounded-[2rem] p-10 text-center">
-          <div class="py-12">
-            <svg class="w-16 h-16 mx-auto text-neutral-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="max-w-3xl mx-auto bg-neutral-900/50 border border-neutral-800 rounded-2xl sm:rounded-[2rem] p-6 sm:p-10 text-center">
+          <div class="py-6 sm:py-12">
+            <svg class="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-neutral-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
             </svg>
-            <h3 class="text-xl font-black uppercase tracking-tight mb-3">Verified Purchase Required</h3>
-            <p class="text-neutral-400 text-sm leading-relaxed mb-6 max-w-md mx-auto">
+            <h3 class="text-lg sm:text-xl font-black uppercase tracking-tight mb-2 sm:mb-3">Verified Purchase Required</h3>
+            <p class="text-neutral-400 text-xs sm:text-sm leading-relaxed mb-6 max-w-md mx-auto">
               To ensure authentic reviews, only customers who have purchased this product can write a review.
               Once your order is confirmed, you'll be able to share your experience.
             </p>
             <a href="{% url 'products:order_history' %}"
-               class="inline-flex items-center px-6 py-3 bg-white text-black font-black uppercase tracking-[0.2em] text-[10px] rounded-full hover:bg-neutral-200 transition">
+               class="inline-flex items-center px-5 sm:px-6 py-3 bg-white text-black font-black uppercase tracking-[0.2em] text-[10px] rounded-full hover:bg-neutral-200 transition">
               View Your Orders
             </a>
           </div>
@@ -473,12 +458,12 @@
 
     {# ─── Recommended Gear ─────────────────────────────────────────────── #}
     {% if related_products %}
-    <div class="mt-32 pt-16 border-t border-neutral-800">
-      <h2 class="text-3xl font-black uppercase italic tracking-tighter mb-12">Recommended Gear</h2>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div class="mt-16 sm:mt-32 pt-10 sm:pt-16 border-t border-neutral-800">
+      <h2 class="text-2xl sm:text-3xl font-black uppercase italic tracking-tighter mb-6 sm:mb-12">Recommended Gear</h2>
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         {% for related in related_products %}
         <div class="group relative">
-          <div class="relative aspect-[4/5] bg-neutral-900 border border-neutral-800 rounded-3xl overflow-hidden p-6 transition-all duration-500 group-hover:border-neutral-600">
+          <div class="relative aspect-[4/5] bg-neutral-900 border border-neutral-800 rounded-2xl sm:rounded-3xl overflow-hidden p-4 sm:p-6 transition-all duration-500 group-hover:border-neutral-600">
             <a href="{% url 'products:users_product_detail' related.slug %}" class="block w-full h-full">
               {% with rv=related.variants.first %}
                 {% if rv and rv.images.first %}
@@ -488,13 +473,13 @@
               {% endwith %}
             </a>
           </div>
-          <div class="mt-4 px-2">
-            <h3 class="text-xs font-bold text-white group-hover:text-neutral-400 transition mb-1 uppercase">
+          <div class="mt-3 sm:mt-4 px-1 sm:px-2">
+            <h3 class="text-[11px] sm:text-xs font-bold text-white group-hover:text-neutral-400 transition mb-1 uppercase truncate">
               {{ related.name }}
             </h3>
             {% with rv=related.variants.first %}
               {% if rv %}
-                <p class="text-[10px] font-black italic text-neutral-400 tracking-wider">₹{{ rv.price }}</p>
+                <p class="text-[9px] sm:text-[10px] font-black italic text-neutral-400 tracking-wider">₹{{ rv.price }}</p>
               {% endif %}
             {% endwith %}
           </div>
@@ -509,11 +494,11 @@
 
 {# ─── Image Zoom Modal ─────────────────────────────────────────────────── #}
 <div id="imageModal"
-     class="fixed inset-0 bg-black/98 z-50 hidden items-center justify-center p-6">
+     class="fixed inset-0 bg-black/98 z-50 hidden items-center justify-center p-4 sm:p-6">
   <button onclick="closeImageModal()"
-          class="absolute top-8 right-8 text-white text-2xl font-black z-50">✕</button>
+          class="absolute top-4 right-4 sm:top-8 sm:right-8 text-white text-xl sm:text-2xl font-black z-50 p-2">✕</button>
   <div class="relative max-w-5xl w-full flex items-center justify-center">
-    <img id="zoomedImage" src="" class="max-h-[90vh] w-auto object-contain">
+    <img id="zoomedImage" src="" class="max-h-[85vh] sm:max-h-[90vh] w-auto max-w-full object-contain">
   </div>
 </div>
 
@@ -543,6 +528,20 @@
 <script>
   const variantsData = JSON.parse(document.getElementById('variants-data').textContent);
 
+  function incrementQty() {
+    const input = document.getElementById('quantity-input');
+    if (!input) return;
+    let val = parseInt(input.value) || 1;
+    if (val < 5) input.value = val + 1;
+  }
+
+  function decrementQty() {
+    const input = document.getElementById('quantity-input');
+    if (!input) return;
+    let val = parseInt(input.value) || 1;
+    if (val > 1) input.value = val - 1;
+  }
+
   function updateSelectedVariantUI(variantId) {
     const variant = variantsData.find(v => String(v.id) === String(variantId));
     if (!variant) return;
@@ -552,13 +551,13 @@
     if (priceContainer) {
       if (parseFloat(variant.discount_percentage) > 0) {
         priceContainer.innerHTML = `
-          <span class="text-4xl font-black italic">₹${variant.offer_price}</span>
-          <span class="text-xl text-neutral-600 line-through font-bold">₹${variant.original_price}</span>
-          <span class="text-green-400 text-sm font-bold">${variant.discount_percentage}% OFF</span>
+          <span class="text-3xl sm:text-4xl font-black italic">₹${variant.offer_price}</span>
+          <span class="text-lg sm:text-xl text-neutral-600 line-through font-bold">₹${variant.original_price}</span>
+          <span class="text-green-400 text-xs sm:text-sm font-bold">${variant.discount_percentage}% OFF</span>
         `;
       } else {
         priceContainer.innerHTML = `
-          <span class="text-4xl font-black italic">₹${variant.price}</span>
+          <span class="text-3xl sm:text-4xl font-black italic">₹${variant.price}</span>
         `;
       }
     }
@@ -571,8 +570,8 @@
     if (stockLabel) {
       stockLabel.textContent = inStock ? 'In Stock' : 'Out of Stock';
       stockLabel.className = inStock
-        ? 'text-green-500 text-sm font-bold mt-2'
-        : 'text-red-500 text-sm font-bold mt-2';
+        ? 'text-green-500 text-xs sm:text-sm font-bold mt-2'
+        : 'text-red-500 text-xs sm:text-sm font-bold mt-2';
     }
 
     // 3. Update Images
@@ -597,7 +596,7 @@
         thumbContainer.classList.remove('hidden');
         thumbContainer.innerHTML = variant.images.map(imgUrl => `
           <button type="button" onclick="changeImage('${imgUrl}')"
-                  class="aspect-square bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden p-2 hover:border-white transition">
+                  class="aspect-square bg-neutral-900 border border-neutral-800 rounded-xl sm:rounded-2xl overflow-hidden p-1.5 sm:p-2 hover:border-white transition">
             <img src="${imgUrl}" class="w-full h-full object-contain">
           </button>
         `).join('');
@@ -614,15 +613,17 @@
     document.getElementById('tab-content-view').classList.toggle('hidden', !isView);
     document.getElementById('tab-content-write').classList.toggle('hidden', isView);
 
-    const activeClass  = 'px-10 py-5 border-b-2 border-white text-white font-black uppercase tracking-widest text-xs transition-all';
-    const inactiveClass = 'px-10 py-5 border-b-2 border-transparent text-neutral-600 font-black uppercase tracking-widest text-xs hover:text-white transition-all';
+    const activeClass  = 'px-6 sm:px-10 py-3 sm:py-5 border-b-2 border-white text-white font-black uppercase tracking-widest text-[11px] sm:text-xs transition-all whitespace-nowrap';
+    const inactiveClass = 'px-6 sm:px-10 py-3 sm:py-5 border-b-2 border-transparent text-neutral-600 font-black uppercase tracking-widest text-[11px] sm:text-xs hover:text-white transition-all whitespace-nowrap';
     document.getElementById('tab-btn-view').className  = isView  ? activeClass : inactiveClass;
-    document.getElementById('tab-btn-write').className = !isView ? activeClass : inactiveClass;
+    const writeBtn = document.getElementById('tab-btn-write');
+    if (writeBtn) writeBtn.className = !isView ? activeClass : inactiveClass;
   }
 
   // ── Image gallery ────────────────────────────────────────────────────
   function changeImage(url) {
-    document.getElementById('main-image').src = url;
+    const mainImg = document.getElementById('main-image');
+    if (mainImg) mainImg.src = url;
   }
 
   function openImageModal(url) {
@@ -638,34 +639,30 @@
   function toggleAccordion(contentId, chevronId) {
     const content = document.getElementById(contentId);
     const chevron = document.getElementById(chevronId);
+    if (!content || !chevron) return;
     const isOpen  = content.style.maxHeight && content.style.maxHeight !== '0px';
     content.style.maxHeight = isOpen ? '0px' : content.scrollHeight + 'px';
     chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
   }
 
-  function toggleHighlights()  { toggleAccordion('highlight-content', 'highlight-chevron'); }
   function toggleDescription() { toggleAccordion('desc-content', 'desc-chevron'); }
 
   // ── Variant stock sync ───────────────────────────────────────────────
   document.querySelectorAll('.variant-radio').forEach(function(radio) {
     radio.addEventListener('change', function() {
       // Keep wishlist variant in sync
-      document.getElementById('wishlist-variant-id').value = this.value;
+      const wlVariant = document.getElementById('wishlist-variant-id');
+      if (wlVariant) wlVariant.value = this.value;
       updateSelectedVariantUI(this.value);
     });
   });
 
   // ── Show wishlist toast message ───────────────────────────────────
-function showWishlistMessage(message, type = 'success') {
+  function showWishlistMessage(message, type = 'success') {
     const container = document.getElementById('toast-container');
-
-    // Safety check
-    if (!container) {
-        return;
-    }
+    if (!container) return;
 
     const toast = document.createElement('div');
-
     toast.className =
         'toast-message toast-animate-in pointer-events-auto relative overflow-hidden group flex items-start gap-4 p-4 rounded-xl border backdrop-blur-md shadow-2xl transition-all duration-300 w-full ' +
         (type === 'success'
@@ -673,209 +670,104 @@ function showWishlistMessage(message, type = 'success') {
             : 'bg-rose-950/90 border-rose-500/50 text-rose-100');
 
     toast.setAttribute('role', 'alert');
-
     toast.innerHTML = `
         <div class="flex-shrink-0 mt-0.5">
             ${
                 type === 'success'
-                    ? `
-                    <svg class="w-5 h-5 text-emerald-400"
-                         fill="currentColor"
-                         viewBox="0 0 20 20">
-                        <path fill-rule="evenodd"
-                              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 001.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                              clip-rule="evenodd"/>
-                    </svg>
-                    `
-                    : `
-                    <svg class="w-5 h-5 text-rose-400"
-                         fill="currentColor"
-                         viewBox="0 0 20 20">
-                        <path fill-rule="evenodd"
-                              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l-1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                              clip-rule="evenodd"/>
-                    </svg>
-                    `
+                    ? `<svg class="w-5 h-5 text-emerald-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 001.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>`
+                    : `<svg class="w-5 h-5 text-rose-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 101.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l-1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>`
             }
         </div>
-
         <div class="flex-1 pr-4">
-            <p class="text-sm font-medium leading-tight">
-                ${message}
-            </p>
+            <p class="text-sm font-medium leading-tight">${message}</p>
         </div>
-
-        <button
-            type="button"
-            class="close-toast flex-shrink-0 text-white/40 hover:text-white transition-colors">
-
-            <svg class="w-4 h-4"
-                 fill="none"
-                 stroke="currentColor"
-                 viewBox="0 0 24 24">
-
-                <path stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-
+        <button type="button" class="close-toast flex-shrink-0 text-white/40 hover:text-white transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
-
-        <div class="progress-bar"
-             style="animation: shrink 4s linear forwards;">
-        </div>
+        <div class="progress-bar" style="animation: shrink 4s linear forwards;"></div>
     `;
 
     container.appendChild(toast);
-
-    // Close button
     const closeButton = toast.querySelector('.close-toast');
-
-    closeButton.addEventListener('click', function () {
+    if (closeButton) {
+      closeButton.addEventListener('click', function () {
         removeToast(toast);
+      });
+    }
+
+    setTimeout(function () {
+      removeToast(toast);
+    }, 4000);
+  }
+
+  function removeToast(toast) {
+    if (toast && toast.parentNode) {
+      toast.parentNode.removeChild(toast);
+    }
+  }
+
+  // ── Wishlist toggle — data-attribute driven, async fetch ──────────
+  function toggleWishlist() {
+    const mobileBtn  = document.getElementById('wishlist-btn');
+    const desktopBtn = document.getElementById('wishlist-btn-desktop');
+    const mobileIcon = document.getElementById('wishlist-icon');
+    const desktopIcon = document.querySelector('.wishlist-icon-desktop');
+
+    const isActive = (mobileBtn && mobileBtn.dataset.wishlisted === 'true') ||
+                     (desktopBtn && desktopBtn.dataset.wishlisted === 'true');
+    const newState = !isActive;
+
+    [mobileBtn, desktopBtn].forEach(btn => {
+      if (!btn) return;
+      btn.dataset.wishlisted = newState ? 'true' : 'false';
+      btn.title = newState ? 'Remove from Wishlist' : 'Save to Wishlist';
     });
 
-    // Automatically remove after 4 seconds
-    setTimeout(function () {
-        removeToast(toast);
-    }, 4000);
-}
-
-
-// ── Wishlist toggle — data-attribute driven, async fetch ──────────
-  function toggleWishlist() {
-
-      const btn = document.getElementById('wishlist-btn');
-      const icon = document.getElementById('wishlist-icon');
-
-      const isActive =
-          btn.dataset.wishlisted === 'true';
-
-
-      // ── Optimistic flip ───────────────────────────────────────────
-
-      const newState = !isActive;
-
-      btn.dataset.wishlisted =
-          newState ? 'true' : 'false';
-
-      btn.title = newState
-          ? 'Remove from Wishlist'
-          : 'Save to Wishlist';
-
-      icon.setAttribute(
-          'fill',
-          newState ? 'currentColor' : 'none'
-      );
-
-
-      // ── Spring pop animation ──────────────────────────────────────
-
-      icon.style.transition =
-          'transform 0.2s cubic-bezier(0.34,1.56,0.64,1)';
-
+    [mobileIcon, desktopIcon].forEach(icon => {
+      if (!icon) return;
+      icon.setAttribute('fill', newState ? 'currentColor' : 'none');
+      icon.style.transition = 'transform 0.2s cubic-bezier(0.34,1.56,0.64,1)';
       icon.style.transform = 'scale(1.3)';
+      setTimeout(() => { icon.style.transform = 'scale(1)'; }, 200);
+    });
 
-      setTimeout(function () {
-          icon.style.transform = 'scale(1)';
-      }, 200);
+    const form = document.getElementById('wishlist-form');
+    if (!form) return;
+    const formData = new FormData(form);
 
-
-      // ── Get wishlist form ─────────────────────────────────────────
-
-      const form =
-          document.getElementById('wishlist-form');
-
-      const formData =
-          new FormData(form);
-
-
-      // ── Send request to Django ────────────────────────────────────
-
-      fetch(form.action, {
-          method: 'POST',
-
-          headers: {
-              'X-Requested-With': 'XMLHttpRequest'
-          },
-
-          body: formData
-      })
-
-
-      // ── Convert Django response to JavaScript object ──────────────
-
-      .then(function (response) {
-
-          return response.json();
-
-      })
-
-
-      // ── Handle Django response ────────────────────────────────────
-
-      .then(function (data) {
-
-          // Server is the source of truth
-          const serverState =
-              data.wishlisted;
-
-
-          // Update heart according to server response
-          btn.dataset.wishlisted =
-              serverState ? 'true' : 'false';
-
-          btn.title = serverState
-              ? 'Remove from Wishlist'
-              : 'Save to Wishlist';
-
-          icon.setAttribute(
-              'fill',
-              serverState
-                  ? 'currentColor'
-                  : 'none'
-          );
-
-
-          // ── Show Django message in website toast ──────────────────
-
-          showWishlistMessage(
-              data.message,
-              data.status ? 'success' : 'error'
-          );
-
-      })
-
-
-      // ── Handle network error ──────────────────────────────────────
-
-      .catch(function () {
-
-          // Rollback optimistic UI
-          btn.dataset.wishlisted =
-              isActive ? 'true' : 'false';
-
-          btn.title = isActive
-              ? 'Remove from Wishlist'
-              : 'Save to Wishlist';
-
-          icon.setAttribute(
-              'fill',
-              isActive
-                  ? 'currentColor'
-                  : 'none'
-          );
-
-
-          // Show error in website toast
-          showWishlistMessage(
-              'Something went wrong. Please try again.',
-              'error'
-          );
-
+    fetch(form.action, {
+      method: 'POST',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+      const serverState = data.wishlisted;
+      [mobileBtn, desktopBtn].forEach(btn => {
+        if (!btn) return;
+        btn.dataset.wishlisted = serverState ? 'true' : 'false';
+        btn.title = serverState ? 'Remove from Wishlist' : 'Save to Wishlist';
       });
+      [mobileIcon, desktopIcon].forEach(icon => {
+        if (!icon) return;
+        icon.setAttribute('fill', serverState ? 'currentColor' : 'none');
+      });
+      showWishlistMessage(data.message, data.status ? 'success' : 'error');
+    })
+    .catch(() => {
+      [mobileBtn, desktopBtn].forEach(btn => {
+        if (!btn) return;
+        btn.dataset.wishlisted = isActive ? 'true' : 'false';
+        btn.title = isActive ? 'Remove from Wishlist' : 'Save to Wishlist';
+      });
+      [mobileIcon, desktopIcon].forEach(icon => {
+        if (!icon) return;
+        icon.setAttribute('fill', isActive ? 'currentColor' : 'none');
+      });
+      showWishlistMessage('Something went wrong. Please try again.', 'error');
+    });
   }
+
   // ── Review image previews ────────────────────────────────────────────
   document.querySelectorAll('.review-image-input').forEach(function(input) {
     input.addEventListener('change', function() {
@@ -898,18 +790,21 @@ function showWishlistMessage(message, type = 'success') {
   });
 
   // ── Review form: minimum 2 images validation ─────────────────────────
-  document.getElementById('review-form').addEventListener('submit', function(e) {
-    const inputs   = document.querySelectorAll('.review-image-input');
-    const errorEl  = document.getElementById('review-image-error');
-    const count    = Array.from(inputs).filter(i => i.files.length > 0).length;
+  const reviewForm = document.getElementById('review-form');
+  if (reviewForm) {
+    reviewForm.addEventListener('submit', function(e) {
+      const inputs   = document.querySelectorAll('.review-image-input');
+      const errorEl  = document.getElementById('review-image-error');
+      const count    = Array.from(inputs).filter(i => i.files.length > 0).length;
 
-    if (count < 2) {
-      e.preventDefault();
-      errorEl.classList.remove('hidden');
-    } else {
-      errorEl.classList.add('hidden');
-    }
-  });
+      if (count < 2) {
+        e.preventDefault();
+        if (errorEl) errorEl.classList.remove('hidden');
+      } else {
+        if (errorEl) errorEl.classList.add('hidden');
+      }
+    });
+  }
 
   document.addEventListener("DOMContentLoaded", function () {
     const colorRadios = document.querySelectorAll(".color-radio");
@@ -928,9 +823,12 @@ function showWishlistMessage(message, type = 'success') {
         });
 
         if (totalStockForColor === 0) {
-            colorLabel.querySelector(".line-indicator").classList.remove("hidden");
-            colorLabel.querySelector("div:first-of-type").classList.add("opacity-30", "pointer-events-none");
-            colorLabel.querySelector(".color-radio").disabled = true;
+            const line = colorLabel.querySelector(".line-indicator");
+            if (line) line.classList.remove("hidden");
+            const box = colorLabel.querySelector("div:first-of-type");
+            if (box) box.classList.add("opacity-30", "pointer-events-none");
+            const radio = colorLabel.querySelector(".color-radio");
+            if (radio) radio.disabled = true;
         }
     });
 
@@ -952,10 +850,10 @@ function showWishlistMessage(message, type = 'success') {
                 sizeLabel.style.display = "block";
                 if (stock > 0) {
                     radio.disabled = false;
-                    line.classList.add("hidden");
+                    if (line) line.classList.add("hidden");
                 } else {
                     radio.disabled = true;
-                    line.classList.remove("hidden");
+                    if (line) line.classList.remove("hidden");
                 }
             } else {
                 // Hide sizes belonging to other colors
@@ -973,7 +871,8 @@ function showWishlistMessage(message, type = 'success') {
             }
             if (nextSize) {
                 nextSize.checked = true;
-                document.getElementById('wishlist-variant-id').value = nextSize.value;
+                const wlVariant = document.getElementById('wishlist-variant-id');
+                if (wlVariant) wlVariant.value = nextSize.value;
                 updateSelectedVariantUI(nextSize.value);
             }
         }
@@ -988,7 +887,8 @@ function showWishlistMessage(message, type = 'success') {
     updateSizeVisibility();
     const initialChecked = document.querySelector(".variant-radio:checked");
     if (initialChecked) {
-        document.getElementById('wishlist-variant-id').value = initialChecked.value;
+        const wlVariant = document.getElementById('wishlist-variant-id');
+        if (wlVariant) wlVariant.value = initialChecked.value;
         updateSelectedVariantUI(initialChecked.value);
     }
 });
@@ -1001,20 +901,17 @@ function showWishlistMessage(message, type = 'success') {
   }
   .animate-fadeIn { animation: fadeIn 0.4s ease forwards; }
 
-  /* Wishlist button — two clear states, no ambiguity */
-
-  /* DEFAULT (not wishlisted) — dark outline, hollow heart */
+  /* Wishlist button — two clear states */
   .wl-btn[data-wishlisted="false"] {
     background: transparent;
-    border-color: #404040;   /* neutral-700 — visible but not harsh */
-    color: #737373;          /* neutral-500 */
+    border-color: #404040;
+    color: #737373;
   }
   .wl-btn[data-wishlisted="false"]:hover {
-    border-color: #d4d4d4;   /* neutral-300 */
+    border-color: #d4d4d4;
     color: #ffffff;
   }
 
-  /* ACTIVE (wishlisted) — solid white, filled heart, black icon */
   .wl-btn[data-wishlisted="true"] {
     background: #ffffff;
     border-color: #ffffff;

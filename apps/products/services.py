@@ -89,6 +89,11 @@ def add_to_cart(user, product, variant, quantity=1):
 def update_cart_item(cart_item, action):
     variant = cart_item.variant
 
+    if variant:
+        current_price = variant.offer_price
+        if cart_item.price != current_price:
+            cart_item.price = current_price
+
     if action == "increase":
         new_quantity = cart_item.quantity + 1
 
@@ -174,12 +179,14 @@ def move_to_cart(user, item, get_or_create_cart):
 
     if not created:
         cart_item.quantity += 1
-        cart_item.save(update_fields=["quantity"])
+        cart_item.price = price
+        cart_item.save(update_fields=["quantity", "price"])
 
     # Delete wishlist item after moving
     item.delete()
 
     return _response(True, "Moved to cart")
+
 
 
 

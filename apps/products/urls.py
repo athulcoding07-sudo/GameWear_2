@@ -91,13 +91,4 @@ urlpatterns = [
     path("orders/admin-item/<int:item_id>/reject-return/",  views.admin_reject_return_item,  name="admin_reject_return_item"),
     path("orders/admin-item/<int:item_id>/refund/",         views.admin_refund_item,          name="admin_refund_item"),
 
-
-
-
-
-    
-
-
-
-    
 ]

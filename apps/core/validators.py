@@ -4,33 +4,27 @@ from django.core.exceptions import ValidationError
 
 
 def validate_name(value):
+    if not isinstance(value, str):
+        raise ValidationError("Invalid name format.")
+
     value = value.strip()
 
     # Empty name
     if not value:
-        raise ValidationError(
-            "Name is required."
-        )
+        raise ValidationError("Name is required.")
 
-    if len(value) < 3:
-        raise ValidationError(
-            "Name must be at least 3 characters long."
-        )
+    if len(value) < 2:
+        raise ValidationError("Name must be at least 2 characters long.")
 
     if len(value) > 100:
-        raise ValidationError(
-            "Name cannot exceed 100 characters."
-        )
+        raise ValidationError("Name cannot exceed 100 characters.")
 
     if value.isdigit():
-        raise ValidationError(
-            "Name cannot contain only numbers."
-        )
+        raise ValidationError("Name cannot contain only numbers.")
 
-    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9 &'()-]*", value):
+    if not re.fullmatch(r"[A-Za-z0-9\s'&()-]+", value):
         raise ValidationError(
             "Name can only contain letters, numbers, spaces, &, apostrophes, hyphens, and parentheses."
-
         )
     
 

@@ -66,13 +66,20 @@ def validate_cart(cart):
         if (
             not item.product.category.is_active or
             not item.product.is_active or
+            not item.variant or
             not item.variant.is_active or
             item.variant.stock <= 0 or
             item.quantity > item.variant.stock
         ):
             invalid_items.append(item)
+        else:
+            current_price = item.variant.offer_price
+            if item.price != current_price:
+                item.price = current_price
+                item.save(update_fields=["price"])
 
     return invalid_items
+
 
 FREE_SHIPPING_LIMIT = Decimal("1000.00")
 SHIPPING_CHARGE = Decimal("50.00")

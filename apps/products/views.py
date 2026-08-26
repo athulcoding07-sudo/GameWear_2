@@ -1606,6 +1606,7 @@ def update_cart_view(request, item_id, action):
             removed = True
 
         # Get latest cart items
+        validate_cart(cart)
         cart_items = (
             cart.items
             .select_related(
@@ -1700,6 +1701,7 @@ def remove_cart_view(request, item_id):
                 status=400,
             )
 
+        validate_cart(cart)
         cart_items = (
             cart.items
             .select_related(
@@ -1849,26 +1851,7 @@ def checkout_view(request):
         request.user
     )
 
-    items = (
-        cart.items
-        .select_related(
-            "product",
-            "product__category",
-            "variant",
-        )
-    )
-
-    invalid_items = []
-
-    for item in items:
-
-        if (
-            not item.product.category.is_active
-            or not item.product.is_active
-            or not item.variant.is_active
-            or item.variant.stock <= 0
-        ):
-            invalid_items.append(item)
+    invalid_items = validate_cart(cart)
 
     if invalid_items:
 
@@ -1883,6 +1866,15 @@ def checkout_view(request):
         return redirect(
             "products:cart_view"
         )
+
+    items = (
+        cart.items
+        .select_related(
+            "product",
+            "product__category",
+            "variant",
+        )
+    )
 
     # Calculate subtotal
     subtotal = sum(
@@ -1952,6 +1944,21 @@ def place_order(request):
     cart = get_or_create_cart(
         request.user
     )
+
+    invalid_items = validate_cart(cart)
+
+    if invalid_items:
+        for item in invalid_items:
+            item.delete()
+
+        messages.warning(
+            request,
+            "Some unavailable items were removed from your cart."
+        )
+
+        return redirect(
+            "products:cart_view"
+        )
 
     items = (
         cart.items
@@ -2913,3 +2920,7 @@ def admin_refund_item(request, item_id):
         f"'{item.variant.product.name if item.variant else 'Unknown'}'."
     )
     return redirect("products:admin_order_detail", order_id=order.id)
+
+
+
+

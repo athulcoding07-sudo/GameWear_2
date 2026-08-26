@@ -261,3 +261,24 @@ class WalletPaymentAndRefundTests(TestCase):
         self.variant.refresh_from_db()
         self.assertEqual(self.variant.stock, 15)
 
+    def test_cart_item_price_updates_when_variant_price_changes(self):
+        from django.urls import reverse
+        self.client.login(email="testuser@example.com", password="testpassword")
+
+        # Cart item initially has price 1000.00
+        self.assertEqual(self.cart_item.price, Decimal("1000.00"))
+
+        # Admin changes variant price to 1500.00
+        self.variant.price = Decimal("1500.00")
+        self.variant.save()
+
+        # User views cart
+        response = self.client.get(reverse("products:cart_view"))
+        self.assertEqual(response.status_code, 200)
+
+        # Cart item price in DB should be updated to 1500.00
+        self.cart_item.refresh_from_db()
+        self.assertEqual(self.cart_item.price, Decimal("1500.00"))
+        self.assertEqual(self.cart_item.subtotal, Decimal("1500.00"))
+
+

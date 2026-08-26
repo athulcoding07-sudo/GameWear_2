@@ -166,10 +166,10 @@
                     <div class="col-span-2 space-y-2">
                         <label class="text-[9px] font-black text-neutral-500 uppercase tracking-widest px-1">Full
                             Name <span class="text-rose-500">*</span></label>
-                        <input type="text" name="full_name" id="add_full_name" required maxlength="100" pattern="[A-Za-z]+"
+                        <input type="text" name="full_name" id="add_full_name" required maxlength="100"
                             class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-sm text-neutral-300 focus:outline-none focus:border-white transition"
-                            placeholder="Letters only, no spaces or numbers" />
-                        <p id="add_full_name_error" class="text-rose-500 text-[10px] font-medium hidden">Name must contain only letters (A-Z, a-z), no spaces, numbers, or special characters.</p>
+                            placeholder="Full name" />
+                        <p id="add_full_name_error" class="text-rose-500 text-[10px] font-medium hidden">Full name is required.</p>
                     </div>
                     <div class="col-span-2 space-y-2">
                         <label
@@ -267,10 +267,10 @@
                     <div class="col-span-2 space-y-2">
                         <label class="text-[9px] font-black text-neutral-500 uppercase tracking-widest px-1">Full
                             Name <span class="text-rose-500">*</span></label>
-                        <input type="text" name="full_name" id="edit_full_name" required maxlength="100" pattern="[A-Za-z]+"
+                        <input type="text" name="full_name" id="edit_full_name" required maxlength="100"
                             class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-sm text-neutral-300 focus:outline-none focus:border-white transition"
-                            placeholder="Letters only, no spaces or numbers" />
-                        <p id="edit_full_name_error" class="text-rose-500 text-[10px] font-medium hidden">Name must contain only letters (A-Z, a-z), no spaces, numbers, or special characters.</p>
+                            placeholder="Full name" />
+                        <p id="edit_full_name_error" class="text-rose-500 text-[10px] font-medium hidden">Full name is required.</p>
                     </div>
                     <div class="col-span-2 space-y-2">
                         <label
@@ -384,13 +384,13 @@
     // Validation Functions
     function validateFullName(value, errorId) {
         const errorEl = document.getElementById(errorId);
-        const nameRegex = /^[A-Za-z]+$/;
+        const nameRegex = /^[A-Za-z0-9\s'&()-]+$/;
         if (!value.trim()) {
             showError(errorEl, 'Full name is required.');
             return false;
         }
         if (!nameRegex.test(value.trim())) {
-            showError(errorEl, 'Name must contain only letters (A-Z, a-z), no spaces, numbers, or special characters.');
+            showError(errorEl, 'Invalid full name format.');
             return false;
         }
         if (value.length > 100) {
